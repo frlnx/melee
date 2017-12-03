@@ -1,0 +1,27 @@
+[
+  {
+    "name": "default",
+    "parts": [
+      {"position": [0, 0, 0], "name": "cockpit"},
+      {"position": [1, 0, 0], "name": "plasma gun", "button": 6},
+      {"position": [-1, 0, 0], "name": "plasma gun", "button": 7},
+      {"position": [0, 0, 1], "name": "fuel tank"},
+      {"position": [0, 0, 2], "name": "fuel tank"},
+      {"position": [-1, 0, 1], "name": "generator"},
+      {"position": [1, 0, 1], "name": "generator"},
+      {"position": [2, 0, 0], "name": "engine", "rotation": [0, 90, 0], "axis": "rz"},
+      {"position": [-2, 0, 0], "name": "engine", "rotation": [0, -180, 0], "axis": "x"},
+      {"position": [1, 0, 2], "name": "engine", "axis": "y"},
+      {"position": [-1, 0, 2], "name": "engine", "rotation": [0, -90, 0], "axis": "z"},
+      {"position": [-2, 0, 1], "name": "shield", "rotation": [0, -90, 0]},
+      {"position": [2, 0, 1], "name": "shield"}
+    ]
+  },
+  {
+    "name": "debug",
+    "parts": [
+      {"position": [0, 0, 0], "name": "cockpit", "rotation": 90},
+      {"position": [1, 0, 0], "name": "plasma gun", "rotation": 90}
+    ]
+  }
+]

@@ -1,0 +1,192 @@
+# ----------------------------------------------------------------------------
+# PyWavefront
+# Copyright (c) 2013 Kurt Yoder
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+#  * Neither the name of PyWavefront nor the names of its
+#    contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ----------------------------------------------------------------------------
+
+from sys import stderr
+from pyglet.gl import *
+
+import pywavefront.parser as parser
+import pywavefront.texture as texture
+
+
+class Material(object):
+    def __init__(self, name):
+        self.name = name
+        self.diffuse = [.8, .8, .8, 1.]
+        self.ambient = [.2, .2, .2, 1.]
+        self.specular = [0., 0., 0., 1.]
+        self.emissive = [0., 0., 0., 1.]
+        self.shininess = 0.
+        self.luminance = 0.
+        self.texture = None
+
+        # Interleaved array of floats in GL_T2F_N3F_V3F format
+        self._vertices = []
+        self.gl_floats = None
+        self.triangle_count = 0
+
+    @staticmethod
+    def pad_light(values):
+        """Accept an array of up to 4 values, and return an array of 4 values.
+        If the input array is less than length 4, pad it with zeroes until it
+        is length 4. Also ensure each value is a float"""
+        while len(values) < 4:
+            values.append(0.)
+        return list(map(float, values))
+
+    def set_alpha(self, alpha):
+        """Set alpha/last value on all four lighting attributes."""
+        alpha = float(alpha)
+        self.diffuse[3] = alpha
+        self.ambient[3] = alpha
+        self.specular[3] = alpha
+        self.emissive[3] = alpha
+
+    def set_diffuse(self, values=None):
+        if values is None:
+            values = []
+        self.diffuse = self.pad_light(values)
+
+    def set_ambient(self, values=None):
+        if values is None:
+            values = []
+        self.ambient = self.pad_light(values)
+
+    def set_specular(self, values=None):
+        if values is None:
+            values = []
+        self.specular = self.pad_light(values)
+
+    def set_emissive(self, values=None):
+        if values is None:
+            values = []
+        self.emissive = self.pad_light(values)
+
+    def set_texture(self, path):
+        self.texture = texture.Texture(path)
+
+    def set_luminance(self, values=None):
+        if values is None:
+            values = [0, 0]
+        self.luminance = values
+
+    def unset_texture(self):
+        self.texture = None
+
+    @staticmethod
+    def gl_light(lighting):
+        """Return a GLfloat with length 4, containing the 4 lighting values."""
+        return (GLfloat * 4)(*(lighting))
+
+    @property
+    def vertices(self) -> list:
+        return self._vertices
+
+    def add_vertices(self, vertices: list):
+        self._vertices += vertices
+        self.gl_floats = (GLfloat * len(self._vertices))(*self._vertices)
+        self.triangle_count = len(self._vertices) / 8
+
+    def draw(self, face=GL_FRONT_AND_BACK):
+        if self.texture:
+            self.texture.draw()
+        else:
+            glDisable(GL_TEXTURE_2D)
+
+        glMaterialfv(face, GL_DIFFUSE, self.gl_light(self.diffuse))
+        glMaterialfv(face, GL_AMBIENT, self.gl_light(self.ambient))
+        glMaterialfv(face, GL_SPECULAR, self.gl_light(self.specular))
+        glMaterialfv(face, GL_EMISSION, self.gl_light(self.emissive))
+        glMaterialf(face, GL_SHININESS, self.shininess)
+        # glMaterialf(face, GL_LUMINANCE, self.luminance)
+
+        glInterleavedArrays(GL_T2F_N3F_V3F, 0, self.gl_floats)
+        glDrawArrays(GL_TRIANGLES, 0, int(self.triangle_count))
+
+
+class MaterialParser(parser.Parser):
+    """Object to parse lines of a materials definition file."""
+
+    def __init__(self, file_path):
+        self.materials = {}
+        self.this_material = None
+        self.read_file(file_path)
+
+    def parse_newmtl(self, args):
+        [newmtl] = args
+        self.this_material = Material(newmtl)
+        self.materials[self.this_material.name] = self.this_material
+
+    def parse_Kd(self, args):
+        self.this_material.set_diffuse(args)
+
+    def parse_Ka(self, args):
+        self.this_material.set_ambient(args)
+
+    def parse_Ks(self, args):
+        self.this_material.set_specular(args)
+
+    def parse_Ke(self, args):
+        self.this_material.set_emissive(args)
+
+    def parse_Ns(self, args):
+        [Ns] = args
+        self.this_material.shininess = float(Ns) / 10
+
+    def parse_d(self, args):
+        [d] = args
+        self.this_material.set_alpha(d)
+
+    def parse_map_Kd(self, args):
+        [Kd] = args
+        self.this_material.set_texture(Kd)
+
+    def parse_Ni(self, args):
+        # unimplemented
+        return
+
+    def parse_Tr(self, args):
+        # unimplemented
+        return
+
+    def parse_illum(self, args):
+        # unimplemented
+        return
+
+    def parse_l(self, args):
+        self.this_material.set_luminance(args)
+
+    def parse_Tf(self, args):
+        if args != ['1', '1', '1']:
+            stderr.write("Texture Tf (transmission filter) not supported")
+        return

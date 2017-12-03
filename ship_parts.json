@@ -1,0 +1,64 @@
+[
+  {
+    "name": "cockpit",
+    "critical": true
+  },
+  {
+    "name": "plasma gun",
+    "states": [
+      {
+        "name": "idle"
+      },
+      {
+        "name": "button",
+        "power required": 50,
+        "spawn": "plasma projectile"
+      }
+    ]
+  },
+  {
+    "name": "fuel tank",
+    "states": [
+      {
+        "name": "idle",
+        "fuel storage": 5000
+      }
+    ]
+  },
+  {
+    "name": "generator",
+    "states": [
+      {
+        "name": "idle",
+        "fuel consumption": 10,
+        "power generation": 150
+      }
+    ]
+  },
+  {
+    "name": "engine",
+    "states": [
+      {
+        "name": "idle"
+      },
+      {
+        "name": "axis",
+        "fuel consumption": 10,
+        "thrust generated": 10
+      }
+    ]
+  },
+  {
+    "name": "shield",
+    "states": [
+      {
+        "name": "idle",
+        "power required": 100,
+        "shield arc": [
+          10,
+          160
+        ]
+      }
+    ]
+  }
+]
