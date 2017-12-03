@@ -6,6 +6,6 @@ from engine.views.base_view import BaseView
 
 
 class ShipView(BaseView):
-
-    def __init__(self, model: ShipModel, sub_views: Set[ShipPartView]):
-        super().__init__(model, sub_views)
+    pass
+    #def __init__(self, model: ShipModel, sub_views: Set[ShipPartView]):
+    #    super().__init__(model, sub_views)

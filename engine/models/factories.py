@@ -17,7 +17,8 @@ class ShipModelFactory(object):
         config = deepcopy(self.ships[name])
         parts = set()
         for part_config in config['parts']:
-            parts.add(self.ship_part_model_factory.manufacture(part_config))
+            part = self.ship_part_model_factory.manufacture(**part_config)
+            parts.add(part)
         ship = ShipModel(parts, (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
         return ship
 
@@ -29,8 +30,10 @@ class ShipPartModelFactory(object):
             ship_parts = json.load(f)
         self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
 
-    def manufacture(self, placement_config) -> ShipPartModel:
-        config = deepcopy(self.ship_parts[placement_config['name']])
+    def manufacture(self, name,  **placement_config) -> ShipPartModel:
+        config = deepcopy(self.ship_parts[name])
+        config['button'] = placement_config.get('button')
+        config['axis'] = placement_config.get('axis')
         config['position'] = placement_config.get('position', (0, 0, 0))
         config['rotation'] = placement_config.get('rotation', (0, 0, 0))
         config['movement'] = placement_config.get('movement', (0, 0, 0))

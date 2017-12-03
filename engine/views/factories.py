@@ -1,13 +1,12 @@
-from engine.models.ship import ShipModel
-from engine.views.ship import ShipView
-from engine.views.ship_part import ShipPartView
+from engine.models.base_model import BaseModel
+from engine.views.base_view import BaseView
 
-class ShipViewFactory(object):
+
+class ViewFactory(object):
 
     def __init__(self):
         pass
 
-    def manufacture(self, model: ShipModel) -> ShipView:
-        sub_views = set(ShipPartView(ship_part_model) for ship_part_model in model.parts)
-        ship_view = ShipView(model, sub_views)
+    def manufacture(self, model: BaseModel) -> BaseView:
+        ship_view = BaseView(model)
         return ship_view

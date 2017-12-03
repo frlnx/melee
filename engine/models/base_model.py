@@ -13,6 +13,15 @@ class BaseModel(object):
         self._dx, self._dy, self._dz = movement
         self._dpitch, self._dyaw, self._dbank = spin
         self._observers = set()
+        self._mesh = None
+
+    @property
+    def name(self):
+        return "base"
+
+    @property
+    def mesh(self):
+        return self._mesh
 
     def observe(self, func: Callable):
         self._observers.add(func)
@@ -36,6 +45,11 @@ class BaseModel(object):
 
     def set_movement(self, dx, dy, dz):
         self._dx, self._dy, self._dz = dx, dy, dz
+
+    def add_movement(self, dx, dy, dz):
+        self._dx += dx
+        self._dy += dy
+        self._dz += dz
 
     def set_spin(self, dpitch, dyaw, dbank):
         self._dpitch, self._dyaw, self._dbank = dpitch, dyaw, dbank

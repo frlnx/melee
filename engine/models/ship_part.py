@@ -8,10 +8,11 @@ class ShipPartModel(BaseModel):
                  movement: Tuple[float, float, float], spin: Tuple[float, float, float], **part_spec):
         super().__init__(position, rotation, movement, spin)
         self._name = name
-        self._states = {t['name']: t for t in part_spec.get('triggers', [{"name": "idle"}])}
+        self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
         self.button = part_spec.get('button')
         self.axis = part_spec.get('axis')
         self._state = "idle"
+        self._mesh = part_spec.get('mesh')
 
     def set_state(self, state):
         assert state in self._states
