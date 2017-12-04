@@ -1,2 +1,3 @@
 # pywavefront
 pyglet
+pytest
