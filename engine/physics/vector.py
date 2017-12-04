@@ -23,7 +23,8 @@ class BaseDirection(object):
 class Direction(BaseDirection):
 
     def __sub__(self, other: BaseDirection):
-        return Direction(self._pitch - other._pitch, self._yaw - other._yaw, self._bank - other._bank)
+        pitch_yaw_bank = [(s % 360) - (o % 360) for s, o in zip(self._pitch_yaw_bank, other._pitch_yaw_bank)]
+        return Direction(*pitch_yaw_bank)
 
 
 class BasePosition(object):
@@ -56,9 +57,11 @@ class BaseVector(object):
         self._offset_direction = self._direction - self._position.direction
         self._rotational_forces = [self._force * offset_direction for offset_direction in self._offset_direction.sin]
         # Needs a transformation matrix
-        self.pitch_offset, self.yaw_offset, self.bank_offset = self._offset_direction
+        self.pitch_offset, self.yaw_offset, self.bank_offset = self._offset_direction._pitch_yaw_bank
         
-        self._directional_forces = 
+        self._directional_forces = [cos(radians(self.yaw_offset)),
+                                    sin(radians(self.pitch_offset)),
+                                    sin(radians(self.yaw_offset))]
 
     @property
     def rotational_forces(self):
