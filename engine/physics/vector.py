@@ -1,4 +1,4 @@
-from math import sqrt, atan2, cos, sin, degrees
+from math import sqrt, atan2, cos, sin, degrees, radians
 
 
 class BaseDirection(object):
@@ -11,11 +11,11 @@ class BaseDirection(object):
 
     @property
     def cos(self):
-        return [cos(x) for x in self._pitch_yaw_bank]
+        return [cos(radians(x)) for x in self._pitch_yaw_bank]
 
     @property
     def sin(self):
-        return [sin(x) for x in self._pitch_yaw_bank]
+        return [sin(radians(x)) for x in self._pitch_yaw_bank]
 
     def __repr__(self):
         return "Pitch: {}, Yaw: {}, Bank: {}".format(*self._pitch_yaw_bank)
@@ -56,7 +56,9 @@ class BaseVector(object):
         self._offset_direction = self._direction - self._position.direction
         self._rotational_forces = [self._force * offset_direction for offset_direction in self._offset_direction.sin]
         # Needs a transformation matrix
-        self._directional_forces = [self._force * offset_direction for offset_direction in self._offset_direction.cos]
+        self.pitch_offset, self.yaw_offset, self.bank_offset = self._offset_direction
+        
+        self._directional_forces = 
 
     @property
     def rotational_forces(self):
