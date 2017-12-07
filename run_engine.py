@@ -42,7 +42,7 @@ class Window(pyglet.window.Window):
 if __name__ == '__main__':
     gamepad = GamePad()
     sf = ShipControllerFactory()
-    ship_controller = sf.manufacture("default", gamepad)
+    ship_controller = sf.manufacture("wolf", gamepad)
     window = Window(ship_controller._view)
     pyglet.clock.schedule(ship_controller.update)
     pyglet.app.run()

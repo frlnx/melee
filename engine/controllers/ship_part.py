@@ -11,37 +11,33 @@ class ShipPartController(BaseController):
         super().__init__(model, view, gamepad)
         self._model = model
         self._view = view
-        self._null_vector = Vector(0, Position(0, 0, 0), Direction(0, 0, 0))
-        print(self._model.name, self._model.axis, self._model.button)
-
-    def spawns(self) -> bool:
-        return False
+        self._force = 0
+        self._force_vector = Vector(Position(*self._model.position), Direction(*self._model.rotation))
+        print(self._model.nickname, self._force_vector)
 
     @property
     def force_vector(self) -> Vector:
-        force = self._model.state_spec.get('thrust generated', 0)
-        if force == 0:
-            return self._null_vector
-        vector = Vector(force, Position(*self._model.position), Direction(*self._model.rotation))
-        print("Thrust", vector.rotational_forces)
-        return vector
+        return self._force_vector
 
     def update(self, dt):
         super(ShipPartController, self).update(dt)
         axis_value = self._gamepad.axis.get(self._model.axis, 0)
         if self._model.button in self._gamepad.buttons:
+            self._force = 1.0
             try:
                 self._model.set_state('button')
             except AssertionError:
                 pass
         elif axis_value > 0:
+            self._force = self._model.state_spec.get('thrust generated', 0)
             try:
                 self._model.set_state('axis')
                 fire_material = self._view._mesh.materials['Fire_front']
-                fire_material.set_alpha(axis_value)
+                fire_material.set_diffuse([axis_value] * 4)
             except AssertionError:
                 raise
         else:
+            self._force = 0
             self._model.set_state('idle')
 
     def axis_multiplier(self):

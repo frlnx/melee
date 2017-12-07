@@ -32,6 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
+from collections import defaultdict
 import pywavefront.material
 import pywavefront.mesh
 import pywavefront.parser
@@ -49,7 +50,7 @@ class Wavefront(object):
         self.materials = {}
         self.meshes = {}        # Name mapping
         self.mesh_list = []     # Also includes anonymous meshes
-        self.group = None
+        self.groups = defaultdict(list)
 
         ObjParser(self, self.file_name)
 
@@ -59,7 +60,8 @@ class Wavefront(object):
 
     def add_mesh(self, the_mesh):
         self.mesh_list.append(the_mesh)
-        if not the_mesh.name: return
+        if not the_mesh.name:
+            return
         self.meshes[the_mesh.name] = the_mesh
 
 
@@ -75,6 +77,7 @@ class ObjParser(parser.Parser):
         self.normals = [[0., 0., 0.]]
         self.tex_coords = [[0., 0.]]
         self.read_file(file_name)
+        self.group = None
 
     # methods for parsing types of wavefront lines
     def parse_v(self, args):
@@ -109,7 +112,7 @@ class ObjParser(parser.Parser):
         self.wavefront.add_mesh(self.mesh)
 
     def parse_g(self, args):
-        [self.mesh.group] = args
+        self.group = args[0]
 
     def parse_f(self, args):
         if (len(self.tex_coords) > 1) and (len(self.normals) == 1): 
@@ -124,6 +127,7 @@ class ObjParser(parser.Parser):
         if self.material is None:
             self.material = material.Material()
         self.mesh.add_material(self.material)
+        self.wavefront.groups[self.group].append(self.material)
 
         # For fan triangulation, remember first and latest vertices
         v1 = None

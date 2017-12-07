@@ -18,10 +18,15 @@
     ]
   },
   {
-    "name": "debug",
+    "name": "wolf",
     "parts": [
-      {"position": [0, 0, 0], "name": "cockpit", "rotation": 90},
-      {"position": [1, 0, 0], "name": "plasma gun", "rotation": 90}
+      {"position": [0, 0, 0], "name": "cockpit", "rotation": [0, 45, 0]},
+      {"position": [1, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "rz", "nickname": "right reverse"},
+      {"position": [-1, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "y", "nickname": "left reverse"},
+      {"position": [2, 0, 0], "name": "engine", "rotation": [0, 90, 0], "axis": "z", "nickname": "right"},
+      {"position": [-2, 0, 0], "name": "engine", "rotation": [0, -90, 0], "axis": "-x", "nickname": "left"},
+      {"position": [1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-rz", "nickname": "right forward"},
+      {"position": [-1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-y", "nickname": "left forward"}
     ]
   }
 ]

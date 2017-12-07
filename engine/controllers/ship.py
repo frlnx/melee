@@ -22,5 +22,6 @@ class ShipController(BaseController):
         dyaw = 0
         for sub_controller in self.sub_controllers:
             vector = sub_controller.force_vector
-            self._model.add_spin(*vector.rotational_forces)
-            self._model.add_movement(*vector.directional_forces)
+            force = sub_controller._force
+            self._model.add_spin(*[x * force * 100 for x in vector.rotational_forces])
+            self._model.add_movement(*[x * force for x in vector.directional_forces])

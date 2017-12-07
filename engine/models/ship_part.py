@@ -13,6 +13,7 @@ class ShipPartModel(BaseModel):
         self.axis = part_spec.get('axis')
         self._state = "idle"
         self._mesh = part_spec.get('mesh')
+        self.nickname = part_spec.get('nickname')
 
     def set_state(self, state):
         assert state in self._states

@@ -18,7 +18,7 @@ class TestRotationalPhysicsVector(object):
     def setup(self):
         position = Position(1, 0, 0)
         direction = Direction(0, 0, 0)
-        self.target = Vector(1, position, direction)
+        self.target = Vector(position, direction)
 
     def test_offset_direction_is_minus_90_degrees(self):
         assert [0, -90, 0] == self.target._offset_direction._pitch_yaw_bank
@@ -42,12 +42,12 @@ class TestRotationalPhysicsVector(object):
         assert 0 == round(z, 6)
 
 
-class TestVectorThroughCenterOfMass(object):
+class TestVectorThroughCenterOfMassFromRight(object):
 
     def setup(self):
         position = Position(1, 0, 0)
         direction = Direction(0, -90, 0)
-        self.target = Vector(1, position, direction)
+        self.target = Vector(position, direction)
 
     def test_offset_force_is_opposite_direction(self):
         assert [0, 180, 0] == self.target._offset_direction._pitch_yaw_bank
@@ -55,5 +55,22 @@ class TestVectorThroughCenterOfMass(object):
     def test_object_moves_left(self):
         x, y, z = self.target.directional_forces
         assert -1 == round(x, 6)
+        assert 0 == round(y, 6)
+        assert 0 == round(z, 6)
+
+
+class TestVectorThroughCenterOfMassFromLeft(object):
+
+    def setup(self):
+        position = Position(-1, 0, 0)
+        direction = Direction(0, 90, 0)
+        self.target = Vector(position, direction)
+
+    def test_offset_force_is_opposite_direction(self):
+        assert [0, 180, 0] == self.target._offset_direction._pitch_yaw_bank
+
+    def test_object_moves_right(self):
+        x, y, z = self.target.directional_forces
+        assert 1 == round(x, 6)
         assert 0 == round(y, 6)
         assert 0 == round(z, 6)
