@@ -1,9 +1,9 @@
-from engine.physics.force import Force, Position, Direction
+from engine.physics.force import Force, Offsets, Degrees
 
 
 class Body(object):
 
-    def __init__(self, direction: Direction, mass_grams: int):
+    def __init__(self, direction: Degrees, mass_grams: int):
         self._direction = direction
         self._mass_grams = mass_grams
         self._forces = set()
