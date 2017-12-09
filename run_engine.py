@@ -33,7 +33,7 @@ class Window(pyglet.window.Window):
         glEnable(GL_LIGHT0)
 
         glRotatef(90, 1, 0, 0)
-        glTranslated(0, -13, 0)
+        glTranslated(0, -23, 0)
         glEnable(GL_LIGHTING)
 
         self.ship_view.draw()

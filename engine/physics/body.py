@@ -1,4 +1,4 @@
-from engine.physics.vector import Vector, Position, Direction
+from engine.physics.force import Force, Position, Direction
 
 
 class Body(object):

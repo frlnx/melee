@@ -49,7 +49,7 @@
       {
         "name": "axis",
         "fuel consumption": 10,
-        "thrust generated": 0.01
+        "thrust generated": 0.1
       }
     ]
   },

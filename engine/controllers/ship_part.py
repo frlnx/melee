@@ -1,7 +1,7 @@
 from engine.controllers.base_controller import BaseController
 from engine.views.base_view import BaseView
 from engine.models.ship_part import ShipPartModel
-from engine.physics.vector import Vector, Position, Direction
+from engine.physics.force import Position, Direction, RotationalForce
 from engine.input_handlers import GamePad
 
 
@@ -12,11 +12,11 @@ class ShipPartController(BaseController):
         self._model = model
         self._view = view
         self._force = 0
-        self._force_vector = Vector(Position(*self._model.position), Direction(*self._model.rotation))
+        self._force_vector = RotationalForce(Position(*self._model.position), Direction(*self._model.rotation))
         print(self._model.nickname, self._force_vector)
 
     @property
-    def force_vector(self) -> Vector:
+    def force_vector(self) -> RotationalForce:
         return self._force_vector
 
     def update(self, dt):
@@ -29,7 +29,7 @@ class ShipPartController(BaseController):
             except AssertionError:
                 pass
         elif axis_value > 0:
-            self._force = self._model.state_spec.get('thrust generated', 0)
+            self._force = self._model.state_spec.get('thrust generated', 0) * axis_value
             try:
                 self._model.set_state('axis')
                 fire_material = self._view._mesh.materials['Fire_front']
@@ -40,5 +40,7 @@ class ShipPartController(BaseController):
             self._force = 0
             self._model.set_state('idle')
 
-    def axis_multiplier(self):
-        return max(0, self._gamepad.axis.get(self._model.axis, 0))
+    @property
+    def spin(self):
+        return 0, self.force_vector.yaw_force(self._force), 0
+
