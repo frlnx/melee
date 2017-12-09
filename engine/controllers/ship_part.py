@@ -4,6 +4,8 @@ from engine.models.ship_part import ShipPartModel
 from engine.physics.force import Position, Direction, RotationalForce
 from engine.input_handlers import GamePad
 
+from math import sin, cos
+
 
 class ShipPartController(BaseController):
 
@@ -44,3 +46,14 @@ class ShipPartController(BaseController):
     def spin(self):
         return 0, self.force_vector.yaw_force(self._force), 0
 
+    @property
+    def yaw(self):
+        return self._model.rotation[1]
+
+    @property
+    def x_z_force(self):
+        return sin(self.yaw) * self._force, cos(self.yaw) * self._force
+
+    @property
+    def position(self):
+        return self._model.position

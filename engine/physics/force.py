@@ -9,7 +9,6 @@ class Vector(object):
         self.y = y
         self.z = z
         self.xyz = array([x, y, z])
-        self.pos_sum = abs(x) + abs(y) + abs(z)
         self.distance = sqrt(sqrt(self.x ** 2 + self.y ** 2) ** 2 + self.z ** 2)
 
     def __add__(self, other):
@@ -54,6 +53,8 @@ class BaseForce(object):
         self.direction = direction
 
 
+    def __add__(self, other):
+
 class RotationalForce(BaseForce):
 
     def __init__(self, position: Position, direction: Direction):
@@ -66,7 +67,7 @@ class RotationalForce(BaseForce):
         return self.yaw_momentum * (force / self.position.distance)
 
 
-class MomentumForce(BaseForce):
+class MomentumForcesSum(BaseForce):
 
     def __init__(self, position: Position, direction: Direction, force):
         super().__init__(position, direction)

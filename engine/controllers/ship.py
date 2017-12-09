@@ -5,7 +5,6 @@ from engine.views.base_view import BaseView
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import GamePad
-from engine.physics.force import Vector, MomentumForce, Direction, Position
 
 from math import cos, sin, radians, atan2, pi
 from numpy import matrix, array
@@ -24,20 +23,26 @@ class ShipController(BaseController):
         super().update(dt)
         theta = radians(self._model.rotation[1])
         m = matrix([[cos(theta), 0, sin(theta)], [0, 1, 0], [-sin(theta), 0, -cos(theta)]])
-        sum_p = array([0, 0, 0])
-        sum_v = array([0, 0, 0])
         for sub_controller in self.sub_controllers:
             self._model.add_spin(*sub_controller.spin)
+
+        movement = m.dot(array(self.sum_directional_forces())).tolist()[0]
+        self._model.add_movement(*movement)
+
+    def sum_directional_forces(self):
+        x_pos_sum = 0
+        z_pos_sum = 0
+        x_force_sum = 0
+        z_force_sum = 0
+        for sub_controller in self.sub_controllers:
             force = sub_controller._force
             if force > 0:
-                r = radians(sub_controller._model.rotation[1]) + pi
-                v = array([sin(-r), 0, cos(r)]) * force
-                sum_v = sum_v + v
-                p = array(sub_controller._model.position) * (force / sum([abs(v) for v in sum_v]))
-                sum_p = sum_p + p
-        yaw = atan2(sum_v[2], sum_v[0])
-        pos_yaw = atan2(sum_p[2], sum_p[0])
+                x_force, z_force = sub_controller.x_z_force
+                x_force_sum += x_force
+                z_force_sum += z_force
+                x_pos_sum += sub_controller.position[0] * force
+                z_pos_sum += sub_controller.position[2] * force
+        yaw = atan2(z_force_sum, x_force_sum)
+        pos_yaw = atan2(z_pos_sum, x_pos_sum)
         translation_force = sin((pi/2) - (yaw % (pi*2)) - (pos_yaw % (pi*2)))
-        directional_forces = sum_v * translation_force
-        movement = m.dot(directional_forces).tolist()[0]
-        self._model.add_movement(*movement)
+        return x_force_sum * translation_force, 0, z_force_sum * translation_force
