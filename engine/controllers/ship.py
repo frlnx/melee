@@ -6,8 +6,9 @@ from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import GamePad
 
-from math import cos, sin, radians, pi
-from numpy import matrix, array
+from math import cos, sin, radians
+from numpy import matrix
+from functools import reduce
 
 
 class ShipController(BaseController):
@@ -21,19 +22,26 @@ class ShipController(BaseController):
 
     def update(self, dt):
         super().update(dt)
-        theta = radians(self._model.rotation[1])
+        theta = radians(-self._model.rotation[1])
         m = matrix([[cos(theta), 0, sin(theta)], [0, 1, 0], [-sin(theta), 0, -cos(theta)]])
+        forces = []
         for sub_controller in self.sub_controllers:
             self._model.add_spin(*sub_controller.spin)
+            sized_force_vector = sub_controller.sized_force_vector
+            if sized_force_vector.forces.distance > 0.01:
+                forces.append(sub_controller.sized_force_vector)
 
-        movement = m.dot(self.sum_directional_forces()).tolist()[0]
-        self._model.add_movement(*movement)
-
-    def sum_directional_forces(self) -> array:
-        forces = None
-        for sub_controller in self.sub_controllers:
-            if forces is None:
-                forces = sub_controller.sized_force_vector
-            else:
-                forces = forces + sub_controller.sized_force_vector
-        return forces.translation_forces()
+        if len(forces) > 0:
+            if len(forces) == 1:
+                movement = forces[0].translation_forces()
+            elif len(forces) > 1:
+                movement = reduce(lambda a, b: a + b, forces[1:], forces[0]).translation_forces()
+            movement = m.dot(movement).tolist()[0]
+            self._model.add_movement(*movement)
+        if 7 in self._gamepad.buttons:
+            self._model.set_rotation(0, 0, 0)
+            self._model.set_position(0, 0, 0)
+            self._model.set_movement(0, 0, 0)
+            self._model.set_spin(0, 0, 0)
+        if 6 in self._gamepad.buttons:
+            print(forces)

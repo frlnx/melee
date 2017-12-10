@@ -33,7 +33,7 @@ class BaseView(object):
         glTranslatef(*self._model.position)
         glRotatef(self._model.pitch, 1, 0, 0)
         glRotatef(self._model.yaw, 0, 1, 0)
-        glRotatef(self._model.bank, 0, 0, 1)
+        glRotatef(self._model.roll, 0, 0, 1)
         glGetFloatv(GL_MODELVIEW_MATRIX, self._model_view_matrix)
         glPopMatrix()
 

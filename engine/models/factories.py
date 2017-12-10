@@ -19,6 +19,8 @@ class ShipModelFactory(object):
         for part_config in config['parts']:
             part = self.ship_part_model_factory.manufacture(**part_config)
             parts.add(part)
+        #arrow = self.ship_part_model_factory.manufacture("arrow")
+        #parts.add(arrow)
         ship = ShipModel(parts, (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
         return ship
 

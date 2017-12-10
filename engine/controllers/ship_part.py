@@ -16,8 +16,7 @@ class ShipPartController(BaseController):
         self._force = 0
         yaw = self._model.rotation[1]
         self._force_vector = RotationalForce(Offsets(*self._model.position),
-                                             Offsets(sin(radians(yaw)), 0, cos(radians(yaw))))
-        print(self._model.nickname, self._force_vector)
+                                             Offsets(sin(radians(yaw + 180)), 0, cos(radians(yaw))))
 
     @property
     def force_vector(self) -> RotationalForce:
@@ -55,10 +54,6 @@ class ShipPartController(BaseController):
     @property
     def yaw(self):
         return self._model.rotation[1]
-
-    @property
-    def x_z_force(self):
-        return sin(self.yaw) * self._force, cos(self.yaw) * self._force
 
     @property
     def position(self):

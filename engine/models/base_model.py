@@ -9,9 +9,9 @@ class BaseModel(object):
                  movement: Tuple[float, float, float],
                  spin: Tuple[float, float, float]):
         self._x, self._y, self._z = position
-        self._pitch, self._yaw, self._bank = rotation
+        self._pitch, self._yaw, self._roll = rotation
         self._dx, self._dy, self._dz = movement
-        self._dpitch, self._dyaw, self._dbank = spin
+        self._dpitch, self._dyaw, self._droll = spin
         self._observers = set()
         self._mesh = None
 
@@ -30,17 +30,17 @@ class BaseModel(object):
         for observer in self._observers:
             observer()
 
-    def set_position_and_rotation(self, x, y, z, pitch, yaw, bank):
+    def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
         self._x, self._y, self._z = x, y, z
-        self._pitch, self._yaw, self._bank = pitch, yaw, bank
+        self._pitch, self._yaw, self._roll = pitch, yaw, roll
         self._callback()
 
     def set_position(self, x, y, z):
         self._x, self._y, self._z = x, y, z
         self._callback()
 
-    def set_rotation(self, pitch, yaw, bank):
-        self._pitch, self._yaw, self._bank = pitch, yaw, bank
+    def set_rotation(self, pitch, yaw, roll):
+        self._pitch, self._yaw, self._roll = pitch, yaw, roll
         self._callback()
 
     def set_movement(self, dx, dy, dz):
@@ -51,17 +51,17 @@ class BaseModel(object):
         self._dy += dy
         self._dz += dz
 
-    def set_spin(self, dpitch, dyaw, dbank):
-        self._dpitch, self._dyaw, self._dbank = dpitch, dyaw, dbank
+    def set_spin(self, dpitch, dyaw, droll):
+        self._dpitch, self._dyaw, self._droll = dpitch, dyaw, droll
 
-    def add_spin(self, dpitch, dyaw, dbank):
+    def add_spin(self, dpitch, dyaw, droll):
         self._dpitch += dpitch
         self._dyaw += dyaw
-        self._dbank += dbank
+        self._droll += droll
 
     @property
     def spin(self):
-        return self._dpitch, self._dyaw, self._dbank
+        return self._dpitch, self._dyaw, self._droll
 
     @property
     def movement(self):
@@ -73,7 +73,7 @@ class BaseModel(object):
 
     @property
     def rotation(self):
-        return self._pitch, self._yaw, self._bank
+        return self._pitch, self._yaw, self._roll
 
     @property
     def pitch(self):
@@ -84,5 +84,5 @@ class BaseModel(object):
         return self._yaw
 
     @property
-    def bank(self):
-        return self._bank
+    def roll(self):
+        return self._roll

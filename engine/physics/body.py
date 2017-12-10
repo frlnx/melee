@@ -1,4 +1,4 @@
-from engine.physics.force import Force, Offsets, Degrees
+from engine.physics.force import Degrees
 
 
 class Body(object):
@@ -9,4 +9,4 @@ class Body(object):
         self._forces = set()
 
     def update(self):
-        x_force_y_position =
+        x_force_y_position = 1

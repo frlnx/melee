@@ -1,5 +1,5 @@
-from math import sqrt, atan2, cos, sin, degrees, radians, pi
-from numpy import array, cross, dot, matrix
+from math import sqrt, atan2, cos, sin, degrees, radians
+from numpy import array, cross, dot
 
 
 class Vector(object):
@@ -39,7 +39,7 @@ class Vector(object):
 class Degrees(Vector):
 
     def __sub__(self, other: Vector):
-        return Degrees(*[(((s % 360)) - ((o % 360)) % 360) - 180 for s, o in zip(self, other)])
+        return Degrees(*[((s % 360) - (o % 360) % 360) for s, o in zip(self, other)])
 
     @property
     def pitch(self):
@@ -50,7 +50,7 @@ class Degrees(Vector):
         return self.y
 
     @property
-    def bank(self):
+    def roll(self):
         return self.z
 
     @property
@@ -62,15 +62,15 @@ class Degrees(Vector):
         return radians(self.yaw)
 
     @property
-    def bank_radian(self):
-        return radians(self.bank)
+    def roll_radian(self):
+        return radians(self.roll)
 
 
 class Offsets(Vector):
 
     def __init__(self, x, y, z):
         super().__init__(x, y, z)
-        self.direction = Degrees(0, degrees(atan2(self.x, self.z)), 0)
+        self.direction = Degrees(0, degrees(atan2(-self.x, self.z)), 0)
 
 
 class BaseForce(object):
@@ -80,13 +80,13 @@ class BaseForce(object):
         self.forces = forces
 
     def __add__(self, other):
-        return BaseForce(self.position + other.position, self.forces + other.forces)
+        return self.__class__(self.position + other.position, self.forces + other.forces)
 
     def __mul__(self, other):
-        return BaseForce(self.position * other, self.forces * other)
+        return self.__class__(self.position * other, self.forces * other)
 
     def diff_yaw_of_force_to_pos(self):
-        return (self.forces.direction.yaw % 360) - (self.position.direction.yaw % 360)
+        return (((self.forces.direction.yaw % 360) - (self.position.direction.yaw % 360) + 180) % 360) - 180
 
     def c_radian(self):
         return radians(90 - self.diff_yaw_of_force_to_pos())
@@ -100,6 +100,9 @@ class BaseForce(object):
     def translation_forces(self):
         return self.forces.xyz * self.translation_part_of_force()
 
+    def __repr__(self):
+        return "{} {}".format(self.position, self.forces)
+
 
 class RotationalForce(BaseForce):
 
@@ -107,8 +110,9 @@ class RotationalForce(BaseForce):
         super().__init__(position, forces)
         if self.position.distance == 0:
             self.yaw_force = lambda x: 0
+            self.yaw_momentum = 0
         else:
-            self.yaw_momentum = -cos(self.c_radian())
+            self.yaw_momentum = cos(self.c_radian())
 
     def yaw_force(self, force):
         return degrees(self.yaw_momentum * (force / self.position.distance))

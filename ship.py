@@ -13,7 +13,7 @@ class ShipPart(object):
         self.position = position
         self.pitch = 0
         self.yaw = rotation
-        self.bank = 0
+        self.roll = 0
         self.mesh = Wavefront(FILE_TEMPLATE.format(name))
 
     def draw(self):
@@ -21,7 +21,7 @@ class ShipPart(object):
         glTranslatef(*self.position)
         glRotatef(self.pitch, 1, 0, 0)
         glRotatef(self.yaw, 0, 1, 0)
-        glRotatef(self.bank, 0, 0, 1)
+        glRotatef(self.roll, 0, 0, 1)
         self.mesh.draw()
         glPopMatrix()
 
@@ -33,13 +33,13 @@ class Ship(object):
         self.position = [0, 0, 0]
         self.pitch = 0
         self.yaw = 0
-        self.bank = 0
+        self.roll = 0
 
     def draw(self):
         glPushMatrix()
         glRotatef(self.pitch, 1, 0, 0)
         glRotatef(self.yaw, 0, 1, 0)
-        glRotatef(self.bank, 0, 0, 1)
+        glRotatef(self.roll, 0, 0, 1)
         glTranslatef(*self.position)
         for part in self.parts.values():
             part.draw()
