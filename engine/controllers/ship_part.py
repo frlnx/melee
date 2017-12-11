@@ -1,7 +1,7 @@
 from engine.controllers.base_controller import BaseController
 from engine.views.base_view import BaseView
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import Offsets, RotationalForce
+from engine.physics.force import Offsets, Force
 from engine.input_handlers import GamePad
 
 from math import sin, cos, radians
@@ -15,11 +15,11 @@ class ShipPartController(BaseController):
         self._view = view
         self._force = 0
         yaw = self._model.rotation[1]
-        self._force_vector = RotationalForce(Offsets(*self._model.position),
-                                             Offsets(sin(radians(yaw + 180)), 0, cos(radians(yaw))))
+        self._force_vector = Force(Offsets(*self._model.position),
+                                   Offsets(-sin(radians(yaw)), 0, -cos(radians(yaw))))
 
     @property
-    def force_vector(self) -> RotationalForce:
+    def force_vector(self) -> Force:
         return self._force_vector
 
     @property
@@ -58,3 +58,6 @@ class ShipPartController(BaseController):
     @property
     def position(self):
         return self._model.position
+
+    def __repr__(self):
+        return "{} at {} directed {}".format(self._model.name, self._model.position, self._model.rotation[1])

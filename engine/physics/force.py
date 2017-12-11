@@ -39,7 +39,7 @@ class Vector(object):
 class Degrees(Vector):
 
     def __sub__(self, other: Vector):
-        return Degrees(*[((s % 360) - (o % 360) % 360) for s, o in zip(self, other)])
+        return Degrees(*[(((s % 360) - (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
 
     @property
     def pitch(self):
@@ -70,14 +70,25 @@ class Offsets(Vector):
 
     def __init__(self, x, y, z):
         super().__init__(x, y, z)
-        self.direction = Degrees(0, degrees(atan2(-self.x, self.z)), 0)
+        self.direction = Degrees(0, degrees(atan2(-self.x, -self.z)), 0)
+
+    def rotated(self, theta):
+        theta = radians(theta)
+        x = self.x * cos(theta) - self.z * sin(theta)
+        z = self.x * sin(theta) + self.z * cos(theta)
+        return Offsets(x, self.y, z)
 
 
-class BaseForce(object):
+class Force(object):
 
     def __init__(self, position: Offsets, forces: Offsets):
         self.position = position
         self.forces = forces
+        if self.position.distance == 0:
+            self.yaw_force = lambda x: 0
+            self.yaw_momentum = 0
+        else:
+            self.yaw_momentum = cos(self.c_radian())
 
     def __add__(self, other):
         return self.__class__(self.position + other.position, self.forces + other.forces)
@@ -100,19 +111,13 @@ class BaseForce(object):
     def translation_forces(self):
         return self.forces.xyz * self.translation_part_of_force()
 
+    def yaw_force(self, force):
+        return degrees(self.yaw_momentum * (force / self.position.distance))
+
     def __repr__(self):
         return "{} {}".format(self.position, self.forces)
 
-
-class RotationalForce(BaseForce):
-
-    def __init__(self, position: Offsets, forces: Offsets):
-        super().__init__(position, forces)
-        if self.position.distance == 0:
-            self.yaw_force = lambda x: 0
-            self.yaw_momentum = 0
-        else:
-            self.yaw_momentum = cos(self.c_radian())
-
-    def yaw_force(self, force):
-        return degrees(self.yaw_momentum * (force / self.position.distance))
+    def rotate(self, theta):
+        position = self.position.rotated(theta)
+        forces = self.forces.rotated(theta)
+        return Force(position, forces)

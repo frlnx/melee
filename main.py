@@ -41,7 +41,7 @@ class Window(pyglet.window.Window):
     def update(self, dt):
         self.ship.pitch += self.controller_values['y']
         self.ship.yaw += self.controller_values['x']
-        self.ship.bank += self.controller_values['z']
+        self.ship.roll += self.controller_values['z']
 
     def on_joyaxis_motion(self, joystick, axis, value):
         self.controller_values[axis] = value
