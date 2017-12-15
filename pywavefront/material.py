@@ -138,6 +138,7 @@ class MaterialParser(parser.Parser):
     """Object to parse lines of a materials definition file."""
 
     def __init__(self, file_path):
+        super().__init__()
         self.materials = {}
         self.this_material = None
         self.read_file(file_path)

@@ -1,6 +1,6 @@
 from engine.controllers.factories import ShipPartControllerFactory
 from engine.models.factories import ShipPartModelFactory
-from engine.input_handlers import GamePad
+from engine.input_handlers import InputHandler
 
 
 controller_factory = ShipPartControllerFactory()
@@ -11,7 +11,7 @@ class TestHorizontalEngineAt45DegreesOff(object):
 
     def setup(self):
         model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 90, 0])
-        self.gamepad = GamePad()
+        self.gamepad = InputHandler()
         self.target = controller_factory.manufacture(model, self.gamepad)
         self.target._force = 1
 

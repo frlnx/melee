@@ -1,4 +1,6 @@
 from engine.views.factories import ViewFactory
+from engine.views.ship import ShipView
+from engine.views.ship_part import ShipPartView
 from engine.models.factories import ShipModelFactory, ShipPartModelFactory
 from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
@@ -6,7 +8,7 @@ from engine.controllers.ship_part import ShipPartController
 class ShipControllerFactory(object):
 
     def __init__(self):
-        self.view_factory = ViewFactory()
+        self.view_factory = ViewFactory(ShipView)
         self.model_factory = ShipModelFactory()
         self.sub_controller_factory = ShipPartControllerFactory()
 
@@ -24,7 +26,7 @@ class ShipControllerFactory(object):
 class ShipPartControllerFactory(object):
 
     def __init__(self):
-        self.view_factory = ViewFactory()
+        self.view_factory = ViewFactory(ShipPartView)
         self.model_factory = ShipPartModelFactory()
 
     def manufacture(self, model, gamepad) -> ShipPartController:

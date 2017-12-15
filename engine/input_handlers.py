@@ -1,12 +1,18 @@
 from pyglet.input import get_joysticks
 
 
-class GamePad(object):
+class InputHandler(object):
 
     def __init__(self):
         self.axis = {'x': 0, 'y': 0, 'z': 0, 'rz': 0, '-x': 0, '-y': 0, '-z': 0, '-rz': 0}
         self.buttons = set()
-        joystick = get_joysticks()[1]
+
+
+class GamePad(InputHandler):
+
+    def __init__(self, joystick_id):
+        super().__init__()
+        joystick = get_joysticks()[joystick_id]
         joystick.open()
         joystick.push_handlers(self)
 
@@ -28,5 +34,5 @@ class GamePad(object):
     def on_joybutton_release(self, joystick, button):
         try:
             self.buttons.remove(button)
-        except ValueError:
+        except KeyError:
             pass

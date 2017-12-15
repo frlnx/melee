@@ -70,6 +70,7 @@ class ObjParser(parser.Parser):
     def __init__(self, wavefront, file_name):
         # unfortunately we can't escape from external effects on the
         # wavefront object
+        super().__init__()
         self.wavefront = wavefront
         self.mesh = None
         self.material = None

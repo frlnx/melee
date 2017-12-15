@@ -30,6 +30,12 @@ class BaseModel(object):
         for observer in self._observers:
             observer()
 
+    def unobserve(self, func: Callable):
+        try:
+            self._observers.remove(func)
+        except KeyError:
+            pass
+
     def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
         self._x, self._y, self._z = x, y, z
         self._pitch, self._yaw, self._roll = pitch, yaw, roll

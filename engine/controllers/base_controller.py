@@ -1,11 +1,11 @@
 from engine.models.base_model import BaseModel
 from engine.views.base_view import BaseView
-from engine.input_handlers import GamePad
+from engine.input_handlers import InputHandler
 
 
 class BaseController(object):
 
-    def __init__(self, model: BaseModel, view: BaseView, gamepad: GamePad):
+    def __init__(self, model: BaseModel, view: BaseView, gamepad: InputHandler):
         self._model = model
         self._view = view
         self._gamepad = gamepad

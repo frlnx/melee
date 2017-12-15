@@ -2,8 +2,8 @@
 import ctypes
 
 from engine.controllers.factories import ShipControllerFactory
-from engine.views.ship import ShipView
-from engine.input_handlers import GamePad
+from engine.views.base_view import BaseView
+from engine.input_handlers import InputHandler, GamePad
 
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
 from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glTranslated, glRotatef
@@ -12,10 +12,19 @@ import pyglet
 
 class Window(pyglet.window.Window):
 
-    def __init__(self, ship_view: ShipView):
+    def __init__(self):
         super().__init__(width=1280, height=720)
         self.lightfv = ctypes.c_float * 4
-        self.ship_view = ship_view
+        self.views = set()
+        self.center = None
+
+    def add_view(self, view: BaseView):
+        self.views.add(view)
+        if self.center is None:
+            self.center = view
+
+    def center_camera_on(self, view: BaseView):
+        self.center = view
 
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
@@ -33,16 +42,40 @@ class Window(pyglet.window.Window):
         glEnable(GL_LIGHT0)
 
         glRotatef(90, 1, 0, 0)
-        glTranslated(0, -23, 0)
+        # glTranslated(0, -23, 0)
         glEnable(GL_LIGHTING)
 
-        self.ship_view.draw()
+        self.center.center_camera()
+        for view in self.views:
+            view.draw()
+
+
+class Engine(pyglet.app.EventLoop):
+
+    def __init__(self):
+        super().__init__()
+        self.controllers = set()
+        self.sf = ShipControllerFactory()
+        self.window = Window()
+        self.has_exit = True
+        pyglet.clock.schedule(self.update)
+
+    def on_enter(self):
+        self.spawn_ship("wolf", [0, 0, 0], GamePad(1))
+        self.spawn_ship("wolf", [10, 0, 2], InputHandler())
+
+    def spawn_ship(self, name, location, input_device=None):
+        ship = self.sf.manufacture(name, input_device)
+        ship.move_to(location)
+        self.window.add_view(ship.view)
+        self.controllers.add(ship)
+
+    def update(self, dt):
+        for controller in self.controllers:
+            controller.update(dt)
 
 
 if __name__ == '__main__':
-    gamepad = GamePad()
-    sf = ShipControllerFactory()
-    ship_controller = sf.manufacture("wolf", gamepad)
-    window = Window(ship_controller._view)
-    pyglet.clock.schedule(ship_controller.update)
-    pyglet.app.run()
+    engine = Engine()
+    engine.run()
+    #pyglet.app.run()

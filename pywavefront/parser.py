@@ -33,17 +33,23 @@
 # ----------------------------------------------------------------------------
 
 import os
-import pyglet
+
 
 class Parser(object):
     """This defines a generalized parse dispatcher; all parse functions
     reside in subclasses."""
 
-    def read_file(self, file_name):
-        for line in open(file_name, 'r'):
-            self.parse(line, dir=os.path.dirname(file_name))
+    def __init__(self):
+        self.file_cache = {}
 
-    def parse(self, line, dir):
+    def read_file(self, file_name):
+        if file_name not in self.file_cache:
+            with open(file_name, 'r') as f:
+                self.file_cache[file_name] = f.readlines()
+        for line in self.file_cache[file_name]:
+            self.parse(line, dir_name=os.path.dirname(file_name))
+
+    def parse(self, line, dir_name):
         """Determine what type of line we are and dispatch
         appropriately."""
         if line.startswith('#'):
@@ -56,7 +62,7 @@ class Parser(object):
         line_type = values[0]
         args = values[1:]
         if line_type in ['mtllib', 'map_Kd']:
-            args = [os.path.join(dir, " ".join(args))]
+            args = [os.path.join(dir_name, " ".join(args))]
 
         parse_function = getattr(self, 'parse_%s' % line_type)
         parse_function(args)

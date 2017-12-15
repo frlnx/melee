@@ -2,14 +2,14 @@ from engine.controllers.base_controller import BaseController
 from engine.views.base_view import BaseView
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import Offsets, Force
-from engine.input_handlers import GamePad
+from engine.input_handlers import InputHandler
 
 from math import sin, cos, radians
 
 
 class ShipPartController(BaseController):
 
-    def __init__(self, model: ShipPartModel, view: BaseView, gamepad: GamePad):
+    def __init__(self, model: ShipPartModel, view: BaseView, gamepad: InputHandler):
         super().__init__(model, view, gamepad)
         self._model = model
         self._view = view
