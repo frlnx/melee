@@ -18,7 +18,10 @@ class BaseModel(object):
         self._dpitch, self._dyaw, self._droll = spin
         self._observers = set()
         self._mesh = None
-        self._bounding_box = Quad([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)])
+        self._bounding_box = Quad([(-0.5 + self._x, -0.5 + self._z),
+                                   (0.5 + self._x, -0.5 + self._z),
+                                   (0.5 + self._x, 0.5 + self._z),
+                                   (-0.5 + self._x, 0.5 + self._z)])
 
     @property
     def bounding_box(self):
