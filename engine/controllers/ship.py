@@ -18,6 +18,19 @@ class ShipController(BaseController):
         self._possible_targets = [model]
         self._button_config = {3: self.select_next_target, 2: self.reset}
 
+    def collides(self, other_model: BaseModel):
+        if not self._model.outer_bounding_box.intersects(other_model.outer_bounding_box):
+            return False
+        m1_m1 = self._model.outer_bounding_box_after_rotation(-self._model.yaw)
+        m2_m1 = other_model.outer_bounding_box_after_rotation(-self._model.yaw)
+        if not m1_m1.intersects(m2_m1):
+            return False
+        m1_m2 = self._model.outer_bounding_box_after_rotation(-other_model.yaw)
+        m2_m2 = other_model.outer_bounding_box_after_rotation(-other_model.yaw)
+        if not m1_m2.intersects(m2_m2):
+            return False
+        return True
+
     def reset(self):
         self._model.set_rotation(0, 0, 0)
         self._model.set_position(0, 0, 0)
@@ -29,6 +42,7 @@ class ShipController(BaseController):
 
     def select_next_target(self):
         self.select_target(self.next_target())
+        self.update_target_position()
 
     def next_target(self) -> BaseModel:
         index = self._possible_targets.index(self._target_model)
@@ -37,13 +51,13 @@ class ShipController(BaseController):
 
     def select_target(self, target: BaseModel):
         try:
-            self.target_model.unobserve(self.update_target_position)
+            self._target_model.unobserve(self.update_target_position)
         except AttributeError:
             pass
-        self.target_model = target
+        self._target_model = target
 
     def update_target_position(self):
-        self._model.set_target_position(self.target_model.position)
+        self._model.set_target_position(self._target_model.position)
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:
@@ -82,5 +96,3 @@ class ShipController(BaseController):
             return forces[0]
         else:
             return reduce(lambda a, b: a + b, forces[1:], forces[0])
-
-

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import ctypes
+from itertools import combinations
 
 from engine.controllers.factories import ShipControllerFactory
 from engine.views.base_view import BaseView
@@ -42,7 +43,6 @@ class Window(pyglet.window.Window):
         glEnable(GL_LIGHT0)
 
         glRotatef(90, 1, 0, 0)
-        # glTranslated(0, -23, 0)
         glEnable(GL_LIGHTING)
 
         self.center.center_camera()
@@ -66,16 +66,25 @@ class Engine(pyglet.app.EventLoop):
 
     def spawn_ship(self, name, location, input_device=None):
         ship = self.sf.manufacture(name, input_device)
+        self.propagate_target(ship)
         ship.move_to(location)
         self.window.add_view(ship.view)
         self.controllers.add(ship)
 
+    def propagate_target(self, ship):
+        for c in self.controllers:
+            c.register_target(ship._model)
+            ship.register_target(c._model)
+
     def update(self, dt):
         for controller in self.controllers:
             controller.update(dt)
+        for c1, c2 in combinations(self.controllers, 2):
+            if c1.collides(c2._model):
+                print("Bang")
+
 
 
 if __name__ == '__main__':
     engine = Engine()
     engine.run()
-    #pyglet.app.run()

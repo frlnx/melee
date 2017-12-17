@@ -1,5 +1,9 @@
 from typing import Tuple, Callable
 
+from math import sin, cos, radians
+
+from engine.physics.shape import Quad
+
 
 class BaseModel(object):
 
@@ -14,6 +18,21 @@ class BaseModel(object):
         self._dpitch, self._dyaw, self._droll = spin
         self._observers = set()
         self._mesh = None
+        self._bounding_box = Quad([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)])
+
+    @property
+    def bounding_box(self):
+        return self._bounding_box
+
+    @property
+    def outer_bounding_box(self):
+        return self._bounding_box.outer_bounding_box
+
+    def update_bounding_box(self):
+        self._bounding_box.set_position_rotation(self._x, self._z, self._yaw)
+
+    def outer_bounding_box_after_rotation(self, degrees):
+        return self._bounding_box.outer_bounds_after_rotation(degrees)
 
     @property
     def name(self):
@@ -39,14 +58,17 @@ class BaseModel(object):
     def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
         self._x, self._y, self._z = x, y, z
         self._pitch, self._yaw, self._roll = pitch, yaw, roll
+        self.update_bounding_box()
         self._callback()
 
     def set_position(self, x, y, z):
         self._x, self._y, self._z = x, y, z
+        self.update_bounding_box()
         self._callback()
 
     def set_rotation(self, pitch, yaw, roll):
         self._pitch, self._yaw, self._roll = pitch, yaw, roll
+        self.update_bounding_box()
         self._callback()
 
     def set_movement(self, dx, dy, dz):
