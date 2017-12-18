@@ -42,14 +42,24 @@ class Texture(object):
         self.image_path = path
         self.image = pyglet.image.load(self.image_name).texture
         self.verify_dimensions()
+        self._position = [0, 0, 0]
+        self._rotation = [0, 0, 0]
+
+    def set_position_rotation(self, position, rotation):
+        self._position = position
+        self._rotation = rotation
 
     def draw(self):
         glEnable(self.image.target)
         glBindTexture(self.image.target, self.image.id)
         gl.glTexParameterf(self.image.target,
-                           gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP)
+                           gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
         gl.glTexParameterf(self.image.target,
-                           gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP)
+                           gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        glMatrixMode(GL_TEXTURE)
+        glPushMatrix()
+        glTranslatef(*[-x for x in self._position])
+        glRotatef(self._rotation[1], 0, 0, 1)
 
     def verify_dimensions(self):
         self.verify('width')

@@ -14,6 +14,9 @@ class ShipPartModel(BaseModel):
         self._state = "idle"
         self._mesh = part_spec.get('mesh')
         self.nickname = part_spec.get('nickname')
+        self.target_indicator = part_spec.get('target_indicator', False)
+        self.texture_offset = [0, 0, 0]
+        self.texture_rotation = [0, 0, 0]
 
     def set_state(self, state):
         assert state in self._states

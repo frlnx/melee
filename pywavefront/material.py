@@ -32,7 +32,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-from sys import stderr
 from pyglet.gl import *
 
 import pywavefront.parser as parser
@@ -114,8 +113,11 @@ class Material(object):
 
     def add_vertices(self, vertices: list):
         self._vertices += vertices
-        self.gl_floats = (GLfloat * len(self._vertices))(*self._vertices)
-        self.triangle_count = len(self._vertices) / 8
+        self.gl_floats = (GLfloat * len(self.vertices))(*self.vertices)
+        self.triangle_count = len(self.vertices) / 8
+
+    def draw_texture(self):
+        self.texture.draw()
 
     def draw(self, face=GL_FRONT_AND_BACK):
         if self.texture:
@@ -132,7 +134,10 @@ class Material(object):
 
         glInterleavedArrays(GL_T2F_N3F_V3F, 0, self.gl_floats)
         glDrawArrays(GL_TRIANGLES, 0, int(self.triangle_count))
-
+        if self.texture:
+            #glMatrixMode(GL_TEXTURE)
+            glPopMatrix()
+            glMatrixMode(GL_MODELVIEW)
 
 class MaterialParser(parser.Parser):
     """Object to parse lines of a materials definition file."""
@@ -189,5 +194,9 @@ class MaterialParser(parser.Parser):
 
     def parse_Tf(self, args):
         if args != ['1', '1', '1']:
-            stderr.write("Texture Tf (transmission filter) not supported")
+            print("Texture Tf (transmission filter) not supported")
+        return
+
+    def parse_map_d(self, args):
+        # alpha map texture
         return

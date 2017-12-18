@@ -14,9 +14,14 @@ class ShipController(BaseController):
 
     def __init__(self, model: ShipModel, view: BaseView, gamepad: InputHandler):
         super().__init__(model, view, gamepad)
+        self._model = model
         self._target_model = model
         self._possible_targets = [model]
         self._button_config = {3: self.select_next_target, 2: self.reset}
+        try:
+            self._target_indicator = [model for model in self._model.parts if model.target_indicator][0]
+        except IndexError:
+            self._target_indicator = None
 
     def collides(self, other_model: BaseModel):
         if not self._model.outer_bounding_box.intersects(other_model.outer_bounding_box):
@@ -55,9 +60,13 @@ class ShipController(BaseController):
         except AttributeError:
             pass
         self._target_model = target
+        self._target_model.observe(self.update_target_position)
 
     def update_target_position(self):
-        self._model.set_target_position(self._target_model.position)
+        self._model.set_target_position_rotation(self._target_model.position, self._target_model.rotation)
+        if self._target_indicator:
+            self._target_indicator.texture_rotation = [(y + x) for x, y in zip(self._target_model.rotation, self._model.rotation)]
+            self._target_indicator.texture_offset = [(y + x) / 51 for x, y in zip(self._target_model.position, self._model.position)]
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:

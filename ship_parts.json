@@ -71,5 +71,14 @@
         ]
       }
     ]
+  },
+  {
+    "name": "grid ball",
+    "mesh": "grid_ball",
+    "states": [
+      {
+        "name": "idle"
+      }
+    ]
   }
 ]

@@ -40,5 +40,6 @@ class ShipPartModelFactory(object):
         config['rotation'] = placement_config.get('rotation', (0, 0, 0))
         config['movement'] = placement_config.get('movement', (0, 0, 0))
         config['spin'] = placement_config.get('spin', (0, 0, 0))
+        config['target_indicator'] = placement_config.get('target_indicator', False)
         part = ShipPartModel(**config)
         return part

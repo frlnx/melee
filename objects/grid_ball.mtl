@@ -1,0 +1,24 @@
+newmtl Default
+Kd 0.784314 0.784314 0.784314
+Ke 0 0 0
+Ka 1 1 1
+Ks 0 0 0
+Ns 400
+Tr 0
+d 1
+Ni 1
+Tf 1 1 1
+
+newmtl Grid
+Kd 0 0 0
+Ke 0 0 0
+Ka 1 1 1
+Ks 0 0 0
+Ns 400
+Tr 1
+d 0
+Ni 1
+Tf 1 1 1
+map_Kd C:Users/SCiOn/Pictures/grid.png
+map_d C:Users/SCiOn/Pictures/grid.png
+

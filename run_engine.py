@@ -62,7 +62,7 @@ class Engine(pyglet.app.EventLoop):
 
     def on_enter(self):
         self.spawn_ship("wolf", [0, 0, 0], GamePad(1))
-        self.spawn_ship("wolf", [10, 0, 2], InputHandler())
+        self.spawn_ship("dolph", [10, 0, 2], GamePad(0))
 
     def spawn_ship(self, name, location, input_device=None):
         ship = self.sf.manufacture(name, input_device)
@@ -82,8 +82,6 @@ class Engine(pyglet.app.EventLoop):
         for c1, c2 in combinations(self.controllers, 2):
             if c1.collides(c2._model):
                 print("Bang")
-
-
 
 if __name__ == '__main__':
     engine = Engine()

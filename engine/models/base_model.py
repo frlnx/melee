@@ -1,7 +1,5 @@
 from typing import Tuple, Callable
 
-from math import sin, cos, radians
-
 from engine.physics.shape import Quad
 
 
