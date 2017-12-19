@@ -1,6 +1,6 @@
 from engine.views.factories import ViewFactory
 from engine.views.ship import ShipView
-from engine.views.ship_part import ShipPartView
+from engine.views.ship_part import ShipPartView, TargetIndicatorView
 from engine.models.factories import ShipModelFactory, ShipPartModelFactory
 from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
@@ -27,9 +27,13 @@ class ShipPartControllerFactory(object):
 
     def __init__(self):
         self.view_factory = ViewFactory(ShipPartView)
+        self.target_indicator_view_factory = ViewFactory(TargetIndicatorView)
         self.model_factory = ShipPartModelFactory()
 
     def manufacture(self, model, gamepad) -> ShipPartController:
-        view = self.view_factory.manufacture(model)
+        if model.target_indicator:
+            view = self.target_indicator_view_factory.manufacture(model)
+        else:
+            view = self.view_factory.manufacture(model)
         controller = ShipPartController(model, view, gamepad)
         return controller

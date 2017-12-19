@@ -65,8 +65,8 @@ class ShipController(BaseController):
     def update_target_position(self):
         self._model.set_target_position_rotation(self._target_model.position, self._target_model.rotation)
         if self._target_indicator:
-            self._target_indicator.texture_rotation = [(y + x) for x, y in zip(self._target_model.rotation, self._model.rotation)]
-            self._target_indicator.texture_offset = [(y + x) / 51 for x, y in zip(self._target_model.position, self._model.position)]
+            self._target_indicator.texture_rotation = [x for x in self._model.rotation]
+            self._target_indicator.texture_offset = [-(y - x) / 10.2 for x, y in zip(self._target_model.position, self._model.position)]
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:

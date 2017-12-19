@@ -49,6 +49,9 @@ class Texture(object):
         self._position = position
         self._rotation = rotation
 
+    def set_position(self, position):
+        self._position = position
+
     def draw(self):
         glEnable(self.image.target)
         glBindTexture(self.image.target, self.image.id)
@@ -56,10 +59,6 @@ class Texture(object):
                            gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
         gl.glTexParameterf(self.image.target,
                            gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
-        glMatrixMode(GL_TEXTURE)
-        glPushMatrix()
-        glTranslatef(*[-x for x in self._position])
-        glRotatef(self._rotation[1], 0, 0, 1)
 
     def verify_dimensions(self):
         self.verify('width')

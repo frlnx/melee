@@ -134,10 +134,7 @@ class Material(object):
 
         glInterleavedArrays(GL_T2F_N3F_V3F, 0, self.gl_floats)
         glDrawArrays(GL_TRIANGLES, 0, int(self.triangle_count))
-        if self.texture:
-            #glMatrixMode(GL_TEXTURE)
-            glPopMatrix()
-            glMatrixMode(GL_MODELVIEW)
+
 
 class MaterialParser(parser.Parser):
     """Object to parse lines of a materials definition file."""
