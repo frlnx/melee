@@ -5,7 +5,7 @@ from engine.views.base_view import BaseView
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
-from engine.physics.force import Force
+from engine.physics.force import Force, Offsets
 
 from functools import reduce
 
@@ -24,17 +24,48 @@ class ShipController(BaseController):
             self._target_indicator = None
 
     def collides(self, other_model: BaseModel):
-        if not self._model.outer_bounding_box.intersects(other_model.outer_bounding_box):
+        if not self._collides(self._model, other_model):
             return False
-        m1_m1 = self._model.outer_bounding_box_after_rotation(-self._model.yaw)
-        m2_m1 = other_model.outer_bounding_box_after_rotation(-self._model.yaw)
-        if not m1_m1.intersects(m2_m1):
-            return False
-        m1_m2 = self._model.outer_bounding_box_after_rotation(-other_model.yaw)
-        m2_m2 = other_model.outer_bounding_box_after_rotation(-other_model.yaw)
-        if not m1_m2.intersects(m2_m2):
-            return False
-        return True
+        try:
+            other_parts = other_model.parts
+        except AttributeError:
+            other_parts = [other_model]
+        part_zip = zip(self._model.parts, other_parts)
+        # TODO: Check each part against other outer bounding box to determine which needs individual checks
+        for part1, part2 in part_zip:
+            if self._collides(part1, part2):
+                return True
+        return False
+
+    def colliding_forces(self, other_model: ShipModel):
+        part_zip = zip(self._model.parts, other_model.parts)
+        for part1, part2 in part_zip:
+            if self._collides(part1, part2):
+                direction = Offsets(*(other_model.movement)) # Movement is already in the universal coord system
+                # TODO: Transfer the rotational force from the coordinate system of other model to the coordinate system
+                #       Of the own model with rotational forces.
+                part2_position = Offsets(*part2.position)
+                part1_position = Offsets(*part1.position)
+                force1 = Force(part2_position, self.movement_at(part2_position))
+                force1.rotate(other_model.yaw - self._model.yaw)
+                force1.translate(Offsets(*other_model.position) - Offsets(*self._model.position))
+                force2 = Force(part1_position, self.movement_at(part1_position))
+                force2.rotate(self._model.yaw - other_model.yaw)
+                force2.translate(Offsets(*self._model.position) - Offsets(*other_model.position))
+                return force1, force2
+        raise ValueError("Models don't collide")
+
+    def movement_at(self, ship_grid_position: Offsets) -> Offsets:
+        movement = Offsets(*self._model.movement)
+        yaw_delta = self._model.spin[1]
+        spin_speed = ship_grid_position.distance * yaw_delta
+        tangent_movement = ship_grid_position.rotated(90) * spin_speed
+        return movement + tangent_movement
+
+    def apply_force(self, force: Force):
+        force = force.rotate(-self._model.rotation[1])
+        self._model.add_movement(*force.translation_forces())
+        self._model.add_spin(0, force.yaw_force(1), 0)
 
     def reset(self):
         self._model.set_rotation(0, 0, 0)
@@ -66,7 +97,8 @@ class ShipController(BaseController):
         self._model.set_target_position_rotation(self._target_model.position, self._target_model.rotation)
         if self._target_indicator:
             self._target_indicator.texture_rotation = [x for x in self._model.rotation]
-            self._target_indicator.texture_offset = [-(y - x) / 10.2 for x, y in zip(self._target_model.position, self._model.position)]
+            positions_iterator = zip(self._target_model.position, self._model.position)
+            self._target_indicator.texture_offset = [-(y - x) / 10.2 for x, y in positions_iterator]
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:

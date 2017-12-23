@@ -5,6 +5,7 @@ from engine.models.factories import ShipModelFactory, ShipPartModelFactory
 from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
 
+
 class ShipControllerFactory(object):
 
     def __init__(self):

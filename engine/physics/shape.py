@@ -15,11 +15,18 @@ class BaseBox(object):
 class Box(BaseBox):
 
     def intersects(self, other: BaseBox):
-        if (self.right < other.left): return False
-        if (self.left > other.right): return False
-        if (self.top < other.bottom): return False
-        if (self.bottom > other.top): return False
+        if self.right < other.left:
+            return False
+        if self.left > other.right:
+            return False
+        if self.top < other.bottom:
+            return False
+        if self.bottom > other.top:
+            return False
         return True
+
+    def union(self, other: BaseBox) -> BaseBox:
+        pass
 
 
 class BaseQuad(object):
@@ -97,3 +104,6 @@ class Quad(BaseQuad):
         top = max(self.top, other.top)
         coords = [(left, bottom), (right, bottom), (right, top), (left, top)]
         return Quad(coords)
+
+    def __repr__(self):
+        return ", ".join([str(x) for x in [self.left, self.right, self.bottom, self.top]])

@@ -14,6 +14,9 @@ class Vector(object):
     def __add__(self, other):
         return self.__class__(*(self.xyz + other.xyz))
 
+    def __sub__(self, other):
+        return self.__class__(*(self.xyz - other.xyz))
+
     def __mul__(self, other: float):
         return self.__class__(*(self.xyz * other))
 
@@ -121,3 +124,6 @@ class Force(object):
         position = self.position.rotated(theta)
         forces = self.forces.rotated(theta)
         return Force(position, forces)
+
+    def translate(self, offset: Offsets):
+        self.position = self.position + offset

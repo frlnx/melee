@@ -23,3 +23,20 @@ class BaseController(object):
         self._model.set_rotation(*[r + s * dt for r, s in zip(self._model.rotation, self._model.spin)])
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
+
+    @staticmethod
+    def _collides(model1: BaseModel, model2: BaseModel):
+        if not model1.outer_bounding_box.intersects(model2.outer_bounding_box):
+            return False
+        m1_m1 = model1.outer_bounding_box_after_rotation(-model1.yaw)
+        m2_m1 = model2.outer_bounding_box_after_rotation(-model1.yaw)
+        if not m1_m1.intersects(m2_m1):
+            return False
+        m1_m2 = model1.outer_bounding_box_after_rotation(-model2.yaw)
+        m2_m2 = model2.outer_bounding_box_after_rotation(-model2.yaw)
+        if not m1_m2.intersects(m2_m2):
+            return False
+        return True
+
+    def collides(self, other_model: BaseModel):
+        return self._collides(self._model, other_model)

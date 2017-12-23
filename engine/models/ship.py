@@ -13,11 +13,9 @@ class ShipModel(BaseModel):
         self._target_position = self.position
         self._target_rotation = self.rotation
         for part in self.parts:
-            self._bounding_box = self._bounding_box + part.bounding_box
-
-    @property
-    def name(self):
-        return "ship"
+            if part.position[1] == 0:
+                self._bounding_box = self._bounding_box + part.bounding_box
+        self._mass = sum([part.mass for part in self.parts])
 
     def set_target_position_rotation(self, position, rotation):
         self._target_position = position

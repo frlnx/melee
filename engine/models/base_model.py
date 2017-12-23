@@ -10,6 +10,7 @@ class BaseModel(object):
                  rotation: Tuple[float, float, float],
                  movement: Tuple[float, float, float],
                  spin: Tuple[float, float, float]):
+        self._mass = 1
         self._x, self._y, self._z = position
         self._pitch, self._yaw, self._roll = rotation
         self._dx, self._dy, self._dz = movement
@@ -20,6 +21,10 @@ class BaseModel(object):
                                    (0.5 + self._x, -0.5 + self._z),
                                    (0.5 + self._x, 0.5 + self._z),
                                    (-0.5 + self._x, 0.5 + self._z)])
+
+    @property
+    def mass(self):
+        return self._mass
 
     @property
     def bounding_box(self):
@@ -37,7 +42,7 @@ class BaseModel(object):
 
     @property
     def name(self):
-        return "base"
+        return self.__class__.__name__
 
     @property
     def mesh(self):

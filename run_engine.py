@@ -81,7 +81,11 @@ class Engine(pyglet.app.EventLoop):
             controller.update(dt)
         for c1, c2 in combinations(self.controllers, 2):
             if c1.collides(c2._model):
-                print("Bang")
+                force1, force2 = c1.colliding_forces(c2._model)
+                c1.apply_force(force1)
+                c2.apply_force(force2)
+
+
 
 if __name__ == '__main__':
     engine = Engine()
