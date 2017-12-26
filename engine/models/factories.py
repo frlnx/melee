@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
+from engine.physics.force import MutableOffsets, MutableDegrees
 
 
 class ShipModelFactory(object):
@@ -19,9 +20,8 @@ class ShipModelFactory(object):
         for part_config in config['parts']:
             part = self.ship_part_model_factory.manufacture(**part_config)
             parts.add(part)
-        #arrow = self.ship_part_model_factory.manufacture("arrow")
-        #parts.add(arrow)
-        ship = ShipModel(parts, (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
+        ship = ShipModel(parts, position=MutableOffsets(0, 0, 0), rotation=MutableDegrees(0, 0, 0),
+                         movement=MutableOffsets(0, 0, 0), spin=MutableDegrees(0, 0, 0))
         return ship
 
 
@@ -36,10 +36,10 @@ class ShipPartModelFactory(object):
         config = deepcopy(self.ship_parts[name])
         config['button'] = placement_config.get('button')
         config['axis'] = placement_config.get('axis')
-        config['position'] = placement_config.get('position', (0, 0, 0))
-        config['rotation'] = placement_config.get('rotation', (0, 0, 0))
-        config['movement'] = placement_config.get('movement', (0, 0, 0))
-        config['spin'] = placement_config.get('spin', (0, 0, 0))
+        config['position'] = MutableOffsets(*placement_config.get('position', (0, 0, 0)))
+        config['rotation'] = MutableDegrees(*placement_config.get('rotation', (0, 0, 0)))
+        config['movement'] = MutableOffsets(*placement_config.get('movement', (0, 0, 0)))
+        config['spin'] = MutableDegrees(*placement_config.get('spin', (0, 0, 0)))
         config['target_indicator'] = placement_config.get('target_indicator', False)
         part = ShipPartModel(**config)
         return part

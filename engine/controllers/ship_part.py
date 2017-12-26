@@ -1,7 +1,7 @@
 from engine.controllers.base_controller import BaseController
 from engine.views.base_view import BaseView
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import Offsets, Force
+from engine.physics.force import MutableOffsets, MutableForce
 from engine.input_handlers import InputHandler
 
 from math import sin, cos, radians
@@ -15,11 +15,11 @@ class ShipPartController(BaseController):
         self._view = view
         self._force = 0
         yaw = self._model.rotation[1]
-        self._force_vector = Force(Offsets(*self._model.position),
-                                   Offsets(-sin(radians(yaw)), 0, -cos(radians(yaw))))
+        self._force_vector = MutableForce(MutableOffsets(*self._model.position),
+                                          MutableOffsets(-sin(radians(yaw)), 0, -cos(radians(yaw))))
 
     @property
-    def force_vector(self) -> Force:
+    def force_vector(self) -> MutableForce:
         return self._force_vector
 
     @property
@@ -27,7 +27,7 @@ class ShipPartController(BaseController):
         return self._force_vector * self._force
 
     def update(self, dt):
-        super(ShipPartController, self).update(dt)
+        super().update(dt)
         axis_value = self._gamepad.axis.get(self._model.axis, 0)
         if self._model.button in self._gamepad.buttons:
             self._force = 1.0

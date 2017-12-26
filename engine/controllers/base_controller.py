@@ -19,8 +19,8 @@ class BaseController(object):
         self._sub_controllers.add(sub_controller)
 
     def update(self, dt):
-        self._model.set_position(*[p + m * dt for p, m in zip(self._model.position, self._model.movement)])
-        self._model.set_rotation(*[r + s * dt for r, s in zip(self._model.rotation, self._model.spin)])
+        self._model.translate(*(self._model.movement * dt))
+        self._model.rotate(*(self._model.spin * dt))
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
 

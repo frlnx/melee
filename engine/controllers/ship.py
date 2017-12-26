@@ -44,19 +44,19 @@ class ShipController(BaseController):
                 direction = Offsets(*(other_model.movement)) # Movement is already in the universal coord system
                 # TODO: Transfer the rotational force from the coordinate system of other model to the coordinate system
                 #       Of the own model with rotational forces.
-                part2_position = Offsets(*part2.position)
-                part1_position = Offsets(*part1.position)
-                force1 = Force(part2_position, self.movement_at(part2_position))
+                force1 = Force(part2.position, self.movement_at(part2.position))
                 force1.rotate(other_model.yaw - self._model.yaw)
-                force1.translate(Offsets(*other_model.position) - Offsets(*self._model.position))
-                force2 = Force(part1_position, self.movement_at(part1_position))
+                force1.translate(other_model.position - self._model.position)
+                force2 = Force(part1.position, self.movement_at(part1.position))
                 force2.rotate(self._model.yaw - other_model.yaw)
-                force2.translate(Offsets(*self._model.position) - Offsets(*other_model.position))
+                force2.translate(self._model.position - other_model.position)
+                if force1.forces.y != 0 or force2.forces.y != 0:
+                    print(force1, force2)
                 return force1, force2
         raise ValueError("Models don't collide")
 
     def movement_at(self, ship_grid_position: Offsets) -> Offsets:
-        movement = Offsets(*self._model.movement)
+        movement = self._model.movement
         yaw_delta = self._model.spin[1]
         spin_speed = ship_grid_position.distance * yaw_delta
         tangent_movement = ship_grid_position.rotated(90) * spin_speed

@@ -1,26 +1,26 @@
-from typing import Tuple, Callable
+from typing import Callable
 
 from engine.physics.shape import Quad
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
 
 
 class BaseModel(object):
 
     def __init__(self,
-                 position: Tuple[float, float, float],
-                 rotation: Tuple[float, float, float],
-                 movement: Tuple[float, float, float],
-                 spin: Tuple[float, float, float]):
+                 position: MutableOffsets,
+                 rotation: MutableDegrees,
+                 movement: MutableOffsets,
+                 spin: MutableDegrees):
         self._mass = 1
-        self._x, self._y, self._z = position
-        self._pitch, self._yaw, self._roll = rotation
-        self._dx, self._dy, self._dz = movement
-        self._dpitch, self._dyaw, self._droll = spin
+        self._position = position
+        self._rotation = rotation
+        self._movement = movement
+        self._spin = spin
         self._observers = set()
         self._mesh = None
-        self._bounding_box = Quad([(-0.5 + self._x, -0.5 + self._z),
-                                   (0.5 + self._x, -0.5 + self._z),
-                                   (0.5 + self._x, 0.5 + self._z),
-                                   (-0.5 + self._x, 0.5 + self._z)])
+        x, z = position.x, position.z
+        self._bounding_box = Quad([(-0.5 + x, -0.5 + z), (0.5 + x, -0.5 + z),
+                                   (0.5 + x, 0.5 + z), (-0.5 + x, 0.5 + z)])
 
     @property
     def mass(self):
@@ -34,8 +34,9 @@ class BaseModel(object):
     def outer_bounding_box(self):
         return self._bounding_box.outer_bounding_box
 
-    def update_bounding_box(self):
-        self._bounding_box.set_position_rotation(self._x, self._z, self._yaw)
+    def update(self):
+        self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
+        self._callback()
 
     def outer_bounding_box_after_rotation(self, degrees):
         return self._bounding_box.outer_bounds_after_rotation(degrees)
@@ -62,61 +63,74 @@ class BaseModel(object):
             pass
 
     def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
-        self._x, self._y, self._z = x, y, z
-        self._pitch, self._yaw, self._roll = pitch, yaw, roll
-        self.update_bounding_box()
-        self._callback()
+        self._position.set(x, y, z)
+        self._rotation.set(pitch, yaw, roll)
+        self.update()
 
     def set_position(self, x, y, z):
-        self._x, self._y, self._z = x, y, z
-        self.update_bounding_box()
-        self._callback()
+        self._position.set(x, y, z)
+        self.update()
 
-    def set_rotation(self, pitch, yaw, roll):
-        self._pitch, self._yaw, self._roll = pitch, yaw, roll
-        self.update_bounding_box()
-        self._callback()
+    def translate(self, *xyz):
+        self._position += xyz
+        self.update()
+
+    def rotate(self, *pitch_yaw_roll):
+        self._rotation += pitch_yaw_roll
+        self.update()
+
+    def set_rotation(self, *pitch_yaw_roll):
+        self._rotation.set(*pitch_yaw_roll)
+        self.update()
 
     def set_movement(self, dx, dy, dz):
-        self._dx, self._dy, self._dz = dx, dy, dz
+        self._movement.set(dx, dy, dz)
 
-    def add_movement(self, dx, dy, dz):
-        self._dx += dx
-        self._dy += dy
-        self._dz += dz
+    def add_movement(self, *xyz: list):
+        self._movement += xyz
 
-    def set_spin(self, dpitch, dyaw, droll):
-        self._dpitch, self._dyaw, self._droll = dpitch, dyaw, droll
+    def set_spin(self, *pitch_yaw_roll):
+        self._spin.set(*pitch_yaw_roll)
 
-    def add_spin(self, dpitch, dyaw, droll):
-        self._dpitch += dpitch
-        self._dyaw += dyaw
-        self._droll += droll
+    def add_spin(self, *pitch_yaw_roll):
+        self._spin += pitch_yaw_roll
 
     @property
     def spin(self):
-        return self._dpitch, self._dyaw, self._droll
+        return self._spin
 
     @property
     def movement(self):
-        return self._dx, self._dy, self._dz
+        return self._movement
 
     @property
     def position(self):
-        return self._x, self._y, self._z
+        return self._position
 
     @property
     def rotation(self):
-        return self._pitch, self._yaw, self._roll
+        return self._rotation
+
+    @property
+    def x(self):
+        return self._position.x
+
+    @property
+    def y(self):
+        return self._position.y
+
+    @property
+    def z(self):
+        return self._position.z
 
     @property
     def pitch(self):
-        return self._pitch
+        return self._rotation.pitch
 
     @property
     def yaw(self):
-        return self._yaw
+        return self._rotation.yaw
 
     @property
     def roll(self):
-        return self._roll
+        return self._rotation.roll

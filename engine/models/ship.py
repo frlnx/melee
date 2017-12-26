@@ -1,13 +1,13 @@
-from typing import Set, Tuple
+from typing import Set
 
 from engine.models.ship_part import ShipPartModel
 from engine.models.base_model import BaseModel
+from engine.physics.force import MutableOffsets, MutableDegrees
 
 
 class ShipModel(BaseModel):
-    def __init__(self, parts: Set[ShipPartModel], position: Tuple[float, float, float],
-                 rotation: Tuple[float, float, float], movement: Tuple[float, float, float],
-                 spin: Tuple[float, float, float]):
+    def __init__(self, parts: Set[ShipPartModel], position: MutableOffsets,
+                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees):
         super().__init__(position, rotation, movement, spin)
         self.parts = parts
         self._target_position = self.position
@@ -17,11 +17,11 @@ class ShipModel(BaseModel):
                 self._bounding_box = self._bounding_box + part.bounding_box
         self._mass = sum([part.mass for part in self.parts])
 
-    def set_target_position_rotation(self, position, rotation):
+    def set_target_position_rotation(self, position: MutableOffsets, rotation: MutableDegrees):
         self._target_position = position
         self._target_rotation = rotation
 
-    def set_target_position(self, position):
+    def set_target_position(self, position: MutableOffsets):
         self._target_position = position
 
     @property

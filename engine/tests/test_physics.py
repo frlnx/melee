@@ -187,7 +187,7 @@ class TestSumTwoNegativeRotationalForces(object):
         assert self.force.translation_part_of_force() == 1
 
     def test_force_does_not_rotate(self):
-        assert self.force.yaw_momentum == 0
+        assert round(self.force.yaw_momentum, 4) == 0
 
 
 class TestHorizontalForce45DegreesOff(object):

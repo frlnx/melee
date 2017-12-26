@@ -1,11 +1,11 @@
-from typing import Tuple
-
 from engine.models.base_model import BaseModel
+from engine.physics.force import MutableOffsets, MutableDegrees
+
 
 class ShipPartModel(BaseModel):
 
-    def __init__(self, name, position: Tuple[float, float, float], rotation: Tuple[float, float, float],
-                 movement: Tuple[float, float, float], spin: Tuple[float, float, float], **part_spec):
+    def __init__(self, name, position: MutableOffsets, rotation: MutableDegrees,
+                 movement: MutableOffsets, spin: MutableDegrees, **part_spec):
         super().__init__(position, rotation, movement, spin)
         self._name = name
         self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
