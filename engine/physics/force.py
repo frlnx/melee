@@ -1,3 +1,4 @@
+from __future__ import division
 from math import sqrt, atan2, cos, sin, degrees, radians
 
 from numpy import array, cross, dot
@@ -20,6 +21,15 @@ class Vector(object):
 
     def __mul__(self, other: float):
         return self.__class__(*[x * other for x in self])
+
+    def __floordiv__(self, other):
+        return self.__div__(other)
+
+    def __div__(self, other):
+        return self.__class__(*[x / other for x in self])
+
+    def __truediv__(self, other):
+        return self.__div__(other)
 
     def cross(self, other):
         return self.__class__(*cross(self.xyz, other.xyz))
@@ -173,6 +183,7 @@ class Force(object):
         self.position = position
         self.forces = forces
         self.yaw_momentum = cos(self.c_radian())
+        self._force_multiplier = 1.0
 
     def __add__(self, other):
         return self.__class__(self.position + other.position, self.forces + other.forces)
@@ -189,21 +200,17 @@ class Force(object):
     def a_radian(self):
         return radians(self.diff_yaw_of_force_to_pos() - 90)
 
-    def translation_part_of_force(self):
-        return abs(sin(self.c_radian()))
-
     def translation_forces(self):
-        return self.forces * self.translation_part_of_force()
+        return self.forces * self._force_multiplier
 
-    def yaw_force(self, force):
-        if self.position.distance == 0:
-            return 0
-        return degrees(self.yaw_momentum * (force / self.position.distance))
+    @property
+    def delta_yaw(self):
+        return degrees(cos(self.c_radian())) * self._force_multiplier
 
     def __repr__(self):
         return "{} {}".format(self.position, self.forces)
 
-    def rotate(self, theta):
+    def rotated(self, theta):
         position = self.position.rotated(theta)
         forces = self.forces.rotated(theta)
         return Force(position, forces)
@@ -217,7 +224,9 @@ class MutableForce(Force):
     def __init__(self, position: MutableOffsets, forces: MutableOffsets):
         super().__init__(position, forces)
         self.position = position
+        self._original_forces = MutableOffsets(*forces)
         self.forces = forces
+        self.set_force(0)
 
     def __iadd__(self, other):
         self.position += other.position
@@ -229,13 +238,22 @@ class MutableForce(Force):
         self.forces *= other
         return self
 
-    def rotate(self, theta):
+    def set_force(self, force):
+        x, y, z = self._original_forces
+        self._force_multiplier = force
+        self.forces.set(x * force, y * force, z * force)
+
+    def translation_forces(self):
+        return self.forces
+
+    @property
+    def delta_yaw(self):
+        return degrees(cos(self.c_radian())) * self._force_multiplier
+
+    def _rotate(self, theta):
         self.position.rotate(theta)
         self.forces.rotate(theta)
         return self
 
     def translate(self, offset):
         self.position = self.position + offset
-
-    def yaw_momentum(self):
-        return cos(self.c_radian())

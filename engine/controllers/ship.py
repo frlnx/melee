@@ -45,10 +45,10 @@ class ShipController(BaseController):
                 # TODO: Transfer the rotational force from the coordinate system of other model to the coordinate system
                 #       Of the own model with rotational forces.
                 force1 = Force(part2.position, self.movement_at(part2.position))
-                force1.rotate(other_model.yaw - self._model.yaw)
+                force1.rotated(other_model.yaw - self._model.yaw)
                 force1.translate(other_model.position - self._model.position)
                 force2 = Force(part1.position, self.movement_at(part1.position))
-                force2.rotate(self._model.yaw - other_model.yaw)
+                force2.rotated(self._model.yaw - other_model.yaw)
                 force2.translate(self._model.position - other_model.position)
                 if force1.forces.y != 0 or force2.forces.y != 0:
                     print(force1, force2)
@@ -63,9 +63,9 @@ class ShipController(BaseController):
         return movement + tangent_movement
 
     def apply_force(self, force: Force):
-        force = force.rotate(-self._model.rotation[1])
+        force = force.rotated(-self._model.rotation[1])
         self._model.add_movement(*force.translation_forces())
-        self._model.add_spin(0, force.yaw_force(1), 0)
+        self._model.add_spin(0, force.delta_yaw, 0)
 
     def reset(self):
         self._model.set_rotation(0, 0, 0)
@@ -106,18 +106,12 @@ class ShipController(BaseController):
 
     def update(self, dt):
         super().update(dt)
-        forces = []
         for sub_controller in self.sub_controllers:
-            self._model.add_spin(*sub_controller.spin)
-            sized_force_vector = sub_controller.sized_force_vector
-            if sized_force_vector.forces.distance > 0.01:
-                forces.append(sub_controller.sized_force_vector)
+            self._model.add_spin(*sub_controller.spin / self._model._inertia)
+            forces = sub_controller.moment_force.rotated(-self._model.rotation[1])
+            forces = forces.translation_forces() / self._model.mass
+            self._model.add_movement(*forces)
 
-        if len(forces) > 0:
-            forces = self.sum_forces(forces)
-            forces = forces.rotate(-self._model.rotation[1])
-            movement = forces.translation_forces()
-            self._model.add_movement(*movement)
         buttons_done = set()
         for button in self._gamepad.buttons:
             if button in self._button_config:

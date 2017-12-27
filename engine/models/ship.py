@@ -16,6 +16,9 @@ class ShipModel(BaseModel):
             if part.position[1] == 0:
                 self._bounding_box = self._bounding_box + part.bounding_box
         self._mass = sum([part.mass for part in self.parts])
+        bb_width = (self._bounding_box.right - self._bounding_box.left)
+        bb_height = (self._bounding_box.top - self._bounding_box.bottom)
+        self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
 
     def set_target_position_rotation(self, position: MutableOffsets, rotation: MutableDegrees):
         self._target_position = position

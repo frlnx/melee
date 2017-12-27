@@ -21,6 +21,10 @@ class BaseModel(object):
         x, z = position.x, position.z
         self._bounding_box = Quad([(-0.5 + x, -0.5 + z), (0.5 + x, -0.5 + z),
                                    (0.5 + x, 0.5 + z), (-0.5 + x, 0.5 + z)])
+        bb_width = (self._bounding_box.right - self._bounding_box.left)
+        bb_height = (self._bounding_box.top - self._bounding_box.bottom)
+        self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+
 
     @property
     def mass(self):

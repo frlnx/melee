@@ -13,10 +13,10 @@ class TestHorizontalEngineAt45DegreesOff(object):
         model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 90, 0])
         self.gamepad = InputHandler()
         self.target = controller_factory.manufacture(model, self.gamepad)
-        self.target._force = 1
+        self.target._force_vector.set_force(1.0)
 
     def test_engine_force_direction_is_left(self):
-        assert round(self.target.sized_force_vector.forces.direction.yaw, 3) == 90
+        assert round(self.target.moment_force.forces.direction.yaw, 3) == 90
 
     def test_force_is_pushing_left(self):
-        assert -1 == self.target.sized_force_vector.forces.x
+        assert -1 == self.target.moment_force.forces.x

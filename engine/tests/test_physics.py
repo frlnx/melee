@@ -37,14 +37,11 @@ class TestLeftRotationalPhysicsVector(object):
     def test_c_radian(self):
         assert self.target.c_radian() == 0
 
-    def test_translation_force_is_zero(self):
-        assert 0 == round(self.target.translation_part_of_force(), 6)
-
     def test_vector_does_not_move_object(self):
         x, y, z = self.target.translation_forces()
         assert 0 == round(x, 6)
         assert 0 == round(y, 6)
-        assert 0 == round(z, 6)
+        assert -1 == round(z, 6)
 
 
 class TestRightRotationalPhysicsVector(object):
@@ -63,14 +60,11 @@ class TestRightRotationalPhysicsVector(object):
     def test_vector_impacts_yaw_negatively(self):
         assert 0 > self.target.yaw_momentum
 
-    def test_translation_force_is_zero(self):
-        assert 0 == round(self.target.translation_part_of_force(), 6)
-
     def test_vector_does_not_move_object(self):
         x, y, z = self.target.translation_forces()
         assert 0 == round(x, 6)
         assert 0 == round(y, 6)
-        assert 0 == round(z, 6)
+        assert -1 == round(z, 6)
 
 
 class TestVectorThroughCenterOfMassFromRight(object):
@@ -79,12 +73,10 @@ class TestVectorThroughCenterOfMassFromRight(object):
         position = Offsets(1, 0, 0)
         forces = Offsets(-1, 0, 0)
         self.target = Force(position, forces)
+        self.target.force_multiplier = 1.0
 
     def test_position_direction_is_90(self):
         assert self.target.position.direction == Offsets(0, -90, 0)
-
-    def test_all_force_is_translation_force(self):
-        assert 1 == self.target.translation_part_of_force()
 
     def test_object_moves_left(self):
         x, y, z = self.target.translation_forces()
@@ -99,9 +91,7 @@ class TestVectorThroughCenterOfMassFromLeft(object):
         position = Offsets(-1, 0, 0)
         forces = Offsets(1, 0, 0)
         self.target = Force(position, forces)
-
-    def test_all_force_is_translation_force(self):
-        assert 1 == self.target.translation_part_of_force()
+        self.target.force_multiplier = 1.0
 
     def test_object_moves_right(self):
         x, y, z = self.target.translation_forces()
@@ -116,18 +106,13 @@ class TestForceAtPositiveXAndYOffset(object):
         position = Offsets(1, 0, 1)
         forces = Offsets(0, 0, -1)
         self.target = Force(position, forces)
-
-    def _test_all_forces_do_not_exceed_one(self):
-        assert 1 == self.target.translation_part_of_force() + self.target.yaw_momentum
-
-    def test_half_of_force_is_translation_force(self):
-        assert 0.7 == round(self.target.translation_part_of_force(), 1)
+        self.target.force_multiplier = 1.0
 
     def test_object_moves_forwards(self):
         x, y, z = self.target.translation_forces()
         assert 0 == round(x, 6)
         assert 0 == round(y, 6)
-        assert -0.7 == round(z, 1)
+        assert -1.0 == round(z, 1)
 
     def test_rotational_force_rotates_positive_yaw(self):
         assert self.target.yaw_momentum > 0
@@ -139,18 +124,13 @@ class TestForceAtNegativeXAndYOffset(object):
         position = Offsets(-1, 0, -1)
         forces = Offsets(0, 0, -1)
         self.target = Force(position, forces)
-
-    def _test_all_forces_do_not_exceed_one(self):
-        assert 1 == self.target.translation_part_of_force() + self.target.yaw_momentum
-
-    def test_half_of_force_is_translation_force(self):
-        assert 0.7 == round(self.target.translation_part_of_force(), 1)
+        self.target.force_multiplier = 1.0
 
     def test_object_moves_forwards(self):
         x, y, z = self.target.translation_forces()
         assert 0 == round(x, 6)
         assert 0 == round(y, 6)
-        assert -0.7 == round(z, 1)
+        assert -1.0 == round(z, 1)
 
     def test_rotational_force_rotates_positive_yaw(self):
         assert self.target.yaw_momentum < 0
@@ -162,6 +142,7 @@ class TestSumTwoRotationalForces(object):
         self.left_force = Force(Offsets(-1, 0, 0), Offsets(0, 0, -1))
         self.right_force = Force(Offsets(1, 0, 0), Offsets(0, 0, -1))
         self.force = self.left_force + self.right_force
+        self.force.force_multiplier = 1.0
 
     def test_position_of_summed_forces_is_origo(self):
         assert self.force.position == Offsets(0, 0, 0)
@@ -176,15 +157,13 @@ class TestSumTwoNegativeRotationalForces(object):
         self.left_force = Force(Offsets(-1, 0, 0), Offsets(0, 0, -1))
         self.right_force = Force(Offsets(1, 0, 0), Offsets(0, 0, -1))
         self.force = self.left_force + self.right_force
+        self.force.force_multiplier = 1.0
 
     def test_position_of_summed_forces_is_origo(self):
         assert self.force.position == Offsets(0, 0, 0)
 
     def test_force_of_summed_forces_is_two_forwards(self):
         assert self.force.forces == Offsets(0, 0, -2)
-
-    def test_force_translates(self):
-        assert self.force.translation_part_of_force() == 1
 
     def test_force_does_not_rotate(self):
         assert round(self.force.yaw_momentum, 4) == 0
@@ -196,16 +175,11 @@ class TestHorizontalForce45DegreesOff(object):
         position = Offsets(1, 0, -1)
         forces = Offsets(-1, 0, 0)
         self.target = Force(position, forces)
+        self.target.force_multiplier = 1.0
 
-    def _test_all_forces_do_not_exceed_one(self):
-        assert 1 == self.target.translation_part_of_force() + self.target.yaw_momentum
-
-    def test_all_force_is_translation_force(self):
-        assert 0.7 == round(self.target.translation_part_of_force(), 1)
-
-    def test_object_moves_forwards(self):
+    def test_object_moves_left(self):
         x, y, z = self.target.translation_forces()
-        assert -0.7 == round(x, 1)
+        assert -1.0 == round(x, 1)
         assert 0 == round(y, 6)
         assert 0 == round(z, 1)
 
@@ -216,14 +190,15 @@ class TestRotatingAForce(object):
         position = Offsets(1, 0, -1)
         forces = Offsets(-1, 0, 0)
         self.target = Force(position, forces)
+        self.target.force_multiplier = 1.0
 
     def test_no_rotation_changes_nothing(self):
-        target = self.target.rotate(0)
+        target = self.target.rotated(0)
         assert target.forces == self.target.forces
         assert target.position == self.target.position
 
     def test_positive_rotation_90_degrees_rotates_forces(self):
-        target = self.target.rotate(90)
+        target = self.target.rotated(90)
         assert round(target.forces.x, 3) == 0
         assert target.forces.y == 0
         assert target.forces.z == -1
