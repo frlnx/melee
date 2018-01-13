@@ -1,7 +1,8 @@
 from typing import Callable
 
-from engine.physics.shape import Quad
-from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
+from engine.physics.polygon import Polygon
+from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
+from math import radians
 
 
 class BaseModel(object):
@@ -10,7 +11,8 @@ class BaseModel(object):
                  position: MutableOffsets,
                  rotation: MutableDegrees,
                  movement: MutableOffsets,
-                 spin: MutableDegrees):
+                 spin: MutableDegrees,
+                 bounding_box: Polygon):
         self._mass = 1
         self._position = position
         self._rotation = rotation
@@ -18,32 +20,65 @@ class BaseModel(object):
         self._spin = spin
         self._observers = set()
         self._mesh = None
-        x, z = position.x, position.z
-        self._bounding_box = Quad([(-0.5 + x, -0.5 + z), (0.5 + x, -0.5 + z),
-                                   (0.5 + x, 0.5 + z), (-0.5 + x, 0.5 + z)])
+        self._bounding_box = bounding_box
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
-
 
     @property
     def mass(self):
         return self._mass
 
+    def apply_global_force(self, force: MutableForce):
+        #force = force.__copy__()
+        self.mutate_force_to_local(force)
+        self.add_movement(*(force.translation_forces() / self.mass))
+        self.add_spin(0, force.delta_yaw / self._inertia, 0)
+
+    def mutate_force_to_local(self, mf: MutableForce):
+        self.mutate_offsets_to_local(mf.position)
+        mf.forces.rotate(self.yaw)
+
+    def mutate_offsets_to_local(self, mo: MutableOffsets):
+        mo -= self.position
+        mo.rotate(self.yaw)
+
+    def global_momentum_at(self, local_coordinates: MutableOffsets) -> MutableForce:
+        force = self.momentum_at(local_coordinates)
+        self.mutate_force_to_global(force)
+        return force
+
+    def momentum_at(self, local_coordinates: MutableOffsets) -> MutableForce:
+        local_coordinates = MutableOffsets(*local_coordinates)
+        momentum = self._movement# * self.mass
+        momentum += self.tangent_momentum_at(local_coordinates)
+        momentum_at = MutableForce(local_coordinates, momentum)
+        momentum_at.set_force(1)
+        return momentum_at
+
+    def mutate_force_to_global(self, mf: MutableForce):
+        self.mutate_offsets_to_global(mf.position)
+        mf.forces.rotate(-self.yaw)
+
+    def mutate_offsets_to_global(self, mo: MutableOffsets):
+        mo.rotate(-self.yaw)
+        mo.translate(self.position)
+
+    def tangent_momentum_at(self, local_coordinates: Offsets) -> Offsets:
+        if local_coordinates.distance == 0:
+            return MutableOffsets(0, 0, 0)
+        return local_coordinates.rotated(90) * (self._spin.yaw_radian * self._inertia / local_coordinates.distance)
+
     @property
     def bounding_box(self):
         return self._bounding_box
 
-    @property
-    def outer_bounding_box(self):
-        return self._bounding_box.outer_bounding_box
+    def intersection_point(self, other_model):
+        return self._bounding_box.intersection_point(other_model.bounding_box)
 
     def update(self):
         self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
         self._callback()
-
-    def outer_bounding_box_after_rotation(self, degrees):
-        return self._bounding_box.outer_bounds_after_rotation(degrees)
 
     @property
     def name(self):

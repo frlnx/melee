@@ -1,6 +1,7 @@
 from engine.models.base_model import BaseModel
 from engine.views.base_view import BaseView
 from engine.input_handlers import InputHandler
+from engine.physics.force import MutableOffsets
 
 
 class BaseController(object):
@@ -10,6 +11,10 @@ class BaseController(object):
         self._view = view
         self._gamepad = gamepad
         self._sub_controllers = set()
+
+    @property
+    def spawns(self):
+        return []
 
     @property
     def view(self):
@@ -24,19 +29,13 @@ class BaseController(object):
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
 
-    @staticmethod
-    def _collides(model1: BaseModel, model2: BaseModel):
-        if not model1.outer_bounding_box.intersects(model2.outer_bounding_box):
-            return False
-        m1_m1 = model1.outer_bounding_box_after_rotation(-model1.yaw)
-        m2_m1 = model2.outer_bounding_box_after_rotation(-model1.yaw)
-        if not m1_m1.intersects(m2_m1):
-            return False
-        m1_m2 = model1.outer_bounding_box_after_rotation(-model2.yaw)
-        m2_m2 = model2.outer_bounding_box_after_rotation(-model2.yaw)
-        if not m1_m2.intersects(m2_m2):
-            return False
-        return True
-
-    def collides(self, other_model: BaseModel):
-        return self._collides(self._model, other_model)
+    def solve_collision(self, other_model: BaseModel):
+        collides, x, z = self._model.intersection_point(other_model)
+        if collides:
+            position = MutableOffsets(x, 0, z)
+            my_force = self._model.global_momentum_at(position)
+            other_force = other_model.global_momentum_at(position)
+            #other_model.apply_global_force(-other_force)
+            #self._model.apply_global_force(-my_force)
+            other_model.apply_global_force(my_force)
+            self._model.apply_global_force(other_force)

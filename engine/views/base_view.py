@@ -56,6 +56,9 @@ class BaseView(object):
     def tear_down_matrix(self):
         glPopMatrix()
 
+    def align_camera(self):
+        glRotatef(-self._model.yaw, 0, 1, 0)
+
     def center_camera(self):
         glRotatef(-self._model.pitch, 1, 0, 0)
         glRotatef(-self._model.yaw, 0, 1, 0)

@@ -1,5 +1,5 @@
 from math import cos, sin, radians
-
+from engine.physics.line import Line
 
 class BaseBox(object):
 
@@ -31,19 +31,20 @@ class Box(BaseBox):
 
 class BaseQuad(object):
 
-    def __init__(self, coords: list):
+    def __init__(self, coords: list, rotation=0, x=0, z=0):
         self._original_coords = coords
         self._coords = list(coords)
         self._rotation = 0
+        self._x = 0
+        self._z = 0
         self._x_es = []
         self._z_es = []
-        for x, z in self._coords:
-            self._z_es.append(z)
-            self._x_es.append(x)
-        self._min_x, _, __, self._max_x = sorted(self._x_es)
-        self._min_z, _, __, self._max_z = sorted(self._z_es)
+        self.set_position_rotation(x, z, rotation)
 
     def set_position_rotation(self, tx, tz, degrees):
+        self._rotation = degrees
+        self._x = tx
+        self._z = tz
         r = radians(degrees)
         sin_r = sin(r)
         cos_r = cos(r)
@@ -73,6 +74,10 @@ class BaseQuad(object):
         min_x, _, __, max_x = sorted(x_es)
         min_z, _, __, max_z = sorted(z_es)
         return Box(min_x, max_x, min_z, max_z)
+
+    @property
+    def to_json(self):
+        return {"coords": self._original_coords, "rotation": self._rotation, "x": self._x, "z": self._z}
 
     @property
     def outer_bounding_box(self):

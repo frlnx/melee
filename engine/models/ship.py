@@ -1,24 +1,41 @@
 from typing import Set
+import json
 
 from engine.models.ship_part import ShipPartModel
 from engine.models.base_model import BaseModel
 from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.polygon import Polygon
 
 
 class ShipModel(BaseModel):
-    def __init__(self, parts: Set[ShipPartModel], position: MutableOffsets,
-                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees):
-        super().__init__(position, rotation, movement, spin)
+    def __init__(self, ship_id, parts: Set[ShipPartModel], position: MutableOffsets,
+                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
+                 bounding_box: Polygon):
+        super().__init__(position, rotation, movement, spin, bounding_box)
+        self.ship_id = ship_id
         self.parts = parts
         self._target_position = self.position
         self._target_rotation = self.rotation
-        for part in self.parts:
-            if part.position[1] == 0:
-                self._bounding_box = self._bounding_box + part.bounding_box
         self._mass = sum([part.mass for part in self.parts])
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+
+    @property
+    def spawns(self):
+        spawns = []
+        for part in self.parts:
+            if part.spawn:
+                spawns.append(part.pop_spawn())
+        return spawns
+
+    @property
+    def to_json(self):
+        return json.dumps({"position": self._position.to_json,
+                           "rotation": self._rotation.to_json,
+                           "movement": self._movement.to_json,
+                           "spin": self._spin.to_json,
+                           "bounding_box": self._bounding_box.to_json})
 
     def set_target_position_rotation(self, position: MutableOffsets, rotation: MutableDegrees):
         self._target_position = position

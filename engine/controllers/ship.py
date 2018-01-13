@@ -5,9 +5,6 @@ from engine.views.base_view import BaseView
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
-from engine.physics.force import Force, Offsets
-
-from functools import reduce
 
 
 class ShipController(BaseController):
@@ -23,49 +20,9 @@ class ShipController(BaseController):
         except IndexError:
             self._target_indicator = None
 
-    def collides(self, other_model: BaseModel):
-        if not self._collides(self._model, other_model):
-            return False
-        try:
-            other_parts = other_model.parts
-        except AttributeError:
-            other_parts = [other_model]
-        part_zip = zip(self._model.parts, other_parts)
-        # TODO: Check each part against other outer bounding box to determine which needs individual checks
-        for part1, part2 in part_zip:
-            if self._collides(part1, part2):
-                return True
-        return False
-
-    def colliding_forces(self, other_model: ShipModel):
-        part_zip = zip(self._model.parts, other_model.parts)
-        for part1, part2 in part_zip:
-            if self._collides(part1, part2):
-                direction = Offsets(*(other_model.movement)) # Movement is already in the universal coord system
-                # TODO: Transfer the rotational force from the coordinate system of other model to the coordinate system
-                #       Of the own model with rotational forces.
-                force1 = Force(part2.position, self.movement_at(part2.position))
-                force1.rotated(other_model.yaw - self._model.yaw)
-                force1.translate(other_model.position - self._model.position)
-                force2 = Force(part1.position, self.movement_at(part1.position))
-                force2.rotated(self._model.yaw - other_model.yaw)
-                force2.translate(self._model.position - other_model.position)
-                if force1.forces.y != 0 or force2.forces.y != 0:
-                    print(force1, force2)
-                return force1, force2
-        raise ValueError("Models don't collide")
-
-    def movement_at(self, ship_grid_position: Offsets) -> Offsets:
-        movement = self._model.movement
-        yaw_delta = self._model.spin[1]
-        spin_speed = ship_grid_position.distance * yaw_delta
-        tangent_movement = ship_grid_position.rotated(90) * spin_speed
-        return movement + tangent_movement
-
-    def apply_force(self, force: Force):
-        force = force.rotated(-self._model.rotation[1])
-        self._model.add_movement(*force.translation_forces())
-        self._model.add_spin(0, force.delta_yaw, 0)
+    @property
+    def spawns(self):
+        return self._model.spawns
 
     def reset(self):
         self._model.set_rotation(0, 0, 0)
@@ -108,7 +65,7 @@ class ShipController(BaseController):
         super().update(dt)
         for sub_controller in self.sub_controllers:
             self._model.add_spin(*sub_controller.spin / self._model._inertia)
-            forces = sub_controller.moment_force.rotated(-self._model.rotation[1])
+            forces = sub_controller.moment_force.rotated(-self._model.rotation.yaw)
             forces = forces.translation_forces() / self._model.mass
             self._model.add_movement(*forces)
 
@@ -123,11 +80,3 @@ class ShipController(BaseController):
 
     def move_to(self, location):
         self._model.set_position(*location)
-
-    @staticmethod
-    def sum_forces(forces) -> Force:
-        assert len(forces) > 0
-        if len(forces) == 1:
-            return forces[0]
-        else:
-            return reduce(lambda a, b: a + b, forces[1:], forces[0])

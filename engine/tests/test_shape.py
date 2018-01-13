@@ -1,4 +1,16 @@
-from engine.physics.shape import Quad
+from engine.physics.quad import Quad
+
+
+class TestQuadAddition(object):
+
+    def setup(self):
+        self.q1 = Quad([(-1, -1), (1, -1), (1, 1), (-1, 1)], x= 1)
+        self.q2 = Quad([(-1, -1), (1, -1), (1, 1), (-1, 1)], x= -1)
+
+    def test_adding_quads_makes_a_quad_of_double_size(self):
+        q = self.q1 + self.q2
+        assert q.left == -2
+        assert q.right == 2
 
 
 class TestQuadRotation(object):

@@ -11,14 +11,19 @@ class ShipView(BaseView):
         super().__init__(model, mesh=mesh)
         self._model = model
 
-    def center_camera(self):
-        glRotatef(-self._model.yaw, 0, 1, 0)
+    def align_camera(self):
+        super().align_camera()
+        self.angle_camera_to_target()
+
+    def angle_camera_to_target(self):
         tx, ty, tz = self._model.target_pos
         x, y, z = self._model.position
 
-        pitch = sorted([-10, -degrees(atan2(z - tz, 23)) / 2, 20])[1]
-        roll = sorted([-10, degrees(atan2(x - tx, 23)) / 2, 10])[1]
-
+        pitch = sorted([-20, -degrees(atan2(z - tz, 23)) / 2, 30])[1]
+        roll = sorted([-20, degrees(atan2(x - tx, 23)) / 2, 20])[1]
         glRotatef(pitch, 1, 0, 0)
         glRotatef(roll, 0, 0, 1)
+
+    def center_camera(self):
+        x, y, z = self._model.position
         glTranslated(-x, -y - 23, -z)

@@ -42,8 +42,8 @@ class Material(object):
     def __init__(self, name):
         self.name = name
         self.diffuse = [.8, .8, .8, 1.]
-        self.ambient = [.2, .2, .2, 1.]
-        self.specular = [0., 0., 0., 1.]
+        self.ambient = [.0, .0, .0, 1.]
+        self.specular = [.4, .4, .4, 1.]
         self.emissive = [0., 0., 0., 1.]
         self.shininess = 0.
         self.luminance = 0.
@@ -94,11 +94,6 @@ class Material(object):
     def set_texture(self, path):
         self.texture = texture.Texture(path)
 
-    def set_luminance(self, values=None):
-        if values is None:
-            values = [0, 0]
-        self.luminance = values
-
     def unset_texture(self):
         self.texture = None
 
@@ -130,7 +125,6 @@ class Material(object):
         glMaterialfv(face, GL_SPECULAR, self.gl_light(self.specular))
         glMaterialfv(face, GL_EMISSION, self.gl_light(self.emissive))
         glMaterialf(face, GL_SHININESS, self.shininess)
-        # glMaterialf(face, GL_LUMINANCE, self.luminance)
 
         glInterleavedArrays(GL_T2F_N3F_V3F, 0, self.gl_floats)
         glDrawArrays(GL_TRIANGLES, 0, int(self.triangle_count))
@@ -187,7 +181,7 @@ class MaterialParser(parser.Parser):
         return
 
     def parse_l(self, args):
-        self.this_material.set_luminance(args)
+        self.this_material.set_emissive(args)
 
     def parse_Tf(self, args):
         if args != ['1', '1', '1']:

@@ -10,7 +10,6 @@ class Vector(object):
         self.x = x
         self.y = y
         self.z = z
-        self.xyz = array([x, y, z])
         self.distance = sqrt(sqrt(self.x ** 2 + self.y ** 2) ** 2 + self.z ** 2)
 
     def __add__(self, other):
@@ -32,22 +31,33 @@ class Vector(object):
         return self.__div__(other)
 
     def cross(self, other):
-        return self.__class__(*cross(self.xyz, other.xyz))
+        return self.__class__(*cross(self, other.xyz))
 
     def dot(self, other):
-        return self.__class__(*dot(self.xyz, other.xyz))
+        return self.__class__(*dot(self, other.xyz))
 
     def __repr__(self):
-        return "V: {} {} {}".format(*self.xyz)
+        return "V: {} {} {}".format(*self)
 
     def __eq__(self, other):
-        return self.xyz.tolist() == other.xyz.tolist()
+        x, y, z = other
+        return self.x == x and self.y == y and self.z == z
 
     def __hash__(self):
-        return self.xyz.tolist().__hash__()
+        return hash(hash(self.x) + hash(self.y) + hash(self.z))
 
     def __getitem__(self, item):
-        return self.xyz[item]
+        return [self.x, self.y, self.z][item]
+
+    def __copy__(self):
+        return self.__class__(*self)
+
+    def __neg__(self):
+        return self.__class__(*[-x for x in self])
+
+    @property
+    def to_json(self):
+        return "[{},{},{}]".format(*self)
 
 
 class MutableVector(Vector):
@@ -156,7 +166,7 @@ class Offsets(Vector):
         theta = radians(theta)
         x = self.x * cos(theta) - self.z * sin(theta)
         z = self.x * sin(theta) + self.z * cos(theta)
-        return Offsets(x, self.y, z)
+        return self.__class__(x, self.y, z)
 
 
 class MutableOffsets(MutableVector, Offsets):
@@ -172,6 +182,9 @@ class MutableOffsets(MutableVector, Offsets):
         self.set(x, self._y, z)
         self.update()
 
+    def translate(self, *xyz):
+        self.__iadd__(*xyz)
+
     def update(self):
         super().update()
         self.direction.set(self.direction.x, degrees(atan2(-self._x, -self._z)), self.direction.z)
@@ -182,7 +195,7 @@ class Force(object):
     def __init__(self, position: Offsets, forces: Offsets):
         self.position = position
         self.forces = forces
-        self.yaw_momentum = cos(self.c_radian())
+        self.yaw_momentum = cos(self.radians_force_is_lateral_to_position())
         self._force_multiplier = 1.0
 
     def __add__(self, other):
@@ -191,13 +204,13 @@ class Force(object):
     def __mul__(self, other):
         return self.__class__(self.position * 1, self.forces * other)
 
+    def __neg__(self):
+        return self.__class__(self.position.__copy__(), -self.forces)
+
     def diff_yaw_of_force_to_pos(self):
         return (((self.forces.direction.yaw % 360) - (self.position.direction.yaw % 360) + 180) % 360) - 180
 
-    def c_radian(self):
-        return radians(90 - self.diff_yaw_of_force_to_pos())
-
-    def a_radian(self):
+    def radians_force_is_lateral_to_position(self):
         return radians(self.diff_yaw_of_force_to_pos() - 90)
 
     def translation_forces(self):
@@ -205,7 +218,9 @@ class Force(object):
 
     @property
     def delta_yaw(self):
-        return degrees(cos(self.c_radian())) * self._force_multiplier
+        amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position())
+        delta_yaw_radians = atan2(amount_of_force_that_rotates * self.forces.distance, self.position.distance)
+        return degrees(delta_yaw_radians) * self._force_multiplier
 
     def __repr__(self):
         return "{} {}".format(self.position, self.forces)
@@ -217,6 +232,9 @@ class Force(object):
 
     def translate(self, offset: Offsets):
         self.position = self.position + offset
+
+    def __copy__(self):
+        return self.__class__(self.position.__copy__(), self.forces.__copy__())
 
 
 class MutableForce(Force):
@@ -245,15 +263,6 @@ class MutableForce(Force):
 
     def translation_forces(self):
         return self.forces
-
-    @property
-    def delta_yaw(self):
-        return degrees(cos(self.c_radian())) * self._force_multiplier
-
-    def _rotate(self, theta):
-        self.position.rotate(theta)
-        self.forces.rotate(theta)
-        return self
 
     def translate(self, offset):
         self.position = self.position + offset

@@ -1,3 +1,5 @@
+from typing import Callable
+
 from engine.controllers.base_controller import BaseController
 from engine.views.base_view import BaseView
 from engine.models.ship_part import ShipPartModel
@@ -9,10 +11,11 @@ from math import sin, cos, radians
 
 class ShipPartController(BaseController):
 
-    def __init__(self, model: ShipPartModel, view: BaseView, gamepad: InputHandler):
+    def __init__(self, model: ShipPartModel, view: BaseView, gamepad: InputHandler, spawn_func: Callable):
         super().__init__(model, view, gamepad)
         self._model = model
         self._view = view
+        self._spawn_func = spawn_func
         yaw = self._model.rotation[1]
         self._force_vector = MutableForce(self._model.position,
                                           MutableOffsets(-sin(radians(yaw)), 0, -cos(radians(yaw))))
@@ -25,6 +28,8 @@ class ShipPartController(BaseController):
         super().update(dt)
         axis_value = self._gamepad.axis.get(self._model.axis, 0)
         if self._model.button in self._gamepad.buttons:
+            if self._model.state_spec.get('spawn', False):
+                self.spawn()
             self._force_vector.set_force(1.0 * self._model.state_spec.get('thrust generated', 0))
             try:
                 self._model.set_state('button')
@@ -36,12 +41,16 @@ class ShipPartController(BaseController):
             try:
                 self._model.set_state('axis')
                 fire_material = self._view._mesh.materials['Fire_front']
-                fire_material.set_diffuse([axis_value] * 4)
+                fire_material.set_emissive([axis_value] * 4)
             except AssertionError:
                 raise
         else:
             self._force_vector.set_force(0.0)
             self._model.set_state('idle')
+
+    def spawn(self):
+        if not self._model.spawn:
+            self._model.set_spawn(self._spawn_func())
 
     @property
     def spin(self):
