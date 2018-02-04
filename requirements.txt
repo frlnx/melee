@@ -2,3 +2,4 @@
 pyglet
 pytest
 numpy
+imageio

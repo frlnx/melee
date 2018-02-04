@@ -5,7 +5,7 @@ from engine.input_handlers import InputHandler
 factory = ShipControllerFactory()
 dummy_input = InputHandler()
 
-class TestShipController(object):
+class _TestShipController(object):
 
     def setup(self):
         self.target = factory.manufacture("wolf", dummy_input)

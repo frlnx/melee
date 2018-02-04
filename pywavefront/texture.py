@@ -34,6 +34,7 @@
 
 import os
 from pyglet.gl import *
+import pyglet
 
 
 class Texture(object):

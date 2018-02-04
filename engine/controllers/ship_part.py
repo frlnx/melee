@@ -40,8 +40,6 @@ class ShipPartController(BaseController):
             self._force_vector.set_force(axis_value * self._model.state_spec.get('thrust generated', 0))
             try:
                 self._model.set_state('axis')
-                fire_material = self._view._mesh.materials['Fire_front']
-                fire_material.set_emissive([axis_value] * 4)
             except AssertionError:
                 raise
         else:

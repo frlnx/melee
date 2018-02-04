@@ -46,7 +46,6 @@ class Material(object):
         self.specular = [.4, .4, .4, 1.]
         self.emissive = [0., 0., 0., 1.]
         self.shininess = 0.
-        self.luminance = 0.
         self.texture = None
 
         # Interleaved array of floats in GL_T2F_N3F_V3F format

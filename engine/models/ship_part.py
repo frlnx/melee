@@ -27,7 +27,6 @@ class ShipPartModel(BaseModel):
         self._spawn = None
         return spawn
 
-
     @property
     def spawn(self):
         return self._spawn

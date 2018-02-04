@@ -1,5 +1,5 @@
-from typing import List, Tuple
-from math import degrees, radians, cos, sin, atan2
+from typing import List
+from math import radians
 from itertools import product
 
 
@@ -82,6 +82,5 @@ class Polygon(BasePolygon):
         return False, None, None
 
     def __iadd__(self, other):
-        other.freeze()
-        self._lines += other.lines
+        self._lines += [Line([(line.x1, line.y1), (line.x2, line.y2)]) for line in other.lines]
         return self

@@ -19,11 +19,12 @@ class Window(pyglet.window.Window):
         super().__init__(width=1280, height=720)
         self.lightfv = ctypes.c_float * 4
         self.views = set()
+        self.new_views = set()
         self.center = None
         self.backdrop = Wavefront("objects/backdrop.obj")
 
     def add_view(self, view: BaseView):
-        self.views.add(view)
+        self.new_views.add(view)
         if self.center is None:
             self.center = view
 
@@ -34,7 +35,7 @@ class Window(pyglet.window.Window):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glEnable(GL_DEPTH_TEST)
-        gluPerspective(60., float(width)/height, 1., 1000.)
+        gluPerspective(60., float(width) / height, 1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         return True
 
@@ -46,10 +47,10 @@ class Window(pyglet.window.Window):
         glRotatef(90, 1, 0, 0)
         self.center.align_camera()
 
-        glLightfv(GL_LIGHT0, GL_POSITION, self.lightfv(2, 1, 0, 0))
         glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 3)(1.0, 1.0, 1.0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 3)(.0, .0, .0))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
+        glLightfv(GL_LIGHT0, GL_POSITION, self.lightfv(0, 1, 1, 0))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
         #glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (GLfloat * 1)(.005))
         #glEnable(GL_LIGHT0)
         self.backdrop.draw()
@@ -58,6 +59,11 @@ class Window(pyglet.window.Window):
 
         for view in self.views:
             view.draw()
+        self.integrate_new_views()
+
+    def integrate_new_views(self):
+        self.views.update(self.new_views)
+        self.new_views.clear()
 
 
 class Engine(pyglet.app.EventLoop):
@@ -65,6 +71,7 @@ class Engine(pyglet.app.EventLoop):
     def __init__(self):
         super().__init__()
         self.controllers = set()
+        self.ships = set()
         self.bf = BaseFactory()
         self.sf = ShipControllerFactory()
         self.window = Window()
@@ -83,6 +90,7 @@ class Engine(pyglet.app.EventLoop):
         self.propagate_target(ship)
         ship.move_to(location)
         self.spawn(ship)
+        self.ships.add(ship)
 
     def spawn(self, controller):
         self.window.add_view(controller.view)
@@ -97,14 +105,15 @@ class Engine(pyglet.app.EventLoop):
         spawns = []
         for controller in self.controllers:
             controller.update(dt)
-            spawns += controller.spawns
-        for c1, c2 in combinations(self.controllers, 2):
-            c1.solve_collision(c2._model)
-        for spawned_model in spawns:
-            print("Nytt skott!")
-            spawned_controller = self.bf.manufacture(spawned_model, GamePad(0))
+            spawns += [self.bf.manufacture(model, controller._gamepad) for model in controller.spawns]
+        for ship in self.ships:
+            for controller in self.controllers:
+                if ship != controller:
+                    ship.solve_collision(controller._model)
+        #for c1, c2 in combinations(self.controllers, 2):
+        #    c1.solve_collision(c2._model)
+        for spawned_controller in spawns:
             self.spawn(spawned_controller)
-
 
 
 if __name__ == '__main__':

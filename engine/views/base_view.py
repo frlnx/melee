@@ -20,6 +20,16 @@ class BaseView(object):
             print("No mesh for {}".format(model.name))
             self._draw = self._draw_nothing
 
+    def set_model(self, model: BaseModel):
+        self._model.unobserve(self.update)
+        self._model = model
+        self._model.observe(self.update)
+        self.update()
+
+    def set_mesh(self, mesh):
+        self._mesh = mesh
+        self._draw = self._draw_mesh
+
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
 
@@ -48,6 +58,9 @@ class BaseView(object):
             subview.draw()
 
     def _draw(self):
+        self._mesh.draw()
+
+    def _draw_mesh(self):
         self._mesh.draw()
 
     def _draw_nothing(self):

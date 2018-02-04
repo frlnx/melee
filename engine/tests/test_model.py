@@ -15,6 +15,12 @@ class TestBoundingBox(object):
         self.target = ship.bounding_box
         ship.set_position_and_rotation(10, 0, 10, 0, 0, 0)
 
+    def test_bounding_box_width_is_5(self):
+        assert self.target.right - self.target.left == 5
+
+    def test_bounding_box_height_is_3(self):
+        assert self.target.top - self.target.bottom == 2
+
     def test_bounding_box_x_is_at_10(self):
         xes = [line.x for line in self.target.lines]
         assert all([x == 10 for x in xes])

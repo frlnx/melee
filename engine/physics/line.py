@@ -3,6 +3,30 @@ from math import *
 from copy import deepcopy
 
 
+class Point(object):
+
+    def __init__(self, x: float, y: float):
+        self.original_x = x
+        self.original_y = y
+        self.x = x
+        self.y = y
+        self.origo_x = 0
+        self.origo_y = 0
+        self.rotation = 0
+
+    @property
+    def radii(self):
+        return atan2(-self.x, self.y)
+
+    def set_position_rotation(self, x, y, radii):
+        cos_val = cos(radii)
+        sin_val = sin(radii)
+        self.x = x + self.original_x * cos_val - self.original_y * sin_val
+        self.y = y + self.original_x * sin_val + self.original_y * cos_val
+        self.rotation = radii
+        self.x, self.y = x, y
+
+
 class BaseLine(object):
 
     def __init__(self, coords: List[Tuple[float, float]]):

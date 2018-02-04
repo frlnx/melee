@@ -77,16 +77,35 @@ class ShipPartModelFactory(object):
 class ProjectileModelFactory(object):
 
     def __init__(self):
-        self.projectiles = {"plasma": {}}
+        self.projectile_configs = {"plasma": {}}
+        self.projectiles = {"plasma": []}
+        plasmas = [self._pre_manufacture("plasma") for i in range(100)]
+        self.projectiles["plasma"] = plasmas
+
+    def _pre_manufacture(self, name):
+        return self.manufacture(name, MutableOffsets(0, 0, 0), MutableDegrees(0, 0, 0),
+                                MutableOffsets(0, 0, 0), MutableDegrees(0, 0, 0))
+
+    def repurpose(self, name,
+                    position: MutableOffsets, rotation: MutableDegrees,
+                    movement: MutableOffsets, spin: MutableDegrees):
+        projectile = self.projectiles[name].pop()
+        print(len(self.projectiles[name]), "left")
+        projectile.set_movement(*movement)
+        projectile.set_position_and_rotation(*position, *rotation)
+        projectile.set_spin(*spin)
+        return projectile
 
     def manufacture(self, name,
                     position: MutableOffsets, rotation: MutableDegrees,
                     movement: MutableOffsets, spin: MutableDegrees) -> PlasmaModel:
+        if self.projectiles[name] != []:
+            return self.repurpose(name, position, rotation, movement, spin)
         config = deepcopy(self.projectiles[name])
-        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+        bounding_box = Polygon.manufacture([(0, 0), (0, 1)],
                             x=position.x, y=position.z, rotation=rotation.yaw)
-        projectile = PlasmaModel(position, rotation, movement, spin, bounding_box)
-        print("Pang model")
+        projectile = PlasmaModel(position.__copy__(), rotation.__copy__(),
+                                 movement.__copy__(), spin.__copy__(), bounding_box)
         return projectile
 
 
@@ -100,12 +119,12 @@ class ProjectileModelSpawnFunctionFactory(object):
         return spawn_func
 
     def _manufacture(self, name, ship_model: ShipModel, ship_part_model: ShipPartModel) -> PlasmaModel:
-        rotation = ship_model.rotation + ship_part_model.rotation
-        position = ship_part_model.position
+        yaw_radian = ship_model.rotation.yaw_radian + ship_part_model.rotation.yaw_radian
+        position = ship_part_model.position.__copy__()
+        position.set(position.x, position.y, position.z - 3)
         ship_model.mutate_offsets_to_global(position)
-        position += MutableOffsets(sin(rotation.yaw_radian), 0, -cos(rotation.yaw_radian))
         rotation = ship_model.rotation.__copy__()
-        movement = MutableOffsets(sin(rotation.yaw_radian) * 5, 0, -cos(rotation.yaw_radian) * 5)
+        movement = MutableOffsets(-sin(yaw_radian) * 25, 0, -cos(yaw_radian) * 25)
         movement += ship_model.global_momentum_at(ship_part_model.position).forces
         spin = -ship_model.spin
         return self.factory.manufacture(name, position, rotation, movement, spin)
