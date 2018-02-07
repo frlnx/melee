@@ -18,8 +18,15 @@
       },
       {
         "name": "button",
+        "spawn": "plasma projectile",
+        "required state": "idle",
+        "next state": "charging"
+      },
+      {
+        "name": "charging",
         "power required": 50,
-        "spawn": "plasma projectile"
+        "timeout": 5,
+        "next state": "idle"
       }
     ]
   },

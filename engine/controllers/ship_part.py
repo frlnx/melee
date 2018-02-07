@@ -27,14 +27,20 @@ class ShipPartController(BaseController):
     def update(self, dt):
         super().update(dt)
         axis_value = self._gamepad.axis.get(self._model.axis, 0)
-        if self._model.button in self._gamepad.buttons:
-            if self._model.state_spec.get('spawn', False):
-                self.spawn()
-            self._force_vector.set_force(1.0 * self._model.state_spec.get('thrust generated', 0))
+        if self._model.state_timeout > 0:
+            return
+        if 'next state' in self._model.state_spec and \
+                self._model.state_transition_possible_to(self._model.state_spec['next state']):
+            self._model.set_state(self._model.state_spec['next state'])
+
+        if self._model.button in self._gamepad.buttons and self._model.state_transition_possible_to('button'):
             try:
                 self._model.set_state('button')
             except AssertionError:
                 pass
+            if self._model.state_spec.get('spawn', False):
+                self.spawn()
+            self._force_vector.set_force(1.0 * self._model.state_spec.get('thrust generated', 0))
         elif axis_value > 0:
             axis_value = min(1.0, max(0.0, axis_value))
             self._force_vector.set_force(axis_value * self._model.state_spec.get('thrust generated', 0))
@@ -42,7 +48,7 @@ class ShipPartController(BaseController):
                 self._model.set_state('axis')
             except AssertionError:
                 raise
-        else:
+        elif self._model.state_transition_possible_to('idle'):
             self._force_vector.set_force(0.0)
             self._model.set_state('idle')
 

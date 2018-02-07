@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 import ctypes
-from itertools import combinations
 
 from engine.controllers.factories import ShipControllerFactory, BaseFactory
+from engine.controllers.projectiles import ProjectileController
 from engine.views.base_view import BaseView
-from engine.input_handlers import InputHandler, GamePad
+from engine.input_handlers import GamePad
 
-from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_LIGHT1, GL_POSITION, GL_LIGHTING
-from pyglet.gl import GL_DIFFUSE, GL_QUADRATIC_ATTENUATION, GLfloat, GL_AMBIENT
-from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, glDisable, gluPerspective, glLightfv, glTranslated, glRotatef
+from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
+from pyglet.gl import GL_DIFFUSE, GLfloat, GL_AMBIENT
+from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
 from pywavefront import Wavefront
 import pyglet
 
@@ -20,13 +20,19 @@ class Window(pyglet.window.Window):
         self.lightfv = ctypes.c_float * 4
         self.views = set()
         self.new_views = set()
+        self.del_views = set()
         self.center = None
         self.backdrop = Wavefront("objects/backdrop.obj")
+        self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
 
     def add_view(self, view: BaseView):
+        self.spawn_sound.play()
         self.new_views.add(view)
         if self.center is None:
             self.center = view
+
+    def del_view(self, view: BaseView):
+        self.del_views.add(view)
 
     def center_camera_on(self, view: BaseView):
         self.center = view
@@ -60,10 +66,15 @@ class Window(pyglet.window.Window):
         for view in self.views:
             view.draw()
         self.integrate_new_views()
+        self.remove_views()
 
     def integrate_new_views(self):
         self.views.update(self.new_views)
         self.new_views.clear()
+
+    def remove_views(self):
+        self.views = self.views - self.del_views
+        self.del_views.clear()
 
 
 class Engine(pyglet.app.EventLoop):
@@ -72,7 +83,7 @@ class Engine(pyglet.app.EventLoop):
         super().__init__()
         self.controllers = set()
         self.ships = set()
-        self.bf = BaseFactory()
+        self.bf = BaseFactory(ProjectileController)
         self.sf = ShipControllerFactory()
         self.window = Window()
         self.has_exit = True
@@ -96,6 +107,11 @@ class Engine(pyglet.app.EventLoop):
         self.window.add_view(controller.view)
         self.controllers.add(controller)
 
+    def decay(self, controller):
+        self.window.del_view(controller.view)
+        self.controllers.remove(controller)
+        # TODO: Deregister target
+
     def propagate_target(self, ship):
         for c in self.controllers:
             c.register_target(ship._model)
@@ -103,9 +119,14 @@ class Engine(pyglet.app.EventLoop):
 
     def update(self, dt):
         spawns = []
+        decays = []
         for controller in self.controllers:
             controller.update(dt)
             spawns += [self.bf.manufacture(model, controller._gamepad) for model in controller.spawns]
+            if not controller.is_alive:
+                decays.append(controller)
+        for decaying_controller in decays:
+            self.decay(decaying_controller)
         for ship in self.ships:
             for controller in self.controllers:
                 if ship != controller:

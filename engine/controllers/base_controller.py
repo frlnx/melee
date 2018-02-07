@@ -20,6 +20,10 @@ class BaseController(object):
     def view(self):
         return self._view
 
+    @property
+    def is_alive(self):
+        return True
+
     def add_sub_controller(self, sub_controller):
         self._sub_controllers.add(sub_controller)
 
@@ -28,6 +32,7 @@ class BaseController(object):
         self._model.rotate(*(self._model.spin * dt))
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
+        self._model.timers(dt)
 
     def solve_collision(self, other_model: BaseModel):
         collides, x, z = self._model.intersection_point(other_model)

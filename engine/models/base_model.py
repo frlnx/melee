@@ -25,6 +25,9 @@ class BaseModel(object):
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
 
+    def timers(self, dt):
+        pass
+
     @property
     def mass(self):
         return self._mass

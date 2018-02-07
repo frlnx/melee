@@ -10,12 +10,13 @@ from engine.controllers.base_controller import BaseController
 
 class BaseFactory(object):
 
-    def __init__(self):
+    def __init__(self, controller_class=BaseController):
+        self.controller_class = controller_class
         self.view_factory = ViewFactory(BaseView)
 
     def manufacture(self, model, input_handler):
         view = self.view_factory.manufacture(model)
-        controller = BaseController(model, view, input_handler)
+        controller = self.controller_class(model, view, input_handler)
         return controller
 
 

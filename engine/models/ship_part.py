@@ -18,6 +18,11 @@ class ShipPartModel(BaseModel):
         self.texture_offset = [0, 0, 0]
         self.texture_rotation = [0, 0, 0]
         self._spawn = None
+        self._time_in_state = 0
+
+    def timers(self, dt):
+        super().timers(dt)
+        self._time_in_state += dt
 
     def set_spawn(self, projectile):
         self._spawn = projectile
@@ -32,8 +37,18 @@ class ShipPartModel(BaseModel):
         return self._spawn
 
     def set_state(self, state):
-        assert state in self._states
         self._state = state
+        self._time_in_state = 0
+
+    def state_transition_possible_to(self, state):
+        if self.state_timeout > 0:
+            return False
+        spec = self._states.get(state, {})
+        return self.state == spec.get('required state', self.state)
+
+    @property
+    def state_timeout(self):
+        return max(0, self.state_spec.get('timeout', 0) - self._time_in_state)
 
     @property
     def state_spec(self):
@@ -45,4 +60,4 @@ class ShipPartModel(BaseModel):
 
     @property
     def state(self):
-        return self.state
+        return self._state
