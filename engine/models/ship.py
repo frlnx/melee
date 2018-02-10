@@ -29,14 +29,6 @@ class ShipModel(BaseModel):
                 spawns.append(part.pop_spawn())
         return spawns
 
-    @property
-    def to_json(self):
-        return json.dumps({"position": self._position.to_json,
-                           "rotation": self._rotation.to_json,
-                           "movement": self._movement.to_json,
-                           "spin": self._spin.to_json,
-                           "bounding_box": self._bounding_box.to_json})
-
     def set_target_position_rotation(self, position: MutableOffsets, rotation: MutableDegrees):
         self._target_position = position
         self._target_rotation = rotation

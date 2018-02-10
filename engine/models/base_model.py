@@ -2,7 +2,7 @@ from typing import Callable
 
 from engine.physics.polygon import Polygon
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
-from math import radians
+from uuid import uuid4
 
 
 class BaseModel(object):
@@ -13,6 +13,7 @@ class BaseModel(object):
                  movement: MutableOffsets,
                  spin: MutableDegrees,
                  bounding_box: Polygon):
+        self.uuid = uuid4()
         self._mass = 1
         self._position = position
         self._rotation = rotation
@@ -24,6 +25,19 @@ class BaseModel(object):
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+
+    @property
+    def data_dict(self):
+        return {"uuid": self.uuid, "position": list(self.position.xyz), "rotation": self.rotation.yaw,
+                "movement": list(self.movement.xyz), "spin": self.spin.yaw}
+
+    def set_data(self, data_dict: dict):
+        assert data_dict['uuid'] == self.uuid
+        self._position.set(*data_dict['position'])
+        self._rotation.set(0, data_dict['rotation'], 0)
+        self._movement.set(*data_dict['movement'])
+        self._spin.set(0, data_dict['spin'], 0)
+        self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
 
     def timers(self, dt):
         pass

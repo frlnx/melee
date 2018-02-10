@@ -1,5 +1,5 @@
 from engine.models.base_model import BaseModel
-from engine.views.base_view import BaseView
+from engine.views.base_view import BaseView, DummyView
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 
@@ -54,3 +54,15 @@ class ViewFactory(object):
         mesh = Wavefront(file_name)
         self.meshes[name] = mesh
         return mesh
+
+
+class DummyViewFactory(ViewFactory):
+
+    def __init__(self, view_class=DummyView):
+        self._view = view_class()
+
+    def repurpose(self, model: BaseModel) -> BaseView:
+        return self._view
+
+    def manufacture(self, model: BaseModel) -> BaseView:
+        return self._view

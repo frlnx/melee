@@ -1,4 +1,4 @@
-from engine.views.factories import ViewFactory
+from engine.views.factories import ViewFactory, DummyViewFactory
 from engine.views.ship import ShipView
 from engine.views.base_view import BaseView
 from engine.views.ship_part import ShipPartView, TargetIndicatorView
@@ -10,9 +10,9 @@ from engine.controllers.base_controller import BaseController
 
 class BaseFactory(object):
 
-    def __init__(self, controller_class=BaseController):
+    def __init__(self, controller_class=BaseController, view_factory_class=ViewFactory):
         self.controller_class = controller_class
-        self.view_factory = ViewFactory(BaseView)
+        self.view_factory = view_factory_class(BaseView)
 
     def manufacture(self, model, input_handler):
         view = self.view_factory.manufacture(model)
@@ -20,12 +20,33 @@ class BaseFactory(object):
         return controller
 
 
-class ShipControllerFactory(object):
+class ShipPartControllerFactory(object):
+
+    def __init__(self, view_factory_class=ViewFactory):
+        self.view_factory = view_factory_class(ShipPartView)
+        self.target_indicator_view_factory = view_factory_class(TargetIndicatorView)
+        self.model_factory = ShipPartModelFactory()
+
+    def manufacture(self, model, gamepad, spawn_func=lambda: False) -> ShipPartController:
+        if model.target_indicator:
+            view = self.target_indicator_view_factory.manufacture(model)
+        else:
+            view = self.view_factory.manufacture(model)
+        controller = ShipPartController(model, view, gamepad, spawn_func)
+        return controller
+
+class DummyShipPartControllerFactory(ShipPartControllerFactory):
 
     def __init__(self):
-        self.view_factory = ViewFactory(ShipView)
+        super().__init__(view_factory_class=DummyViewFactory)
+
+
+class ShipControllerFactory(object):
+
+    def __init__(self, view_factory_class=ViewFactory, sub_controller_factory_class=ShipPartControllerFactory):
+        self.view_factory = view_factory_class(ShipView)
         self.model_factory = ShipModelFactory()
-        self.sub_controller_factory = ShipPartControllerFactory()
+        self.sub_controller_factory = sub_controller_factory_class()
         self.projectile_model_spawn_func_factory = ProjectileModelSpawnFunctionFactory()
 
     def manufacture(self, name, gamepad):
@@ -46,18 +67,9 @@ class ShipControllerFactory(object):
         pass
 
 
-class ShipPartControllerFactory(object):
+class DummyViewShipControllerFactory(ShipControllerFactory):
 
     def __init__(self):
-        self.view_factory = ViewFactory(ShipPartView)
-        self.target_indicator_view_factory = ViewFactory(TargetIndicatorView)
-        self.model_factory = ShipPartModelFactory()
-
-    def manufacture(self, model, gamepad, spawn_func=lambda: False) -> ShipPartController:
-        if model.target_indicator:
-            view = self.target_indicator_view_factory.manufacture(model)
-        else:
-            view = self.view_factory.manufacture(model)
-        controller = ShipPartController(model, view, gamepad, spawn_func)
-        return controller
+        super().__init__(view_factory_class=DummyViewFactory,
+                         sub_controller_factory_class=DummyShipPartControllerFactory)
 
