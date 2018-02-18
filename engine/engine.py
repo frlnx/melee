@@ -1,10 +1,9 @@
 from engine.models.base_model import BaseModel
-from engine.controllers.factories import ShipControllerFactory, BaseFactory
-from engine.controllers.projectiles import ProjectileController
-from engine.views.factories import DummyViewFactory
+from engine.controllers.factories import ShipControllerFactory, ControllerFactory
 from engine.input_handlers import GamePad
 
 import pyglet
+
 
 class Engine(pyglet.app.EventLoop):
 
@@ -12,8 +11,8 @@ class Engine(pyglet.app.EventLoop):
         super().__init__()
         self.controllers = set()
         self.ships = set()
-        self.bf = BaseFactory(ProjectileController)
         self.sf = ShipControllerFactory()
+        self.controller_factory = ControllerFactory()
         self.has_exit = True
         pyglet.clock.schedule(self.update)
         pyglet.clock.set_fps_limit(60)
@@ -31,7 +30,8 @@ class Engine(pyglet.app.EventLoop):
         self.ships.add(ship)
 
     def spawn_model(self, model: BaseModel):
-
+        controller = self.controller_factory.manufacture(model)
+        self.spawn(controller)
 
     def spawn(self, controller):
         self.window.add_view(controller.view)
@@ -52,7 +52,7 @@ class Engine(pyglet.app.EventLoop):
         decays = []
         for controller in self.controllers:
             controller.update(dt)
-            spawns += [self.bf.manufacture(model, controller._gamepad) for model in controller.spawns]
+            spawns += controller.spawns
             if not controller.is_alive:
                 decays.append(controller)
         for decaying_controller in decays:
@@ -63,5 +63,5 @@ class Engine(pyglet.app.EventLoop):
                     ship.solve_collision(controller._model)
         #for c1, c2 in combinations(self.controllers, 2):
         #    c1.solve_collision(c2._model)
-        for spawned_controller in spawns:
-            self.spawn(spawned_controller)
+        for model in spawns:
+            self.spawn_model(model)

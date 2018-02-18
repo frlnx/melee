@@ -6,6 +6,30 @@ from engine.models.factories import ShipModelFactory, ShipPartModelFactory, Proj
 from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
 from engine.controllers.base_controller import BaseController
+from engine.controllers.projectiles import ProjectileController
+from engine.models.ship import ShipModel
+from engine.models.ship_part import ShipPartModel
+from engine.models.projectiles import PlasmaModel
+from engine.input_handlers import InputHandler
+
+
+class ControllerFactory(object):
+
+    def __init__(self):
+        self.dummy_view_factory = DummyViewFactory()
+        self.dummy_input_handler = InputHandler()
+        self.model_controller_map = {
+            ShipModel: ShipController,
+            ShipPartModel: ShipPartController,
+            PlasmaModel: ProjectileController
+        }
+
+    def manufacture(self, model, input_handler=None):
+        if not input_handler:
+            input_handler = self.dummy_input_handler
+        view = self.dummy_view_factory.manufacture(model)
+        controller_class = self.model_controller_map.get(model.__class__, BaseController)
+        return controller_class(model, view, input_handler)
 
 
 class BaseFactory(object):

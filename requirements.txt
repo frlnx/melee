@@ -3,3 +3,4 @@ pyglet
 pytest
 numpy
 imageio
+twisted
