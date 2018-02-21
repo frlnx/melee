@@ -1,7 +1,6 @@
 from typing import Set
 
 from engine.models.ship import ShipModel, BaseModel
-from engine.views.base_view import BaseView
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
@@ -9,8 +8,8 @@ from engine.input_handlers import InputHandler
 
 class ShipController(BaseController):
 
-    def __init__(self, model: ShipModel, view: BaseView, gamepad: InputHandler):
-        super().__init__(model, view, gamepad)
+    def __init__(self, model: ShipModel, gamepad: InputHandler):
+        super().__init__(model, gamepad)
         self._model = model
         self._target_model = model
         self._possible_targets = [model]

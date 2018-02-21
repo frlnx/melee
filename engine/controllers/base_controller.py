@@ -1,24 +1,18 @@
 from engine.models.base_model import BaseModel
-from engine.views.base_view import BaseView
 from engine.input_handlers import InputHandler
 from engine.physics.force import MutableOffsets
 
 
 class BaseController(object):
 
-    def __init__(self, model: BaseModel, view: BaseView, gamepad: InputHandler):
+    def __init__(self, model: BaseModel, gamepad: InputHandler):
         self._model = model
-        self._view = view
         self._gamepad = gamepad
         self._sub_controllers = set()
 
     @property
     def spawns(self):
         return []
-
-    @property
-    def view(self):
-        return self._view
 
     @property
     def is_alive(self):

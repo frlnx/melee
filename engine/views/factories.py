@@ -1,4 +1,9 @@
+from engine.views.ship_part import ShipPartView
+from engine.views.ship import ShipView
+from engine.models.ship_part import ShipPartModel
+from engine.models.ship import ShipModel
 from engine.models.base_model import BaseModel
+from engine.models.projectiles import PlasmaModel
 from engine.views.base_view import BaseView, DummyView
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
@@ -13,7 +18,7 @@ FILE_TEMPLATE = "objects/{}.obj"
 
 class ViewFactory(object):
 
-    def __init__(self, view_class):
+    def __init__(self, view_class=BaseView):
         self.meshes = {}
         files = ["objects\\" + file_name for file_name in listdir('objects') if file_name.endswith('.obj')]
         self.mesh_factory = OpenGLWaveFrontFactory(files)
@@ -66,3 +71,26 @@ class DummyViewFactory(ViewFactory):
 
     def manufacture(self, model: BaseModel) -> BaseView:
         return self._view
+
+
+class DynamicViewFactory(ViewFactory):
+
+    model_view_map = {
+        BaseModel: BaseView,
+        ShipModel: ShipView,
+        ShipPartModel: ShipPartView,
+        PlasmaModel: BaseView
+    }
+
+    def manufacture(self, model: BaseModel):
+        view_class = self.model_view_map[model.__class__]
+        if model.mesh is not None:
+            mesh = self.mesh_factory.manufacture(model.mesh)
+        else:
+            mesh = None
+        ship_view = view_class(model, mesh=mesh)
+        if hasattr(model, 'parts'):
+            for part in model.parts:
+                sub_view = self.manufacture(part)
+                ship_view.add_sub_view(sub_view)
+        return ship_view

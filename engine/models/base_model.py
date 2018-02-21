@@ -26,6 +26,15 @@ class BaseModel(object):
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
 
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        del d['_observers']
+        return d
+
+    @property
+    def is_alive(self):
+        return True
+
     @property
     def data_dict(self):
         return {"uuid": self.uuid, "position": list(self.position.xyz), "rotation": self.rotation.yaw,

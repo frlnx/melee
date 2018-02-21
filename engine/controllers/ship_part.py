@@ -1,7 +1,6 @@
 from typing import Callable
 
 from engine.controllers.base_controller import BaseController
-from engine.views.base_view import BaseView
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableForce, Degrees
 from engine.input_handlers import InputHandler
@@ -11,10 +10,9 @@ from math import sin, cos, radians
 
 class ShipPartController(BaseController):
 
-    def __init__(self, model: ShipPartModel, view: BaseView, gamepad: InputHandler, spawn_func: Callable):
-        super().__init__(model, view, gamepad)
+    def __init__(self, model: ShipPartModel, gamepad: InputHandler, spawn_func: Callable):
+        super().__init__(model, gamepad)
         self._model = model
-        self._view = view
         self._spawn_func = spawn_func
         yaw = self._model.rotation[1]
         self._force_vector = MutableForce(self._model.position,

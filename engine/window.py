@@ -1,7 +1,7 @@
 import ctypes
 
 from engine.views.base_view import BaseView
-from engine.views.factories import ViewFactory
+from engine.views.factories import DynamicViewFactory
 
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
 from pyglet.gl import GL_DIFFUSE, GLfloat, GL_AMBIENT
@@ -15,7 +15,7 @@ class Window(pyglet.window.Window):
     def __init__(self):
         super().__init__(width=1280, height=720)
         self.lightfv = ctypes.c_float * 4
-        self.view_factory = ViewFactory(BaseView)
+        self.view_factory = DynamicViewFactory()
         self.views = set()
         self.new_views = set()
         self.del_views = set()
@@ -25,11 +25,13 @@ class Window(pyglet.window.Window):
 
     def spawn(self, model):
         view = self.view_factory.manufacture(model)
+        self.spawn_sound.play()
         self.new_views.add(view)
         if self.center is None:
             self.center = view
 
     def add_view(self, view: BaseView):
+        raise Exception("Depricated")
         self.spawn_sound.play()
         self.new_views.add(view)
         if self.center is None:
