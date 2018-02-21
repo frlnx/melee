@@ -17,7 +17,6 @@ class GamePad(InputHandler):
         joystick.push_handlers(self)
 
     def on_joyaxis_motion(self, joystick, axis, value):
-        print(joystick, axis, value)
         negative_axis = "-{}".format(axis)
         if value < 0:
             self.axis[negative_axis] = value ** 2
