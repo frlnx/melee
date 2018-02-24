@@ -1,11 +1,9 @@
 from engine.models.base_model import BaseModel
 from engine.models.factories import ShipModelFactory
 from engine.controllers.factories import ControllerFactory
-from engine.input_handlers import GamePad
 from engine.pigtwisted import TwistedEventLoop
-from engine.window import Window
 
-import pyglet
+import random
 from typing import Callable
 
 
@@ -15,17 +13,21 @@ class Engine(TwistedEventLoop):
 
     def __init__(self):
         super().__init__()
-        self.controllers = set()
+        self.local_controllers = set()
+        self.remote_controllers = set()
         self.ships = set()
         self.smf = ShipModelFactory()
         self.controller_factory = ControllerFactory()
         self.has_exit = True
-        self.window = Window()
         self.clock.schedule(self.update)
         self.clock.set_fps_limit(60)
         self._new_model_callbacks = set()
         self._model_rollback = list()
-        self.gamepad = GamePad(0)
+        self.rnd = random.seed()
+
+    @property
+    def controllers(self):
+        return self.local_controllers | self.remote_controllers
 
     def observe_new_models(self, func: Callable):
         self._new_model_callbacks.add(func)
@@ -53,13 +55,19 @@ class Engine(TwistedEventLoop):
             pass
 
     def on_enter(self):
-        model = self.smf.manufacture("wolf")
+        model = self.smf.manufacture("wolf", position=self.random_position())
         self._new_model_callback(model)
-        ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
+        ship = self.controller_factory.manufacture(model)
         self.propagate_target(ship)
-        self.window.spawn(ship._model)
         self.controllers.add(ship)
         self.ships.add(ship)
+
+    @staticmethod
+    def random_position():
+        x = random.randint(-10, 10)
+        y = 0
+        z = random.randint(-10, 10)
+        return x, y, z
 
     def spawn_with_callback(self, model: BaseModel):
         self._new_model_callback(model)
@@ -67,11 +75,9 @@ class Engine(TwistedEventLoop):
 
     def spawn(self, model: BaseModel):
         controller = self.controller_factory.manufacture(model)
-        self.window.spawn(model)
         self.controllers.add(controller)
 
     def decay(self, controller):
-        self.window.del_view(controller.view)
         self.controllers.remove(controller)
         # TODO: Deregister target
 

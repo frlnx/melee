@@ -2,10 +2,11 @@
 
 from engine.network.server_factory import EventClientFactory
 from engine.pigtwisted import install
-from engine import Engine
+from engine import ClientEngine
+
 
 def main():
-    engine = Engine()
+    engine = ClientEngine()
     install(engine)
     from twisted.internet import reactor
     factory = EventClientFactory(engine)

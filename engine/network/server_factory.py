@@ -1,6 +1,6 @@
 from twisted.internet.protocol import ServerFactory
 
-from engine import Engine
+from engine.engine import Engine
 from engine.network.client_protocol import ClientProtocol
 from engine.network.broadcast_protocol import BroadcastProtocol
 
@@ -29,21 +29,22 @@ class BroadcastServerFactory(ServerFactory):
 
     protocol = BroadcastProtocol
 
-    def __init__(self):
+    def __init__(self, engine):
         self.clients = set()
+        self.engine = engine
 
     def startedConnecting(self, arg):
         print("Started connecting {}".format(arg))
 
-    def clientConnectionLost(self):
-        print("Lost client")
+    def clientConnectionLost(self, *args):
+        print("Lost client", *args)
 
     def buildProtocol(self, addr):
-        p = self.protocol(self)
-        return p
+        return self.protocol(self, self.engine)
 
-    def broadcast(self, origin_client, frame):
+    def broadcast(self, frame, original_client_uuid):
+        print("Broadcasting!")
         for client in self.clients:
-            if client == origin_client:
+            if client.uuid == original_client_uuid:
                 continue
-            client.message(frame)
+            client.send(frame)

@@ -17,7 +17,6 @@ class BaseView(object):
         if mesh:
             self._mesh = mesh
         else:
-            print("No mesh for {}".format(model.name))
             self._draw = self._draw_nothing
 
     def set_model(self, model: BaseModel):

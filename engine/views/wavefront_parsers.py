@@ -105,7 +105,8 @@ class MaterialParser(object):
         try:
             func = self.parser_map[instruction]
         except KeyError:
-            print("Don't know how to interpret instruction {}".format(instruction))
+            pass
+            #print("Don't know how to interpret instruction {}".format(instruction))
         else:
             key, value = func(data)
             self._material_data[key] = value
@@ -159,7 +160,7 @@ class ObjectParser(object):
 
     def _parse_line(self, line: str):
         instruction, data = line.split(' ', 1)
-        func = self.parser_map.get(instruction, print)
+        func = self.parser_map.get(instruction, lambda x: print(line))
         func(data)
 
     def set_name(self, name):
