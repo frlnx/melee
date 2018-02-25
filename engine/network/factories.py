@@ -1,11 +1,11 @@
-from twisted.internet.protocol import ServerFactory
+from twisted.internet.protocol import ServerFactory, ClientFactory
 
 from engine.engine import Engine
 from engine.network.client_protocol import ClientProtocol
 from engine.network.broadcast_protocol import BroadcastProtocol
 
 
-class EventClientFactory(ServerFactory):
+class EventClientFactory(ClientFactory):
 
     protocol = ClientProtocol
 
@@ -15,10 +15,10 @@ class EventClientFactory(ServerFactory):
     def startedConnecting(self, arg):
         print("Started connecting {}".format(arg))
 
-    def clientConnectionLost(self):
+    def clientConnectionLost(self, connector, reason):
         print("Lost client")
 
-    def clientConnectionFailed(self, reason):
+    def clientConnectionFailed(self, connector, reason):
         print("Failed to connect! {}".format(reason))
 
     def buildProtocol(self, addr):
@@ -36,8 +36,8 @@ class BroadcastServerFactory(ServerFactory):
     def startedConnecting(self, arg):
         print("Started connecting {}".format(arg))
 
-    def clientConnectionLost(self, *args):
-        print("Lost client", *args)
+    def clientConnectionLost(self, connector, reason):
+        print("Lost client")
 
     def buildProtocol(self, addr):
         return self.protocol(self, self.engine)

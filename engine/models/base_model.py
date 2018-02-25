@@ -26,9 +26,12 @@ class BaseModel(object):
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
 
+    def __repr__(self):
+        return "{} {}".format(self.__class__.__name__, self.uuid)
+
     def __getstate__(self):
-        d = self.__dict__.copy()
-        del d['_observers']
+        d = {k: val for k, val in self.__dict__.items()}
+        d['_observers'] = set()
         return d
 
     @property

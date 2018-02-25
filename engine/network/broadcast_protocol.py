@@ -20,5 +20,9 @@ class BroadcastProtocol(EventProtocol):
         print("Lost a client!")
         self.factory.clients.remove(self)
 
+    def spawn_model(self, frame):
+        self.engine.spawn(frame['model'])
+        self.broadcast(frame)
+
     def broadcast(self, frame):
         self.factory.broadcast(frame, self.uuid)

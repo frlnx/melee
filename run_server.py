@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from engine.network.server_factory import BroadcastServerFactory
+from engine.network.factories import BroadcastServerFactory
 from engine.pigtwisted import install
 from engine import ServerEngine
 

@@ -11,16 +11,17 @@ class ClientProtocol(EventProtocol):
         self.engine = engine
         self.commands.update({
             "spawn": self.spawn_model,
-            "handshake": self.handshake
         })
         
     def connectionMade(self):
         super(ClientProtocol, self).connectionMade()
         self.engine.observe_new_models(self.engine_callback_new_model)
         self.engine.clock.schedule_interval(self.initiate_ping, interval=10)
+        for c in self.engine.local_controllers:
+            self.send_spawn_model(c._model)
 
     def engine_callback_new_model(self, model):
-        self.send({"command": "spawn", "model": model})
+        self.send_spawn_model(model)
 
     def spawn_model(self, frame):
         self.engine.spawn(frame['model'])

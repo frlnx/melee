@@ -1,10 +1,11 @@
 from twisted.internet.protocol import Protocol, connectionDone
+from twisted.protocols.basic import Int32StringReceiver
 import pickle
 from datetime import datetime
 from uuid import uuid4
 
 
-class EventProtocol(Protocol):
+class EventProtocol(Int32StringReceiver):
 
     version = (1, 0, 0)
 
@@ -14,33 +15,40 @@ class EventProtocol(Protocol):
         self.commands = {
             "handshake": self.handshake,
             "ping": self.ping,
-            "pong": self.pong
+            "pong": self.pong,
+            "spawn": self.spawn_model
         }
         self.uuid = uuid4()
 
     def connectionMade(self):
         self.send({"command": "handshake", "versions": {"protocol": self.version}})
         self.initiate_ping(None)
+        for c in self.engine.controllers:
+            self.send_spawn_model(c._model)
 
     @staticmethod
     def serialize(d: dict):
-        return pickle.dumps(d, protocol=-1)
+        ser = pickle.dumps(d, protocol=-1)
+        return ser
 
     @staticmethod
-    def deserialize(m: object):
+    def deserialize(m: bytes):
         return pickle.loads(m)
 
     def send(self, frame: dict):
-        print(">> {}".format(frame))
         ser = self.serialize(frame)
-        self.transport.write(ser)
+        print("<< {} {}".format(len(ser), frame))
+        self.sendString(ser)
+
+    def send_spawn_model(self, model):
+        self.send({"command": "spawn", "model": model})
 
     def connectionLost(self, reason=connectionDone):
         pass
 
-    def dataReceived(self, data):
+    def stringReceived(self, data):
         frame = self.deserialize(data)
-        print("<< {}".format(frame))
+        print(">> {} {}".format(len(data), frame))
         self.commands.get(frame['command'], self.print_frame)(frame)
 
     def print_frame(self, frame):

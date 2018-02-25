@@ -1,7 +1,9 @@
 from engine.models.base_model import BaseModel
+from engine.models.ship import ShipModel
 from engine.models.factories import ShipModelFactory
 from engine.controllers.factories import ControllerFactory
 from engine.pigtwisted import TwistedEventLoop
+from engine.input_handlers import InputHandler
 
 import random
 from typing import Callable
@@ -22,8 +24,8 @@ class Engine(TwistedEventLoop):
         self.clock.schedule(self.update)
         self.clock.set_fps_limit(60)
         self._new_model_callbacks = set()
-        self._model_rollback = list()
         self.rnd = random.seed()
+        self.gamepad = InputHandler()
 
     @property
     def controllers(self):
@@ -31,22 +33,10 @@ class Engine(TwistedEventLoop):
 
     def observe_new_models(self, func: Callable):
         self._new_model_callbacks.add(func)
-        self._rollback_for_new_observer(func)
-
-    def _rollback_for_new_observer(self, func):
-        dead_models = []
-        for model in self._model_rollback:
-            if not model.is_alive:
-                dead_models.append(model)
-            else:
-                func(model)
-        for dead_model in dead_models:
-            self._model_rollback.remove(dead_model)
 
     def _new_model_callback(self, model):
         for _new_model_observer in self._new_model_callbacks:
             _new_model_observer(model)
-        self._model_rollback.append(model)
 
     def unobserve_new_models(self, func: Callable):
         try:
@@ -57,9 +47,9 @@ class Engine(TwistedEventLoop):
     def on_enter(self):
         model = self.smf.manufacture("wolf", position=self.random_position())
         self._new_model_callback(model)
-        ship = self.controller_factory.manufacture(model)
+        ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
         self.propagate_target(ship)
-        self.controllers.add(ship)
+        self.local_controllers.add(ship)
         self.ships.add(ship)
 
     @staticmethod
@@ -71,11 +61,20 @@ class Engine(TwistedEventLoop):
 
     def spawn_with_callback(self, model: BaseModel):
         self._new_model_callback(model)
-        self.spawn(model)
+        controller = self.controller_factory.manufacture(model, input_handler=self.gamepad)
+        self.local_controllers.add(controller)
+        if isinstance(model, ShipModel):
+            self.spawn_ship(controller)
 
     def spawn(self, model: BaseModel):
         controller = self.controller_factory.manufacture(model)
-        self.controllers.add(controller)
+        self.remote_controllers.add(controller)
+        if isinstance(model, ShipModel):
+            self.spawn_ship(controller)
+
+    def spawn_ship(self, controller):
+        self.propagate_target(controller)
+        self.ships.add(controller)
 
     def decay(self, controller):
         self.controllers.remove(controller)

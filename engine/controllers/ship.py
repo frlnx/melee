@@ -74,8 +74,8 @@ class ShipController(BaseController):
                 self._button_config[button]()
                 buttons_done.add(button)
         self._gamepad.buttons -= buttons_done
-        if len(self._gamepad.buttons) > 0:
-            print(self._gamepad.buttons)
+        #if len(self._gamepad.buttons) > 0:
+        #    print(self._gamepad.buttons)
 
     def move_to(self, location):
         self._model.set_position(*location)
