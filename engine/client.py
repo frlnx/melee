@@ -1,5 +1,5 @@
 from engine.models.base_model import BaseModel
-from engine.input_handlers import GamePad
+from engine.input_handlers import GamePad, Keyboard
 from engine.window import Window
 from engine.engine import Engine
 
@@ -11,7 +11,10 @@ class ClientEngine(Engine):
     def __init__(self, gamepad_id=0):
         super().__init__()
         self.window = Window()
-        self.gamepad = GamePad(gamepad_id)
+        try:
+            self.gamepad = GamePad(gamepad_id)
+        except:
+            self.gamepad = Keyboard(self.window)
 
     def on_enter(self):
         model = self.smf.manufacture("wolf", position=self.random_position())

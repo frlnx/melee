@@ -8,6 +8,23 @@ class InputHandler(object):
         self.buttons = set()
 
 
+class Keyboard(InputHandler):
+
+    def __init__(self, window):
+        super(Keyboard, self).__init__()
+        window.on_key_press = self.on_key_press
+        window.on_key_release = self.on_key_release
+
+    def on_key_press(self, symbol, modifiers):
+        self.buttons.add(symbol)
+
+    def on_key_release(self, symbol, modifiers):
+        try:
+            self.buttons.remove(symbol)
+        except KeyError:
+            pass
+
+
 class GamePad(InputHandler):
 
     def __init__(self, joystick_id):

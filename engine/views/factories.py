@@ -10,7 +10,7 @@ from engine.physics.polygon import Polygon
 
 from pywavefront import Wavefront
 from engine.views.opengl_mesh import OpenGLWaveFrontFactory
-from os import listdir
+from os import listdir, path
 
 
 FILE_TEMPLATE = "objects/{}.obj"
@@ -20,7 +20,7 @@ class ViewFactory(object):
 
     def __init__(self, view_class=BaseView):
         self.meshes = {}
-        files = ["objects\\" + file_name for file_name in listdir('objects') if file_name.endswith('.obj')]
+        files = [path.join("objects", file_name) for file_name in listdir('objects') if file_name.endswith('.obj')]
         self.mesh_factory = OpenGLWaveFrontFactory(files)
         self._view_class = view_class
         self.pre_factorized_views = []

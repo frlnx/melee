@@ -3,26 +3,18 @@ from engine.network.event_protocol import EventProtocol
 
 class BroadcastProtocol(EventProtocol):
 
-    def __init__(self, factory, engine):
-        super().__init__(factory, engine)
+    def __init__(self, engine, broadcast_func):
+        super().__init__(engine)
         self.engine = engine
         commands = {
             "spawn": self.broadcast
         }
         self.commands.update(commands)
-
-    def connectionMade(self):
-        print("Got new client!")
-        self.factory.clients.add(self)
-        self.send({"command": "handshake", "versions": {"protocol": self.version}})
-
-    def connectionLost(self, reason):
-        print("Lost a client!")
-        self.factory.clients.remove(self)
+        self.broadcast_func = broadcast_func
 
     def spawn_model(self, frame):
-        self.engine.spawn(frame['model'])
+        super(BroadcastProtocol, self).spawn_model(frame)
         self.broadcast(frame)
 
     def broadcast(self, frame):
-        self.factory.broadcast(frame, self.uuid)
+        self.broadcast_func(frame, self.uuid)

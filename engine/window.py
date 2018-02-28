@@ -21,18 +21,11 @@ class Window(pyglet.window.Window):
         self.del_views = set()
         self.center = None
         self.backdrop = Wavefront("objects/backdrop.obj")
-        self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
+        #self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
 
     def spawn(self, model):
         view = self.view_factory.manufacture(model)
-        self.spawn_sound.play()
-        self.new_views.add(view)
-        if self.center is None:
-            self.center = view
-
-    def add_view(self, view: BaseView):
-        raise Exception("Depricated")
-        self.spawn_sound.play()
+        #self.spawn_sound.play()
         self.new_views.add(view)
         if self.center is None:
             self.center = view
@@ -81,3 +74,4 @@ class Window(pyglet.window.Window):
     def remove_views(self):
         self.views = self.views - self.del_views
         self.del_views.clear()
+

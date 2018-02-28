@@ -1,4 +1,4 @@
-from twisted.internet.protocol import Protocol, connectionDone
+from twisted.internet.protocol import connectionDone
 from twisted.protocols.basic import Int32StringReceiver
 import pickle
 from datetime import datetime
@@ -9,9 +9,9 @@ class EventProtocol(Int32StringReceiver):
 
     version = (1, 0, 0)
 
-    def __init__(self, factory, engine):
-        self.factory = factory
+    def __init__(self, engine):
         self.engine = engine
+        self._latency = 0
         self.commands = {
             "handshake": self.handshake,
             "ping": self.ping,
@@ -19,6 +19,11 @@ class EventProtocol(Int32StringReceiver):
             "spawn": self.spawn_model
         }
         self.uuid = uuid4()
+        self.known_models = set()
+        self.controlled_model = None
+
+    def get_latency(self):
+        return self._latency
 
     def connectionMade(self):
         self.send({"command": "handshake", "versions": {"protocol": self.version}})
@@ -41,7 +46,14 @@ class EventProtocol(Int32StringReceiver):
         self.sendString(ser)
 
     def send_spawn_model(self, model):
-        self.send({"command": "spawn", "model": model})
+        if model not in self.known_models:
+            self.send({"command": "spawn", "model": model})
+
+    def spawn_model(self, frame):
+        if self.controlled_model is None:
+            self.controlled_model = frame['model']
+        self.known_models.add(frame['model'])
+        self.engine.spawn(frame['model'])
 
     def connectionLost(self, reason=connectionDone):
         pass
@@ -65,4 +77,6 @@ class EventProtocol(Int32StringReceiver):
         self.send({"command": "pong", "ts": frame['ts']})
 
     def pong(self, frame):
-        print(datetime.now().timestamp() - frame['ts'], "latency")
+        latency = datetime.now().timestamp() - frame['ts']
+        self._latency = latency
+        print(latency, "latency")
