@@ -18,6 +18,7 @@ class ClientEngine(Engine):
 
     def on_enter(self):
         model = self.smf.manufacture("wolf", position=self.random_position())
+        self.models[model.uuid] = model
         self._new_model_callback(model)
         ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
         self.propagate_target(ship)

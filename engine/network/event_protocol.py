@@ -19,8 +19,6 @@ class EventProtocol(Int32StringReceiver):
             "spawn": self.spawn_model
         }
         self.uuid = uuid4()
-        self.known_models = set()
-        self.controlled_model = None
 
     def get_latency(self):
         return self._latency
@@ -28,8 +26,8 @@ class EventProtocol(Int32StringReceiver):
     def connectionMade(self):
         self.send({"command": "handshake", "versions": {"protocol": self.version}})
         self.initiate_ping(None)
-        for c in self.engine.controllers:
-            self.send_spawn_model(c._model)
+        for model in self.engine.models.values():
+            self.send_spawn_model(model)
 
     @staticmethod
     def serialize(d: dict):
@@ -46,13 +44,9 @@ class EventProtocol(Int32StringReceiver):
         self.sendString(ser)
 
     def send_spawn_model(self, model):
-        if model not in self.known_models:
-            self.send({"command": "spawn", "model": model})
+        self.send({"command": "spawn", "model": model})
 
     def spawn_model(self, frame):
-        if self.controlled_model is None:
-            self.controlled_model = frame['model']
-        self.known_models.add(frame['model'])
         self.engine.spawn(frame['model'])
 
     def connectionLost(self, reason=connectionDone):

@@ -17,8 +17,6 @@ class ClientProtocol(EventProtocol):
         super(ClientProtocol, self).connectionMade()
         self.engine.observe_new_models(self.engine_callback_new_model)
         self.engine.clock.schedule_interval(self.initiate_ping, interval=10)
-        for model in self.engine.models.values():
-            self.send_spawn_model(model)
 
     def engine_callback_new_model(self, model):
         self.send_spawn_model(model)

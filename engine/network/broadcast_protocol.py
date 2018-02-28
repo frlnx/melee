@@ -11,9 +11,14 @@ class BroadcastProtocol(EventProtocol):
         }
         self.commands.update(commands)
         self.broadcast_func = broadcast_func
+        self.known_models = set()
+        self.controlled_model = None
 
     def spawn_model(self, frame):
         super(BroadcastProtocol, self).spawn_model(frame)
+        if self.controlled_model is None:
+            self.controlled_model = frame['model']
+        self.known_models.add(frame['model'])
         self.broadcast(frame)
 
     def broadcast(self, frame):

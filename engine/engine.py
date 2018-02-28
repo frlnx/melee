@@ -63,9 +63,9 @@ class Engine(TwistedEventLoop):
 
     @staticmethod
     def random_position():
-        x = random.randint(-10, 10)
+        x = random.randint(-20, 20)
         y = 0
-        z = random.randint(-10, 10)
+        z = random.randint(-20, 20)
         return x, y, z
 
     def spawn_with_callback(self, model: BaseModel):
