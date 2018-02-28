@@ -59,6 +59,7 @@ class ShipPartModelFactory(object):
     def manufacture(self, name,  **placement_config) -> ShipPartModel:
         config = deepcopy(self.ship_parts[name])
         config['button'] = placement_config.get('button')
+        config['keyboard'] = placement_config.get('keyboard')
         config['axis'] = placement_config.get('axis')
         position = MutableOffsets(*placement_config.get('position', (0, 0, 0)))
         rotation = MutableDegrees(*placement_config.get('rotation', (0, 0, 0)))

@@ -1,4 +1,5 @@
 from pyglet.input import get_joysticks
+from pyglet.window import key
 
 
 class InputHandler(object):
@@ -16,11 +17,14 @@ class Keyboard(InputHandler):
         window.on_key_release = self.on_key_release
 
     def on_key_press(self, symbol, modifiers):
-        self.buttons.add(symbol)
+        key_name = key._key_names[symbol]
+        self.buttons.add(key_name)
+        print(key_name)
 
     def on_key_release(self, symbol, modifiers):
+        key_name = key._key_names[symbol]
         try:
-            self.buttons.remove(symbol)
+            self.buttons.remove(key_name)
         except KeyError:
             pass
 

@@ -10,6 +10,7 @@ class ShipPartModel(BaseModel):
         self._name = name
         self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
         self.button = part_spec.get('button')
+        self.keyboard = part_spec.get('keyboard')
         self.axis = part_spec.get('axis')
         self._state = "idle"
         self._mesh = part_spec.get('mesh')

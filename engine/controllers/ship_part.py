@@ -31,7 +31,8 @@ class ShipPartController(BaseController):
                 self._model.state_transition_possible_to(self._model.state_spec['next state']):
             self._model.set_state(self._model.state_spec['next state'])
 
-        if self._model.button in self._gamepad.buttons and self._model.state_transition_possible_to('button'):
+        if (self._model.button in self._gamepad.buttons or self._model.keyboard in self._gamepad.buttons) and \
+                self._model.state_transition_possible_to('button'):
             try:
                 self._model.set_state('button')
             except AssertionError:
