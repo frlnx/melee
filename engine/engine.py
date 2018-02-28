@@ -30,7 +30,10 @@ class Engine(TwistedEventLoop):
 
     def update_model(self, frames):
         for frame in frames:
-            self.models[frame['uuid']].set_data(frame)
+            try:
+                self.models[frame['uuid']].set_data(frame)
+            except KeyError:
+                pass
 
     @property
     def controllers(self):
