@@ -44,15 +44,17 @@ class UpdateServerProtocol(UpdateProtocol):
 
     def datagramReceived(self, datagram, addr):
         super(UpdateServerProtocol, self).datagramReceived(datagram, addr)
-        self.broadcast(datagram)
+        self.broadcast(datagram, ignore=addr)
 
     def send(self, data):
         ser = self.serialize(data)
         self.broadcast(ser)
 
-    def broadcast(self, ser: bytes):
+    def broadcast(self, ser: bytes, ignore=None):
         print("<< {} UDP".format(len(ser)))
         for address in self.addresses:
+            if ignore and ignore == address:
+                continue
             self.transport.write(ser, address)
 
 
@@ -67,7 +69,6 @@ class UpdateClientProtocol(UpdateProtocol):
         self.transport.connect(self.host, self.port)
 
     def start(self):
-        self.engine.clock.schedule_interval(self.update, interval=1)
         self.engine.my_model.observe(self.client_movement)
 
     def client_movement(self):

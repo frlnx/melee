@@ -14,7 +14,7 @@ def main():
     factory = BroadcastServerFactory(engine, update_protocol)
     reactor.listenTCP(8000, factory)
     reactor.listenUDP(8001, update_protocol)
-    reactor.run()
+    reactor.run(call_interval=1/60)
 
 if __name__ == "__main__":
     main()
