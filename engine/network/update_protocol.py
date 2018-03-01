@@ -15,7 +15,6 @@ class UpdateProtocol(DatagramProtocol):
         self.send(data)
 
     def datagramReceived(self, datagram, addr):
-        print(">> {} UDP".format(len(datagram)))
         frame = self.deserialize(datagram)
         self.engine.update_model(frame)
 
@@ -51,7 +50,6 @@ class UpdateServerProtocol(UpdateProtocol):
         self.broadcast(ser)
 
     def broadcast(self, ser: bytes, ignore=None):
-        print("<< {} UDP".format(len(ser)))
         for address in self.addresses:
             if ignore and ignore == address:
                 continue
