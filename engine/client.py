@@ -15,8 +15,6 @@ class ClientEngine(Engine):
             self.gamepad = GamePad(gamepad_id)
         except:
             self.gamepad = Keyboard(self.window)
-        self.my_model = self.smf.manufacture("wolf", position=self.random_position())
-        self.models[self.my_model.uuid] = self.my_model
 
     def on_enter(self):
         super(ClientEngine, self).on_enter()

@@ -5,10 +5,6 @@ class BroadcastProtocol(EventProtocol):
 
     def __init__(self, engine, broadcast_func):
         super().__init__(engine)
-        commands = {
-            "spawn": self.broadcast
-        }
-        self.commands.update(commands)
         self.broadcast_func = broadcast_func
         self.known_models = set()
         self.controlled_model = None

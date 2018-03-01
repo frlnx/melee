@@ -73,6 +73,7 @@ class Engine(TwistedEventLoop):
             self.spawn_ship(controller)
 
     def spawn(self, model: BaseModel):
+        print("Spawning from network", model.uuid)
         controller = self.controller_factory.manufacture(model)
         self.models[model.uuid] = model
         self.controllers.add(controller)
