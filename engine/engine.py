@@ -15,8 +15,7 @@ class Engine(TwistedEventLoop):
 
     def __init__(self):
         super().__init__()
-        self.local_controllers = set()
-        self.remote_controllers = set()
+        self.controllers = set()
         self.ships = set()
         self.smf = ShipModelFactory()
         self.controller_factory = ControllerFactory()
@@ -27,6 +26,8 @@ class Engine(TwistedEventLoop):
         self.rnd = random.seed()
         self.gamepad = InputHandler()
         self.models = {}
+        self.my_model = self.smf.manufacture("wolf", position=self.random_position())
+        self.models[self.my_model.uuid] = self.my_model
 
     def update_model(self, frames):
         for frame in frames:
@@ -34,10 +35,6 @@ class Engine(TwistedEventLoop):
                 self.models[frame['uuid']].set_data(frame)
             except KeyError:
                 pass
-
-    @property
-    def controllers(self):
-        return self.local_controllers | self.remote_controllers
 
     def observe_new_models(self, func: Callable):
         self._new_model_callbacks.add(func)
@@ -53,12 +50,11 @@ class Engine(TwistedEventLoop):
             pass
 
     def on_enter(self):
-        model = self.smf.manufacture("wolf", position=self.random_position())
+        model = self.my_model
         self._new_model_callback(model)
-        self.models[model.uuid] = model
         ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
         self.propagate_target(ship)
-        self.local_controllers.add(ship)
+        self.controllers.add(ship)
         self.ships.add(ship)
 
     @staticmethod
@@ -72,14 +68,14 @@ class Engine(TwistedEventLoop):
         self._new_model_callback(model)
         self.models[model.uuid] = model
         controller = self.controller_factory.manufacture(model, input_handler=self.gamepad)
-        self.local_controllers.add(controller)
+        self.controllers.add(controller)
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
 
     def spawn(self, model: BaseModel):
         controller = self.controller_factory.manufacture(model)
         self.models[model.uuid] = model
-        self.remote_controllers.add(controller)
+        self.controllers.add(controller)
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
 

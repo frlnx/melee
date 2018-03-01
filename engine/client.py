@@ -16,16 +16,11 @@ class ClientEngine(Engine):
         except:
             self.gamepad = Keyboard(self.window)
         self.my_model = self.smf.manufacture("wolf", position=self.random_position())
+        self.models[self.my_model.uuid] = self.my_model
 
     def on_enter(self):
-        model = self.my_model
-        self.models[model.uuid] = model
-        self._new_model_callback(model)
-        ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
-        self.propagate_target(ship)
-        self.window.spawn(ship._model)
-        self.local_controllers.add(ship)
-        self.ships.add(ship)
+        super(ClientEngine, self).on_enter()
+        self.window.spawn(self.my_model)
 
     def spawn(self, model: BaseModel):
         super(ClientEngine, self).spawn(model)
@@ -37,6 +32,5 @@ class ClientEngine(Engine):
 
     def decay(self, controller):
         self.window.del_view(controller.view)
-        self.remote_controllers.remove(controller)
-        self.local_controllers.remove(controller)
+        self.controllers.remove(controller)
         # TODO: Deregister target

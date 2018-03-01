@@ -19,7 +19,6 @@ class Keyboard(InputHandler):
     def on_key_press(self, symbol, modifiers):
         key_name = key._key_names[symbol]
         self.buttons.add(key_name)
-        print(key_name)
 
     def on_key_release(self, symbol, modifiers):
         key_name = key._key_names[symbol]

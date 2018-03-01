@@ -5,7 +5,6 @@ class BroadcastProtocol(EventProtocol):
 
     def __init__(self, engine, broadcast_func):
         super().__init__(engine)
-        self.engine = engine
         commands = {
             "spawn": self.broadcast
         }

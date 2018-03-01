@@ -120,7 +120,7 @@ class TestApplyForce(object):
         force.set_force(1.0)
         self.target.apply_global_force(force)
         x, y, z = self.target.movement
-        assert (round(x, 2), round(y, 2), round(z, 2)) == (-0.1, 0, 0)
+        assert (round(x, 1), round(y, 1), round(z, 1)) == (-0.1, 0, 0)
 
     def _test_force_applied_lateral_to_center_of_mass_rotates_and_moves(self):
         x_offset = 2
