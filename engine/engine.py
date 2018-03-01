@@ -26,6 +26,7 @@ class Engine(TwistedEventLoop):
         self._new_model_callbacks = set()
         self.rnd = random.seed()
         self.gamepad = InputHandler()
+        self.my_model = None
         self.models = {}
 
     def update_model(self, frames):
@@ -56,6 +57,7 @@ class Engine(TwistedEventLoop):
         model = self.smf.manufacture("wolf", position=self.random_position())
         self._new_model_callback(model)
         self.models[model.uuid] = model
+        self.my_model = model
         ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
         self.propagate_target(ship)
         self.local_controllers.add(ship)

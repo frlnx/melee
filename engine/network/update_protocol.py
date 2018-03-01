@@ -64,6 +64,10 @@ class UpdateClientProtocol(UpdateProtocol):
 
     def start(self):
         self.engine.clock.schedule_interval(self.update, interval=1)
+        self.engine.my_model.observe(self.client_movement)
+
+    def client_movement(self):
+        self.send(self.engine.my_model.data_dict)
 
     def send(self, data):
         ser = self.serialize(data)
