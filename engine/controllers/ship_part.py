@@ -32,9 +32,9 @@ class ShipPartController(BaseController):
             self._model.set_state(self._model.state_spec['next state'])
 
         if (self._model.button in self._gamepad.buttons or self._model.keyboard in self._gamepad.buttons) and \
-                self._model.state_transition_possible_to('button'):
+                self._model.state_transition_possible_to('active'):
             try:
-                self._model.set_state('button')
+                self._model.set_state('active')
             except AssertionError:
                 pass
             if self._model.state_spec.get('spawn', False):
@@ -44,7 +44,7 @@ class ShipPartController(BaseController):
             axis_value = min(1.0, max(0.0, axis_value))
             self._force_vector.set_force(axis_value * self._model.state_spec.get('thrust generated', 0))
             try:
-                self._model.set_state('axis')
+                self._model.set_state('active')
             except AssertionError:
                 raise
         elif self._model.state_transition_possible_to('idle'):

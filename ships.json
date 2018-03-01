@@ -21,15 +21,14 @@
     "name": "wolf",
     "parts": [
       {"position": [0, 0, 0], "name": "cockpit", "rotation": [0, 0, 0]},
-      {"position": [1, 0, 0], "name": "plasma gun", "button": 6},
-      {"position": [-1, 0, 0], "name": "plasma gun", "button": 7},
-      {"position": [2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "rz", "nickname": "right reverse"},
-      {"position": [-2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "y", "nickname": "left reverse"},
-      {"position": [2, 0, 1], "name": "engine", "rotation": [0, 90, 0], "axis": "-x", "nickname": "right"},
-      {"position": [-2, 0, 1], "name": "engine", "rotation": [0, -90, 0], "axis": "z", "nickname": "left"},
-      {"position": [1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-rz", "nickname": "right forward"},
-      {"position": [-1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-y", "nickname": "left forward"},
-      {"position": [0, -5, 0], "name": "grid ball", "target_indicator": true}
+      {"position": [1, 0, 0], "name": "plasma gun", "button": 6, "keyboard": "E"},
+      {"position": [-1, 0, 0], "name": "plasma gun", "button": 7, "keyboard": "W"},
+      {"position": [2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "rz", "keyboard": "R"},
+      {"position": [-2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "y", "keyboard": "Q"},
+      {"position": [2, 0, 1], "name": "engine", "rotation": [0, 90, 0], "axis": "-x", "keyboard": "F"},
+      {"position": [-2, 0, 1], "name": "engine", "rotation": [0, -90, 0], "axis": "z", "keyboard": "A"},
+      {"position": [1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-rz", "keyboard": "C"},
+      {"position": [-1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-y", "keyboard": "X"}
     ]
   },
   {

@@ -17,7 +17,7 @@
         "name": "idle"
       },
       {
-        "name": "button",
+        "name": "active",
         "spawn": "plasma projectile",
         "required state": "idle",
         "next state": "charging"
@@ -59,7 +59,7 @@
         "name": "idle"
       },
       {
-        "name": "axis",
+        "name": "active",
         "fuel consumption": 10,
         "thrust generated": 1
       }
