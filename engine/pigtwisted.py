@@ -24,6 +24,8 @@ class TwistedEventLoop(pyglet.app.base.EventLoop):
 
 class PygletReactor(_threadedselect.ThreadedSelectReactor):
 
+    max_fps = 120
+
     def __init__(self, event_loop):
         super().__init__()
         self._postQueue = Queue()
@@ -55,7 +57,7 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
             self.pyglet_event_loop.exit()
 
     def run(self, call_interval=1 / 10., installSignalHandlers=True):
-        assert call_interval > 0
+        call_interval = max((1 / self.max_fps), call_interval)
         self.pyglet_event_loop.register_twisted_queue(self._twistedQueue, call_interval)
 
         self.interleave(self._run_in_main_thread, installSignalHandlers=installSignalHandlers)
