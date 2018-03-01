@@ -25,6 +25,7 @@ class BaseModel(object):
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        self.update_needed = False
 
     def __repr__(self):
         return "{} {}".format(self.__class__.__name__, self.uuid)
@@ -108,6 +109,7 @@ class BaseModel(object):
     def update(self):
         self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
         self._callback()
+        self.update_needed = True
 
     @property
     def name(self):
@@ -131,37 +133,44 @@ class BaseModel(object):
             pass
 
     def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
-        self._position.set(x, y, z)
-        self._rotation.set(pitch, yaw, roll)
-        self.update()
+        if self._position.set(x, y, z) or self._rotation.set(pitch, yaw, roll):
+            self.update()
 
     def set_position(self, x, y, z):
-        self._position.set(x, y, z)
-        self.update()
+        if self._position.set(x, y, z):
+            self.update()
 
     def translate(self, *xyz):
         self._position += xyz
-        self.update()
+        if xyz != (0, 0, 0):
+            self.update()
 
     def rotate(self, *pitch_yaw_roll):
         self._rotation += pitch_yaw_roll
-        self.update()
+        if pitch_yaw_roll != (0, 0, 0):
+            self.update()
 
     def set_rotation(self, *pitch_yaw_roll):
-        self._rotation.set(*pitch_yaw_roll)
-        self.update()
+        if self._rotation.set(*pitch_yaw_roll):
+            self.update()
 
     def set_movement(self, dx, dy, dz):
-        self._movement.set(dx, dy, dz)
+        if self._movement.set(dx, dy, dz):
+            self.update()
 
     def add_movement(self, *xyz: list):
         self._movement += xyz
+        if xyz != (0, 0, 0):
+            self.update()
 
     def set_spin(self, *pitch_yaw_roll):
-        self._spin.set(*pitch_yaw_roll)
+        if self._spin.set(*pitch_yaw_roll):
+            self.update()
 
     def add_spin(self, *pitch_yaw_roll):
         self._spin += pitch_yaw_roll
+        if pitch_yaw_roll != (0, 0, 0):
+            self.update()
 
     @property
     def spin(self):

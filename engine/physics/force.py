@@ -73,11 +73,12 @@ class MutableVector(Vector):
 
     def set(self, x, y, z):
         if x == self._x and y == self._y and z == self._z:
-            return
+            return False
         self._x = x
         self._y = y
         self._z = z
         self.update()
+        return True
 
     def update(self):
         pass

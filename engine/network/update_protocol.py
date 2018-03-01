@@ -42,11 +42,15 @@ class UpdateServerProtocol(UpdateProtocol):
     def unregister_address(self, ip, port):
         self.addresses.remove((ip, port))
 
-    def send(self, data):
-        self.broadcast(data)
+    def datagramReceived(self, datagram, addr):
+        super(UpdateServerProtocol, self).datagramReceived(datagram, addr)
+        self.broadcast(datagram)
 
-    def broadcast(self, data):
+    def send(self, data):
         ser = self.serialize(data)
+        self.broadcast(ser)
+
+    def broadcast(self, ser: bytes):
         print("<< {} UDP".format(len(ser)))
         for address in self.addresses:
             self.transport.write(ser, address)
