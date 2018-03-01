@@ -12,8 +12,8 @@ from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
 class OpenGLMesh(WaveFrontObject):
     point_flag_map = {3: GL_TRIANGLES, 4: GL_QUADS}
 
-    def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None):
-        super().__init__(faces, textured_faces, name)
+    def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
+        super().__init__(faces, textured_faces, name, group)
         self.n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
         self.t2f_n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
         self._sort_faces()

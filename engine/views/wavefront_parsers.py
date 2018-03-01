@@ -45,10 +45,11 @@ class TexturedMaterial(Material):
 
 class WaveFrontObject(object):
 
-    def __init__(self, faces: List[Face], textured_faces: List[TexturedFace], name=None):
+    def __init__(self, faces: List[Face], textured_faces: List[TexturedFace], name=None, group=None):
         self._faces = faces
         self._textured_faces = textured_faces
         self.name = name
+        self.group = group
 
 
 class MaterialFactory(object):
@@ -131,10 +132,14 @@ class ObjectParser(object):
         self._vertices = []
         self._normals = []
         self.name = None
+        self.group = None
+        self.smoothing_group = None
         self._vertex_texture_coordinates = []
         self._material_factory = MaterialFactory(material_class, textured_material_class)
         self._current_material_file_name = ""
         self.parser_map = {
+            "g": self.set_group,
+            "s": self.set_smoothing_group,
             "o": lambda x: self.set_name(x[:-4]),
             "v": lambda x: self.add_vertex(*map(float, x.split(" "))),
             "vn": lambda x: self.add_normal(*map(float, x.split(" "))),
@@ -163,7 +168,14 @@ class ObjectParser(object):
         func = self.parser_map.get(instruction, lambda x: print(line))
         func(data)
 
-    def set_name(self, name):
+    def set_group(self, group):
+        self.group = group
+
+    def set_smoothing_group(self, smoothing_group):
+        self.smoothing_group = smoothing_group
+
+    def set_name(self, name: str):
+        assert isinstance(name, str)
         self.name = name
 
     def add_vertex(self, *xyz):
