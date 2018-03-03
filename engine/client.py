@@ -8,12 +8,15 @@ class ClientEngine(Engine):
 
     version = (1, 0, 0)
 
-    def __init__(self, gamepad_id=0):
+    def __init__(self, input_handler=None, window=None):
         super().__init__()
-        self.window = Window()
-        try:
-            self.gamepad = GamePad(gamepad_id)
-        except:
+        if window is None:
+            self.window = Window()
+        else:
+            self.window = window
+        if input_handler is not None:
+            self.gamepad = input_handler
+        else:
             self.gamepad = Keyboard(self.window)
 
     def on_enter(self):
