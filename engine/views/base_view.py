@@ -35,12 +35,28 @@ class BaseView(object):
     def update(self):
         glPushMatrix()
         glLoadIdentity()
-        glTranslatef(*self._model.position)
-        glRotatef(self._model.pitch, 1, 0, 0)
-        glRotatef(self._model.yaw, 0, 1, 0)
-        glRotatef(self._model.roll, 0, 0, 1)
+        glTranslatef(*self.position)
+        glRotatef(self.pitch, 1, 0, 0)
+        glRotatef(self.yaw, 0, 1, 0)
+        glRotatef(self.roll, 0, 0, 1)
         glGetFloatv(GL_MODELVIEW_MATRIX, self._model_view_matrix)
         glPopMatrix()
+
+    @property
+    def position(self):
+        return self._model.position
+
+    @property
+    def pitch(self):
+        return self._model.pitch
+
+    @property
+    def yaw(self):
+        return self._model.yaw
+
+    @property
+    def roll(self):
+        return self._model.roll
 
     def draw(self):
         self.set_up_matrix()
