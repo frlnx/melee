@@ -17,6 +17,11 @@ class ShipPartController(BaseController):
         yaw = self._model.rotation[1]
         self._force_vector = MutableForce(self._model.position,
                                           MutableOffsets(-sin(radians(yaw)), 0, -cos(radians(yaw))))
+        self._model.observe(self.model_changed)
+
+    def model_changed(self):
+        yaw = self._model.rotation[1]
+        self._force_vector.set_forces(-sin(radians(yaw)), 0, -cos(radians(yaw)))
 
     @property
     def moment_force(self):

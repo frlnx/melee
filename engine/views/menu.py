@@ -2,6 +2,7 @@ from typing import List, Callable
 import inspect
 import pyglet
 from engine.views.ship_part import ShipPartView
+from engine.models.ship_part import ShipPartModel
 
 
 class WidgetContainer(object):
@@ -125,7 +126,8 @@ class ShipConfigMenu(Menu):
         self.ship_x = self.x + 640
         self.ship_y = self.y - 300
         self.ship_part_views = [self.factorize_ship_part(part_view) for part_view in ship_model._sub_views]
-        self.buttons += self.ship_part_views
+        for ship_part_view in self.ship_part_views:
+            self.buttons += ship_part_view.buttons
         self.highlightables = self.buttons
         self._grid_left = self.ship_x / 110
         self._grid_right = (1280 - self.ship_x) / 110
@@ -134,9 +136,15 @@ class ShipConfigMenu(Menu):
 
 
     def factorize_ship_part(self, part: ShipPartView):
-        return MenuShipPartView(part, lambda: part._model.translate(0, 1, 0),
+        return MenuShipPartView(part, part._model,
                         part._model.x * 110 + self.ship_x, -part._model.z * 110 + self.ship_y,
                         self.batch, text=part._model.name[:3], width=100, height=100)
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        for button in self.buttons:
+            if button.hit_test(x, y):
+                button.func()
+                break
 
     def draw(self):
         super(ShipConfigMenu, self).draw()
@@ -153,11 +161,11 @@ class ShipConfigMenu(Menu):
 
 
 class MenuItem(object):
-    def __init__(self, text: str, func: Callable, x, y, batch, width=300, height=50):
+    def __init__(self, text: str, func: Callable, x, y, batch, width=300, height=50, font_size=36):
         self.text = text
         self.batch = batch
         self.func = func
-        self.font_size = 36
+        self.font_size = font_size
         self.x = x
         self.y = y
         self.width = width
@@ -183,11 +191,13 @@ class MenuItem(object):
 
 class MenuShipPartView(MenuItem):
 
-    def __init__(self, ship_part: ShipPartView, func: Callable, x, y, batch, text=None, width=100, height=100):
+    def __init__(self, ship_part: ShipPartView, model: ShipPartModel, x, y, batch, text=None, width=100, height=100):
         if text is None:
             text = ''
-        super().__init__(text, func, x, y, batch, width, height)
+        super().__init__(text, lambda: print("Klikk"), x, y, batch, width, height)
         self.ship_part = ship_part
+        self.buttons = [MenuItem('rotate ->', lambda: model.rotate(0, 90, 0), x + width, y + 10, batch,
+                                 width=30, height=10, font_size=10)]
 
     def draw_3d(self):
         self.ship_part.set_up_matrix()

@@ -247,6 +247,11 @@ class MutableForce(Force):
         self.forces = forces
         self.set_force(0)
 
+    def set_forces(self, *xyz):
+        self._original_forces.set(*xyz)
+        x, y, z = xyz
+        self.forces.set(x * self._force_multiplier, y * self._force_multiplier, z * self._force_multiplier)
+
     def __iadd__(self, other):
         self.position += other.position
         self.forces += other.forces
