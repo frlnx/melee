@@ -40,8 +40,7 @@ class Window(pyglet.window.Window):
                                 self.close_menu,
                                 self._menu_configure_ship,
                                 self._menu_controls,
-                                self.connect,
-                                self.host,
+                                self._menu_connect,
                                 self.exit
                             ]))
 
@@ -57,11 +56,11 @@ class Window(pyglet.window.Window):
     def exit(self):
         pass
 
-    def connect(self, host, port):
-        print("Not connecting to {} {}".format(host, port))
+    def _menu_connect(self, host, port):
+        self.connect(host, int(port))
 
-    def host(self, port):
-        print("Not hosting on port {}".format(port))
+    def connect(self, host, port):
+        print("connect not bound yet")
 
     def set_menu(self, menu):
         if self.menu is not None:

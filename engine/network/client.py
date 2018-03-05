@@ -10,8 +10,7 @@ class NetworkClient(object):
         install(engine)
         from twisted.internet import reactor
         self.engine = engine
-        engine.clock.schedule_once(lambda _: self.connect('127.0.0.1'), delay=3)
-        print("T minus 3")
+        self.engine.bind_connect(self.connect)
         self.reactor = reactor
         self.reactor.run(call_interval=1/60)
 

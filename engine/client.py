@@ -19,6 +19,9 @@ class ClientEngine(Engine):
         else:
             self.gamepad = Keyboard(self.window)
 
+    def bind_connect(self, connect_func):
+        self.window.connect = connect_func
+
     def on_enter(self):
         super(ClientEngine, self).on_enter()
         self.window.spawn(self.my_model)
