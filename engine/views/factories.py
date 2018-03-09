@@ -8,20 +8,12 @@ from engine.views.base_view import BaseView, DummyView
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 
-from pywavefront import Wavefront
-from engine.views.opengl_mesh import OpenGLWaveFrontFactory
-from os import listdir, path
-
-
-FILE_TEMPLATE = "objects/{}.obj"
-
 
 class ViewFactory(object):
 
-    def __init__(self, view_class=BaseView):
+    def __init__(self, mesh_factory, view_class=BaseView):
         self.meshes = {}
-        files = [path.join("objects", file_name) for file_name in listdir('objects') if file_name.endswith('.obj')]
-        self.mesh_factory = OpenGLWaveFrontFactory(files)
+        self.mesh_factory = mesh_factory
         self._view_class = view_class
         self.pre_factorized_views = []
         if view_class == BaseView:
@@ -53,12 +45,6 @@ class ViewFactory(object):
             mesh = None
         ship_view = self._view_class(model, mesh=mesh)
         return ship_view
-
-    def manufacture_mesh(self, name) -> Wavefront:
-        file_name = FILE_TEMPLATE.format(name)
-        mesh = Wavefront(file_name)
-        self.meshes[name] = mesh
-        return mesh
 
 
 class DummyViewFactory(ViewFactory):

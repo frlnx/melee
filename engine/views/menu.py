@@ -133,6 +133,8 @@ class ShipConfigMenu(Menu):
         self._grid_right = (1280 - self.ship_x) / 110
         self._grid_up = (720 - self.ship_y) / 110
         self._grid_down = self.ship_y / 110
+        self.dragged_part = None
+        self.dragged_to = (0, 0)
 
 
     def factorize_ship_part(self, part: ShipPartView):
@@ -145,6 +147,20 @@ class ShipConfigMenu(Menu):
             if button.hit_test(x, y):
                 button.func()
                 break
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        super(ShipConfigMenu, self).on_mouse_drag(x, y, dx, dy, buttons, modifiers)
+        if self.dragged_part is None:
+            for ship_part_view in self.ship_part_views:
+                if ship_part_view.hit_test(x, y):
+                    self.dragged_part = ship_part_view
+                    break
+        else:
+            self.dragged_to = (x + dx, y + dy)
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        if self.dragged_part:
+            pass
 
     def draw(self):
         super(ShipConfigMenu, self).draw()
@@ -196,8 +212,26 @@ class MenuShipPartView(MenuItem):
             text = ''
         super().__init__(text, lambda: print("Klikk"), x, y, batch, width, height)
         self.ship_part = ship_part
-        self.buttons = [MenuItem('rotate ->', lambda: model.rotate(0, 90, 0), x + width, y + 10, batch,
-                                 width=30, height=10, font_size=10)]
+        self.buttons = [
+            MenuItem('->', lambda: model.rotate(0, 90, 0),
+                     x + width / 3 * 2, y + height - 20, batch,
+                     width=30, height=10, font_size=10),
+            MenuItem('<-', lambda: model.rotate(0, -90, 0),
+                     x + width / 3, y + height - 20, batch,
+                     width=30, height=10, font_size=10),
+            MenuItem('->', lambda: model.translate(1, 0, 0),
+                     x + width - 10, y + height / 2, batch,
+                     width=30, height=10, font_size=10),
+            MenuItem('<-', lambda: model.translate(-1, 0, 0),
+                     x, y + height / 2, batch,
+                     width=30, height=10, font_size=10),
+            MenuItem('^', lambda: model.translate(0, 0, -1),
+                     x + width / 2, y + height -10, batch,
+                     width=30, height=10, font_size=10),
+            MenuItem('V', lambda: model.translate(0, 0, 1),
+                     x + width / 2, y + 10, batch,
+                     width=30, height=10, font_size=10)
+        ]
 
     def draw_3d(self):
         self.ship_part.set_up_matrix()
@@ -218,6 +252,10 @@ class Rectangle(object):
 
 class Box(object):
     def __init__(self, x1, y1, x2, y2, batch):
+        x1 = int(x1)
+        x2 = int(x2)
+        y1 = int(y1)
+        y2 = int(y2)
         self.v2i = ('v2i', [x1, y1, x2, y1, x2, y1, x2, y2, x2, y2, x1, y2, x1, y2, x1, y1])
         x1 -=1
         y1 -=1

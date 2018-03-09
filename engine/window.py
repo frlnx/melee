@@ -1,8 +1,11 @@
 import ctypes
 
 from engine.views.base_view import BaseView
+from engine.views.opengl_mesh import OpenGLWaveFrontFactory
 from engine.views.factories import DynamicViewFactory
 from engine.views.menu import Menu, ShipConfigMenu
+from engine.views.menus.ship_build_menu import ShipBuildMenu
+from engine.views.menus.base_menu import BaseMenu
 
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
 from pyglet.gl import GL_DIFFUSE, GLfloat, GL_AMBIENT
@@ -11,12 +14,16 @@ from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH
 from pywavefront import Wavefront
 import pyglet
 
+from os import path, listdir
+
 
 class Window(pyglet.window.Window):
     def __init__(self):
         super().__init__(width=1280, height=720)
+        files = [path.join("objects", file_name) for file_name in listdir('objects') if file_name.endswith('.obj')]
+        self.mesh_factory = OpenGLWaveFrontFactory(files)
         self.lightfv = ctypes.c_float * 4
-        self.view_factory = DynamicViewFactory()
+        self.view_factory = DynamicViewFactory(self.mesh_factory)
         self.views = set()
         self.new_views = set()
         self.del_views = set()
@@ -35,6 +42,16 @@ class Window(pyglet.window.Window):
                 self._menu_main_menu()
 
     def _menu_main_menu(self):
+        self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu",
+                            [
+                                self.close_menu,
+                                self._menu_configure_ship,
+                                self._menu_controls,
+                                self._menu_connect,
+                                self.exit
+                            ], 200, 600))
+
+    def __menu_main_menu(self):
         self.set_menu(Menu("Main Menu",
                             [
                                 self.close_menu,
@@ -45,7 +62,9 @@ class Window(pyglet.window.Window):
                             ]))
 
     def _menu_configure_ship(self):
-        self.set_menu(ShipConfigMenu(self.center, "Configure Ship", [self._menu_main_menu]))
+        #self.set_menu(ShipConfigMenu(self.center, "Configure Ship", [self._menu_main_menu]))
+        self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu,
+                                                               200, 600, self.mesh_factory))
 
     def _menu_controls(self):
         self.set_menu(Menu("Controls",
