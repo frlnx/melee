@@ -75,8 +75,13 @@ class DynamicViewFactory(ViewFactory):
         else:
             mesh = None
         ship_view = view_class(model, mesh=mesh)
-        if hasattr(model, 'parts'):
-            for part in model.parts:
-                sub_view = self.manufacture(part)
-                ship_view.add_sub_view(sub_view)
+        if hasattr(model, 'parts') and isinstance(model, ShipModel):
+            self.rebuild_subviews(ship_view, model)
+            model.observe_rebuild(lambda model: self.rebuild_subviews(ship_view, model))
         return ship_view
+
+    def rebuild_subviews(self, ship_view, model: ShipModel):
+        for part in model.parts:
+            sub_view = self.manufacture(part)
+            ship_view.add_sub_view(sub_view)
+

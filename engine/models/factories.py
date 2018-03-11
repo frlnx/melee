@@ -51,10 +51,13 @@ class ShipModelFactory(object):
 
 class ShipPartModelFactory(object):
 
+    ship_parts = {}
+
     def __init__(self):
-        with open("ship_parts.json", 'r') as f:
-            ship_parts = json.load(f)
-        self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
+        if len(self.ship_parts) == 0:
+            with open("ship_parts.json", 'r') as f:
+                ship_parts = json.load(f)
+            self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
 
     def manufacture(self, name,  **placement_config) -> ShipPartModel:
         config = deepcopy(self.ship_parts[name])
@@ -67,12 +70,15 @@ class ShipPartModelFactory(object):
         config['rotation'] = rotation
         config['movement'] = MutableOffsets(*placement_config.get('movement', (0, 0, 0)))
         config['spin'] = MutableDegrees(*placement_config.get('spin', (0, 0, 0)))
-        config['target_indicator'] = placement_config.get('target_indicator', False)
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                             x=position.x, y=position.z, rotation=rotation.yaw)
         config['bounding_box'] = bounding_box
         part = ShipPartModel(**config)
         return part
+
+    @property
+    def all_parts(self):
+        return self.ship_parts.values()
 
 
 class ProjectileModelFactory(object):

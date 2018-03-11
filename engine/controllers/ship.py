@@ -4,6 +4,7 @@ from engine.models.ship import ShipModel, BaseModel
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
+from pyglet.window import key
 
 
 class ShipController(BaseController):
@@ -13,11 +14,7 @@ class ShipController(BaseController):
         self._model = model
         self._target_model = model
         self._possible_targets = [model]
-        self._button_config = {3: self.select_next_target, 2: self.reset}
-        try:
-            self._target_indicator = [model for model in self._model.parts if model.target_indicator][0]
-        except IndexError:
-            self._target_indicator = None
+        self._button_config = {3: self.select_next_target, 2: self.reset, key.TAB: self.select_next_target}
 
     @property
     def spawns(self):
@@ -51,10 +48,6 @@ class ShipController(BaseController):
 
     def update_target_position(self):
         self._model.set_target_position_rotation(self._target_model.position, self._target_model.rotation)
-        if self._target_indicator:
-            self._target_indicator.texture_rotation = [x for x in self._model.rotation]
-            positions_iterator = zip(self._target_model.position, self._model.position)
-            self._target_indicator.texture_offset = [-(y - x) / 10.2 for x, y in positions_iterator]
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:

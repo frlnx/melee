@@ -1,9 +1,12 @@
 from typing import List, Callable
 from engine.views.menus.base_menu import BaseMenu, BaseButton
-from engine.views.menus.grid import GridItem, GridItemArranger
+from engine.views.menus.grid import GridItem, GridItemArranger, NewGridItem
+from engine.models.factories import ShipPartModelFactory
 
 
 class ShipBuildMenu(BaseMenu):
+
+    ship_part_model_factory = ShipPartModelFactory()
 
     def __init__(self, heading: str, buttons: List[BaseButton], x, y, grid_item_arranger: GridItemArranger):
         super().__init__(heading, buttons, x, y)
@@ -14,9 +17,25 @@ class ShipBuildMenu(BaseMenu):
         items = {}
         for part in ship_model.parts:
             mesh = mesh_factory.manufacture(part.mesh)
-            item = GridItem(part, mesh.draw)
+            item = GridItem(part.x, part.z, part.yaw, part.set_position_and_rotation, mesh.draw)
             items[(part.x, part.z)] = item
-        grid_item_arranger = GridItemArranger(x + 400, y - 400, items, 5, 5, 100)
+
+        def new_ship_model(name):
+            def save_function(x, y, z, pitch, yaw, roll):
+                placement_config = {'position': [x, 0, z], 'rotation': [0, yaw, 0]}
+                model = cls.ship_part_model_factory.manufacture(name, **placement_config)
+                ship_model.add_part(model)
+            return save_function
+
+        new_items = {}
+        for i, part_config in enumerate(cls.ship_part_model_factory.all_parts):
+            mesh = mesh_factory.manufacture(part_config['mesh'])
+            new_item_x = i - 7
+            new_item_y = 5
+            new_items[(new_item_x, new_item_y)] = NewGridItem(new_item_x, new_item_y, 0,
+                                                              new_ship_model(part_config['name']), mesh.draw)
+
+        grid_item_arranger = GridItemArranger(x + 600, y - 400, items, new_items, 10, 10, 50)
 
         heading = "Configure ship"
         callables = [("<- Back", close_menu_function), ("Save", grid_item_arranger.save_all)]
@@ -38,6 +57,10 @@ class ShipBuildMenu(BaseMenu):
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.grid_item_arranger.drop(x, y)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        super(ShipBuildMenu, self).on_mouse_motion(x, y, dx, dy)
+        self.grid_item_arranger.move(x, y)
 
     def draw(self):
         super(ShipBuildMenu, self).draw()
