@@ -78,6 +78,9 @@ class NewGridItem(GridItem):
         self.set_xy = self.place_on_ship
         self.place_on_ship = self.place_on_ship
 
+    def copy(self):
+        return self.__class__(self.x, self.y, self.yaw, self.save_function, self.draw_function)
+
     def do_nothing(self):
         pass
 
@@ -149,8 +152,9 @@ class GridItemArranger(object):
     def move(self, x, y):
         if self.spinned_item or self.held_item:
             return
-        for item in self.items.values():
+        for item in chain(self.items.values(), self.new_items.values()):
             item.set_highlight(False, False)
+
         distance = self._off_grid_center(x, y)
         xy = (self._window_to_grid(x, y))
         item = self.items.get(xy)
@@ -179,7 +183,7 @@ class GridItemArranger(object):
                     self.spinned_item = self.items.get((x, y))
                     self.spinning_around = (x, y)
             elif (x, y) in self.new_items:
-                self.held_item = self.new_items.get((x, y))
+                self.held_item = self.new_items.get((x, y)).copy()
 
     def _off_grid_center(self, x, y):
         f_x, f_y = self._window_to_grid_float(x, y)

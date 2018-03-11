@@ -80,7 +80,8 @@ class DynamicViewFactory(ViewFactory):
             model.observe_rebuild(lambda model: self.rebuild_subviews(ship_view, model))
         return ship_view
 
-    def rebuild_subviews(self, ship_view, model: ShipModel):
+    def rebuild_subviews(self, ship_view: BaseView, model: ShipModel):
+        ship_view.clear_sub_views()
         for part in model.parts:
             sub_view = self.manufacture(part)
             ship_view.add_sub_view(sub_view)

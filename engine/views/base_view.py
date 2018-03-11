@@ -94,6 +94,9 @@ class BaseView(object):
         x, y, z = self._model.position
         glTranslated(-x, -y - 23, -z)
 
+    def clear_sub_views(self):
+        self._sub_views.clear()
+
 
 class DummyView(BaseView):
 
