@@ -13,8 +13,7 @@ class Keyboard(InputHandler):
 
     def __init__(self, window):
         super(Keyboard, self).__init__()
-        window.on_key_press = self.on_key_press
-        window.on_key_release = self.on_key_release
+        window.push_handlers(self)
 
     def on_key_press(self, symbol, modifiers):
         key_name = key._key_names[symbol]

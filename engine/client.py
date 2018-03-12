@@ -18,6 +18,18 @@ class ClientEngine(Engine):
             self.gamepad = input_handler
         else:
             self.gamepad = Keyboard(self.window)
+        self.window.push_handlers(self)
+        self.window._stop_func = self.stop
+        self._stop_func = None
+
+    def on_window_close(self):
+        self.stop()
+
+    def stop(self):
+        self._stop_func()
+
+    def bind_stop(self, func):
+        self._stop_func = func
 
     def bind_connect(self, connect_func):
         self.window.connect = connect_func

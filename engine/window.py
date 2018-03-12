@@ -32,6 +32,7 @@ class Window(pyglet.window.Window):
         self._exit = False
         self.backdrop = Wavefront("objects/backdrop.obj")
         self._menu_main_menu()
+        self._stop_func = None
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
 
     def on_key_press(self, symbol, modifiers):
@@ -51,18 +52,7 @@ class Window(pyglet.window.Window):
                                 self.exit
                             ], 200, 600))
 
-    def __menu_main_menu(self):
-        self.set_menu(Menu("Main Menu",
-                            [
-                                self.close_menu,
-                                self._menu_configure_ship,
-                                self._menu_controls,
-                                self._menu_connect,
-                                self.exit
-                            ]))
-
     def _menu_configure_ship(self):
-        #self.set_menu(ShipConfigMenu(self.center, "Configure Ship", [self._menu_main_menu]))
         self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu,
                                                                200, 600, self.mesh_factory))
 
@@ -73,7 +63,8 @@ class Window(pyglet.window.Window):
                              ]))
 
     def exit(self):
-        pass
+        self.close()
+        self._stop_func()
 
     def _menu_connect(self, host, port):
         self.connect(host, int(port))

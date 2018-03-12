@@ -52,9 +52,11 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
 
     def _stop_pyglet(self):
         """Stop the pyglet event loop."""
-
-        if hasattr(self, "pygletEventLoop"):
+        if hasattr(self, "pyglet_event_loop"):
             self.pyglet_event_loop.exit()
+
+    def _stop_postqueue(self):
+        self._postQueue.put(None)
 
     def run(self, call_interval=1 / 10., installSignalHandlers=True):
         call_interval = max((1 / self.max_fps), call_interval)
@@ -63,7 +65,7 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
         self.interleave(self._run_in_main_thread, installSignalHandlers=installSignalHandlers)
 
         self.addSystemEventTrigger("after", "shutdown", self._stop_pyglet)
-        self.addSystemEventTrigger("after", "shutdown", lambda: self._postQueue.put(None))
+        self.addSystemEventTrigger("after", "shutdown", self._stop_postqueue)
 
         self.pyglet_event_loop.run()
         self.graceful_shutdown()
