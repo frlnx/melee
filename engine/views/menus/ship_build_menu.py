@@ -47,7 +47,7 @@ class ShipBuildMenu(BaseMenu):
             i += 1
             button = BaseButton.labeled_button(name, font_size=font_size, left=x, right=x + width,
                                                bottom=y - height_spacing * i, top=y - height_spacing * i + height,
-                                               function=func)
+                                               func=func)
             buttons.append(button)
 
         return cls(heading, buttons, x, y, grid_item_arranger)
