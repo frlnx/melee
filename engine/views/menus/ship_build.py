@@ -1,5 +1,5 @@
 from typing import List, Callable
-from engine.views.menus.base_menu import BaseMenu, BaseButton
+from engine.views.menus.base import BaseMenu, BaseButton
 from engine.views.menus.grid import GridItem, GridItemArranger, NewGridItem
 from engine.models.factories import ShipPartModelFactory
 

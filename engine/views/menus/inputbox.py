@@ -1,4 +1,4 @@
-from engine.views.menus.base_menu import BaseButton, BaseMenu
+from engine.views.menus.base import BaseButton, BaseMenu
 from typing import List, Callable
 import pyglet
 from pyglet.text import Label
