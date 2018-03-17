@@ -3,9 +3,7 @@ import ctypes
 from engine.views.base_view import BaseView
 from engine.views.opengl_mesh import OpenGLWaveFrontFactory
 from engine.views.factories import DynamicViewFactory
-from engine.views.menu import Menu, ShipConfigMenu
-from engine.views.menus.ship_build_menu import ShipBuildMenu
-from engine.views.menus.base_menu import BaseMenu
+from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu
 
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
 from pyglet.gl import GL_DIFFUSE, GLfloat, GL_AMBIENT
@@ -48,7 +46,7 @@ class Window(pyglet.window.Window):
                                 self.close_menu,
                                 self._menu_configure_ship,
                                 self._menu_controls,
-                                self._menu_connect,
+                                self._menu_network,
                                 self.exit
                             ], 200, 600))
 
@@ -56,8 +54,11 @@ class Window(pyglet.window.Window):
         self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu,
                                                                200, 600, self.mesh_factory))
 
+    def _menu_network(self):
+        self.set_menu(InputMenu.input_menu("Network", self._menu_connect, 200, 600, self._menu_main_menu, 36))
+
     def _menu_controls(self):
-        self.set_menu(Menu("Controls",
+        self.set_menu(BaseMenu("Controls",
                              [
                                  self._menu_main_menu
                              ]))
@@ -66,8 +67,8 @@ class Window(pyglet.window.Window):
         self.close()
         self._stop_func()
 
-    def _menu_connect(self, host, port):
-        self.connect(host, int(port))
+    def _menu_connect(self, host="127.0.0.1", port=8000):
+        self.connect(host, port)
 
     def connect(self, host, port):
         print("connect not bound yet")

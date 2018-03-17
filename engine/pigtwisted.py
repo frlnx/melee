@@ -31,6 +31,7 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
         self._postQueue = Queue()
         self._twistedQueue = Queue()
         self.pyglet_event_loop = event_loop
+        self.pyglet_terminated = False
         self._stopping = False
 
     def stop(self):
@@ -40,20 +41,14 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
         _threadedselect.ThreadedSelectReactor.stop(self)
 
     def _run_in_main_thread(self, f):
-        """Schedule Twisted calls within the Pyglet event loop."""
-        if hasattr(self, "pyglet_event_loop"):
-            # Add the function to a queue which is called as part
-            # of the Pyglet event loop (see EventLoop above)
-            self._twistedQueue.put(f)
-        else:
-            # If Pyglet has stopped, add the events to a queue which
-            # is processed prior to shutting Twisted down.
+        if self.pyglet_terminated:
             self._postQueue.put(f)
+        else:
+            self._twistedQueue.put(f)
 
     def _stop_pyglet(self):
         """Stop the pyglet event loop."""
-        if hasattr(self, "pyglet_event_loop"):
-            self.pyglet_event_loop.exit()
+        self.pyglet_event_loop.exit()
 
     def _stop_postqueue(self):
         self._postQueue.put(None)
@@ -74,7 +69,7 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
         # Now that the event loop has finished, remove
         # it so that further Twisted events are added to
         # the shutdown queue, and are dealt with below.
-        del self.pyglet_event_loop
+        self.pyglet_terminated = True
         last_twisted_event = None
         if not self._stopping:
             # The Pyglet event loop is no longer running, so we monitor the

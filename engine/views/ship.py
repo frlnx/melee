@@ -1,17 +1,18 @@
 from math import atan2, degrees
+from itertools import chain
 
 from engine.models.ship import ShipModel
 from engine.views.base_view import BaseView
 
 from pyglet.graphics import glRotatef, glTranslated
+from pyglet.graphics import draw, GL_LINES
 
 
 class ShipView(BaseView):
     def __init__(self, model: ShipModel, mesh=None):
-        self._part_spacing = 0
-        self._offset = [0, 0, 0]
         super().__init__(model, mesh=mesh)
         self._model = model
+        #self._draw = self.draw_bounding_box
 
     def align_camera(self):
         super().align_camera()
@@ -26,34 +27,28 @@ class ShipView(BaseView):
         glRotatef(pitch, 1, 0, 0)
         glRotatef(roll, 0, 0, 1)
 
-    @property
-    def position(self):
-        return [a + b for a, b in zip(self._model.position, self._offset)]
+    def draw(self):
+        super(ShipView, self).draw()
+        coords = self._model.bounding_box._shape.boundary.coords
+        v3f = [(coord[0], 10.0, coord[1], coord[0], 10.0, coord[1]) for coord in coords]
+        v3f = list(chain(*v3f))
+        v3f += v3f[:3]
+        v3f = v3f[3:]
+        n_points = int(len(v3f) / 3)
+        v3f = ('v3f', v3f)
+        c4B = ('c4B', (255, 255, 255, 255) * n_points)
+        draw(n_points, GL_LINES, v3f, c4B)
 
-    @property
-    def pitch(self):
-        return self._model.pitch
-
-    @property
-    def yaw(self):
-        return self._model.yaw
-
-    @property
-    def roll(self):
-        return self._model.roll
+        lines  = self._model.bounding_box.lines
+        v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
+        v3f = list(chain(*v3f))
+        #v3f += v3f[:3]
+        #v3f = v3f[3:]
+        n_points = int(len(v3f) / 3)
+        v3f = ('v3f', v3f)
+        c4B = ('c4B', (255, 255, 255, 255) * n_points)
+        #draw(n_points, GL_LINES, v3f, c4B)
 
     def center_camera(self):
         x, y, z = self._model.position
         glTranslated(-x, -y - 23, -z)
-
-    def reset_offset(self):
-        self._offset = [0, 0, 0]
-
-    def reset_part_spacing(self):
-        self._part_spacing = 0
-
-    def offset(self, x, y, z):
-        self._offset = [x, y, z]
-
-    def part_spacing(self, distance):
-        self._part_spacing = distance

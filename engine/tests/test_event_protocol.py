@@ -18,7 +18,7 @@ class MockEngine(object):
         pass
 
 
-class TestBroadcastProtocol(object):
+class _TestBroadcastProtocol(object):
 
     def setup(self):
         self.models = {"foo": "bar"}
@@ -40,7 +40,7 @@ class TestBroadcastProtocol(object):
         assert b'spawn' in self.target.read()
 
 
-class TestClientProtocol(object):
+class _TestClientProtocol(object):
 
     def setup(self):
         self.models = {"foo": "bar"}

@@ -1,7 +1,7 @@
 from __future__ import division
 from math import sqrt, atan2, cos, sin, degrees, radians
 
-from numpy import array, cross, dot
+from numpy import cross, dot
 
 
 class Vector(object):
@@ -18,7 +18,7 @@ class Vector(object):
     def __sub__(self, other):
         return self.__class__(*[x - y for x, y in zip(self, other)])
 
-    def __mul__(self, other: float):
+    def __mul__(self, other: float) -> "Vector":
         return self.__class__(*[x * other for x in self])
 
     def __floordiv__(self, other):
@@ -91,7 +91,7 @@ class MutableVector(Vector):
         self.set(*[x - y for x, y in zip(self, other)])
         return self
 
-    def __imul__(self, other: float):
+    def __imul__(self, other: float) -> "MutableVector":
         self.set(*[x + other for x in self])
         return self
 
@@ -163,7 +163,7 @@ class Offsets(Vector):
         super().__init__(x, y, z)
         self.direction = Degrees(0, degrees(atan2(-self.x, -self.z)), 0)
 
-    def rotated(self, theta):
+    def rotated(self, theta) -> "Offsets":
         theta = radians(theta)
         x = self.x * cos(theta) - self.z * sin(theta)
         z = self.x * sin(theta) + self.z * cos(theta)
@@ -267,7 +267,7 @@ class MutableForce(Force):
         self._force_multiplier = force
         self.forces.set(x * force, y * force, z * force)
 
-    def translation_forces(self):
+    def translation_forces(self) -> MutableOffsets:
         return self.forces
 
     def translate(self, offset):

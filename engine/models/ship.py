@@ -21,6 +21,7 @@ class ShipModel(BaseModel):
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
         self._rebuild_observers = set()
+        self._own_spawns = []
 
     def observe_rebuild(self, func):
         self._rebuild_observers.add(func)
@@ -29,9 +30,13 @@ class ShipModel(BaseModel):
         for callback in self._rebuild_observers:
             callback(self)
 
+    def add_own_spawn(self, model: BaseModel):
+        self._own_spawns.append(model)
+
     @property
     def spawns(self):
-        spawns = []
+        spawns = self._own_spawns
+        self._own_spawns = []
         for part in self.parts:
             if part.spawn:
                 spawns.append(part.pop_spawn())

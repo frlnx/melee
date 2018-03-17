@@ -7,13 +7,13 @@ from pyglet.text import Label
 
 class BaseButton(object):
     
-    def __init__(self, drawable, left, right, bottom, top, function: Callable):
+    def __init__(self, drawable, left, right, bottom, top, func: Callable):
         self.drawable = drawable
         self.left = left
         self.right = right
         self.bottom = bottom
         self.top = top
-        self.function = function
+        self.func = func
         self.highlight = False
         self.v2i_bounding_box = ('v2i', [left, bottom, right, bottom, right, bottom, right, top,
                                          right, top, left, top, left, top, left, bottom])
@@ -23,10 +23,10 @@ class BaseButton(object):
         self.c4B_highlight_box = ('c4B', [255, 255, 220, 255] * 8)
 
     @classmethod
-    def labeled_button(cls, text, font_size, left, right, bottom, top, function: Callable):
+    def labeled_button(cls, text, font_size, left, right, bottom, top, func: Callable):
         bottom_padding = int(font_size * 0.35)
         drawable = Label(text, font_name='Times New Roman', font_size=font_size, x=left, y=bottom + bottom_padding)
-        return cls(drawable, left, right, bottom, top, function)
+        return cls(drawable, left, right, bottom, top, func)
 
     def mouse_enter(self):
         self.highlight = True
@@ -50,6 +50,7 @@ class BaseMenu(object):
         self.heading = heading
         self.heading_label = Label(heading, font_name='Times New Roman', font_size=50, x=x, y=y)
         self.buttons = buttons
+        self.highlightables = list(buttons)
         self.x = x
         self.y = y
 
@@ -67,23 +68,23 @@ class BaseMenu(object):
             name = name.capitalize().replace('_', ' ')
             button = BaseButton.labeled_button(name, font_size=font_size, left=x, right=x + width,
                                                bottom=y - height_spacing * i, top=y - height_spacing * i + height,
-                                               function=func)
+                                               func=func)
             buttons.append(button)
         return cls(heading, buttons, x, y)
 
     def on_mouse_press(self, x, y, button, modifiers):
         for button in self.buttons:
             if button.inside(x, y):
-                button.function()
+                button.func()
                 break
 
     def on_mouse_motion(self, x, y, dx, dy):
-        for button in self.buttons:
-            if button.inside(x, y) != button.inside(x - dx, y - dy):
-                if button.inside(x, y):
-                    button.mouse_enter()
+        for element in self.highlightables:
+            if element.inside(x, y) != element.inside(x - dx, y - dy):
+                if element.inside(x, y):
+                    element.mouse_enter()
                 else:
-                    button.mouse_leave()
+                    element.mouse_leave()
 
     def draw(self):
         self.heading_label.draw()

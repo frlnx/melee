@@ -14,6 +14,7 @@ class ClientEngine(Engine):
             self.window = Window()
         else:
             self.window = window
+        self.window.spawn(self.my_model)
         if input_handler is not None:
             self.gamepad = input_handler
         else:
@@ -33,10 +34,6 @@ class ClientEngine(Engine):
 
     def bind_connect(self, connect_func):
         self.window.connect = connect_func
-
-    def on_enter(self):
-        super(ClientEngine, self).on_enter()
-        self.window.spawn(self.my_model)
 
     def spawn(self, model: BaseModel):
         super(ClientEngine, self).spawn(model)

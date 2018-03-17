@@ -22,9 +22,12 @@ class BaseModel(object):
         self._observers = set()
         self._mesh = None
         self._bounding_box = bounding_box
-        bb_width = (self._bounding_box.right - self._bounding_box.left)
-        bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-        self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        try:
+            bb_width = (self._bounding_box.right - self._bounding_box.left)
+            bb_height = (self._bounding_box.top - self._bounding_box.bottom)
+            self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        except AttributeError:
+            self._inertia = 1
         self.update_needed = False
 
     def __repr__(self):
@@ -97,7 +100,8 @@ class BaseModel(object):
     def tangent_momentum_at(self, local_coordinates: Offsets) -> Offsets:
         if local_coordinates.distance == 0:
             return MutableOffsets(0, 0, 0)
-        return local_coordinates.rotated(90) * (self._spin.yaw_radian * self._inertia / local_coordinates.distance)
+        yaw = local_coordinates.rotated(90) * (self._spin.yaw_radian * self._inertia / local_coordinates.distance)
+        return yaw
 
     @property
     def bounding_box(self):

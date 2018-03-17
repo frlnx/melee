@@ -37,6 +37,11 @@ class TestPolygonMovement(object):
         self.target.set_position_rotation(-1, 0, 0)
         assert set([line.x1 for line in self.target.lines]) == {-6, 4}
 
+    def test_moving_left_multiple_times_does_not_accumulate(self):
+        self.target.set_position_rotation(-1, 0, 0)
+        self.target.set_position_rotation(-1, 0, 0)
+        assert set([line.x1 for line in self.target.lines]) == {-6, 4}
+
     def test_moving_left_and_freezing_moves_all_original_xes_of_lines_left(self):
         self.target.set_position_rotation(-1, 0, 0)
         self.target.freeze()

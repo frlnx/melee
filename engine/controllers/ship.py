@@ -14,7 +14,21 @@ class ShipController(BaseController):
         self._model = model
         self._target_model = model
         self._possible_targets = [model]
-        self._button_config = {3: self.select_next_target, 2: self.reset, key.TAB: self.select_next_target}
+        self._button_config = {
+            3: self.select_next_target,
+            2: self.reset,
+            "TAB": self.select_next_target,
+            "SPACE": self.self_destruct
+        }
+
+    def self_destruct(self):
+        for part in self._model.parts:
+            part.set_movement(*self._model.momentum_at(part.position).forces)
+            self._model.mutate_offsets_to_global(part.position)
+            part.set_rotation(*self._model.rotation)
+            self._model.add_own_spawn(part)
+        self._model.parts = []
+        #self._model.rebuild()
 
     @property
     def spawns(self):

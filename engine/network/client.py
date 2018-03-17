@@ -12,6 +12,7 @@ class NetworkClient(object):
         self.engine = engine
         self.engine.bind_connect(self.connect)
         self.reactor = reactor
+        self.engine.bind_stop(self.reactor.stop)
         self.reactor.run(call_interval=1/60)
 
     def connect(self, host, port=8000):

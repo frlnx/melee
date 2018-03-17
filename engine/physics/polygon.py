@@ -1,15 +1,20 @@
 from typing import List
 from math import radians
 from itertools import product
-
+import shapely.geometry
+import shapely.affinity
 
 from engine.physics.line import Line
 
 
 class BasePolygon(object):
 
-    def __init__(self, lines: List[Line]):
+    def __init__(self, lines: List[Line], shape: shapely.geometry.Polygon):
         self._lines = lines
+        self._shape = shape
+        self.rotation = 0
+        self.x = 0
+        self.y = 0
 
     @staticmethod
     def manufacture(coords, x=0, y=0, rotation=0):
@@ -18,7 +23,12 @@ class BasePolygon(object):
         for coord in coords[1:]:
             lines.append(Line([last_coord, coord]))
             last_coord = coord
-        polygon = Polygon(lines)
+        if len(coords) < 3:
+            shape = shapely.geometry.Point(coords[0]).buffer(0.1)
+        else:
+            shape = shapely.geometry.Polygon(coords)
+        assert shape.is_valid
+        polygon = Polygon(lines, shape)
         polygon.set_position_rotation(x, y, rotation)
         polygon.freeze()
         return polygon
@@ -30,10 +40,15 @@ class BasePolygon(object):
     def set_position_rotation(self, x, y, yaw_degrees):
         for line in self.lines:
             line.set_position_rotation(x, y, radians(yaw_degrees))
+        self._shape = shapely.affinity.translate(self._shape, x - self.x, 0, y - self.y)
+        self._shape = shapely.affinity.rotate(self._shape, -yaw_degrees - self.rotation)
 
     def freeze(self):
         for line in self.lines:
             line.freeze()
+        self.x = 0
+        self.y = 0
+        self.rotation = 0
 
     @property
     def left(self):
@@ -66,21 +81,16 @@ class Polygon(BasePolygon):
         return True
 
     def intersection_point(self, other: BasePolygon):
-        n_intersections = 0
-        sum_x = 0
-        sum_y = 0
-        for line1, line2 in product(self.lines, other.lines):
-            if not line1.bounding_box_intersects(line2):
-                continue
-            intersects, x, y = line1.intersection_point(line2)
-            if intersects:
-                sum_x += x
-                sum_y += y
-                n_intersections += 1
-        if n_intersections > 0:
-            return True, sum_x / n_intersections, sum_y / n_intersections
-        return False, None, None
+        inter = self._shape.intersection(other._shape)
+        if inter is None:
+            return False, None, None
+        if isinstance(inter, shapely.geometry.GeometryCollection):
+            if len(inter) == 0:
+                return False, None, None
+        return True, inter.centroid.x, inter.centroid.y
+
 
     def __iadd__(self, other):
         self._lines += [Line([(line.x1, line.y1), (line.x2, line.y2)]) for line in other.lines]
+        self._shape = self._shape.union(other._shape)
         return self

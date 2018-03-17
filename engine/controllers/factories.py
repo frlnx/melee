@@ -3,6 +3,7 @@ from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
 from engine.controllers.base_controller import BaseController
 from engine.models.ship import ShipModel
+from engine.models.ship_part import ShipPartModel
 from engine.models.projectiles import PlasmaModel
 from engine.input_handlers import InputHandler
 
@@ -13,6 +14,7 @@ class ControllerFactory(object):
         self.dummy_input_handler = InputHandler()
         self.model_controller_map = {
             ShipModel: ShipControllerFactory().manufacture,
+            ShipPartModel: ShipPartControllerFactory().manufacture,
             PlasmaModel: BaseFactory().manufacture
         }
 
