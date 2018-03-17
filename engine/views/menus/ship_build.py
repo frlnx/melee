@@ -1,6 +1,6 @@
 from typing import List, Callable
 from engine.views.menus.base import BaseMenu, BaseButton
-from engine.views.menus.grid import GridItem, GridItemArranger, NewGridItem
+from engine.views.menus.grid import MovableGridItem, GridItemArranger, NewGridItem
 from engine.models.factories import ShipPartModelFactory
 
 
@@ -13,31 +13,11 @@ class ShipBuildMenu(BaseMenu):
         self.grid_item_arranger = grid_item_arranger
 
     @classmethod
-    def manufacture_for_ship_model(cls, ship_model, close_menu_function:Callable, x, y, mesh_factory, font_size=36):
-        items = {}
-        for part in ship_model.parts:
-            mesh = mesh_factory.manufacture(part.mesh)
-            item = GridItem(part.x, part.z, part.yaw, part.set_position_and_rotation, mesh.draw)
-            items[(part.x, part.z)] = item
+    def manufacture_for_ship_model(cls, ship_model, close_menu_function: Callable, x, y, mesh_factory, font_size=36):
+        grid_item_arranger = GridItemArranger.from_ship_model(640, 300, ship_model, mesh_factory,
+                                                              cls.ship_part_model_factory, 10, 10, 100)
 
-        def new_ship_model(name):
-            def save_function(x, y, z, pitch, yaw, roll):
-                placement_config = {'position': [x, 0, z], 'rotation': [0, yaw, 0]}
-                model = cls.ship_part_model_factory.manufacture(name, **placement_config)
-                ship_model.add_part(model)
-            return save_function
-
-        new_items = {}
-        for i, part_config in enumerate(cls.ship_part_model_factory.all_parts):
-            mesh = mesh_factory.manufacture(part_config['mesh'])
-            new_item_x = i - 7
-            new_item_y = 5
-            new_items[(new_item_x, new_item_y)] = NewGridItem(new_item_x, new_item_y, 0,
-                                                              new_ship_model(part_config['name']), mesh.draw)
-
-        grid_item_arranger = GridItemArranger(x + 600, y - 400, items, new_items, 10, 10, 50)
-
-        heading = "Configure ship"
+        heading = "Shipyard"
         callables = [("<- Back", close_menu_function), ("Save", grid_item_arranger.save_all)]
         height = int(font_size * 1.6)
         width = int(height * 6)

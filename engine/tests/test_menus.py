@@ -1,4 +1,5 @@
 from engine.views import menus
+from engine.models.factories import ShipModelFactory
 
 
 class TestBaseMenu(object):
@@ -31,3 +32,26 @@ class TestInputMenu(object):
 
     def test_menu_func_is_callable(self):
         self.target.buttons[0].func()
+
+
+class FakeFactory(object):
+    def manufacture(self, name):
+        class Drawable(object):
+            def draw(self):
+                pass
+        return Drawable()
+
+
+class TestConfigControlsMenu(object):
+    smf = ShipModelFactory()
+    def setup(self):
+        self.ship_model = self.smf.manufacture("wolf")
+        def cancel_func():
+            pass
+
+        fake_mesh_factory = FakeFactory()
+        self.target = menus.ControlConfigMenu.manufacture_for_ship_model(self.ship_model, cancel_func, 0, 0,
+                                                                        fake_mesh_factory)
+
+    def test_menu_has_two_button(self):
+        assert len(self.target.buttons) == 2

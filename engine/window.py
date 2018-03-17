@@ -3,7 +3,7 @@ import ctypes
 from engine.views.base_view import BaseView
 from engine.views.opengl_mesh import OpenGLWaveFrontFactory
 from engine.views.factories import DynamicViewFactory
-from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu
+from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfigMenu
 
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
 from pyglet.gl import GL_DIFFUSE, GLfloat, GL_AMBIENT
@@ -44,13 +44,13 @@ class Window(pyglet.window.Window):
         self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu",
                             [
                                 self.close_menu,
-                                self._menu_configure_ship,
+                                self._menu_shipyard,
                                 self._menu_controls,
                                 self._menu_network,
                                 self.exit
                             ], 200, 600))
 
-    def _menu_configure_ship(self):
+    def _menu_shipyard(self):
         self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu,
                                                                200, 600, self.mesh_factory))
 
@@ -58,10 +58,8 @@ class Window(pyglet.window.Window):
         self.set_menu(InputMenu.input_menu("Network", self._menu_connect, 200, 600, self._menu_main_menu, 36))
 
     def _menu_controls(self):
-        self.set_menu(BaseMenu("Controls",
-                             [
-                                 self._menu_main_menu
-                             ]))
+        self.set_menu(ControlConfigMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu, 200, 600,
+                                                                   self.mesh_factory))
 
     def exit(self):
         self.close()
