@@ -21,6 +21,11 @@ class ShipPartModel(BaseModel):
         self._spawn = None
         self._time_in_state = 0
 
+    def set_controls(self, button=None, keyboard=None, axis=None):
+        self.button = button
+        self.keyboard = keyboard
+        self.axis = axis
+
     def timers(self, dt):
         super().timers(dt)
         self._time_in_state += dt
