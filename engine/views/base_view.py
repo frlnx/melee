@@ -18,6 +18,7 @@ class BaseView(object):
             self._mesh = mesh
         else:
             self._draw = self._draw_nothing
+        self.yaw_catchup = 0
 
     def set_model(self, model: BaseModel):
         self._model.unobserve(self.update)
@@ -85,18 +86,21 @@ class BaseView(object):
         glPopMatrix()
 
     def align_camera(self):
-        glRotatef(-self._model.yaw, 0, 1, 0)
+        yaw = -self._model.yaw + self._model.spin.yaw - self.yaw_catchup
+        glRotatef(yaw, 0, 1, 0)
 
     def center_camera(self):
         glRotatef(-self._model.pitch, 1, 0, 0)
         glRotatef(-self._model.yaw, 0, 1, 0)
         glRotatef(-self._model.roll, 0, 0, 1)
         x, y, z = self._model.position
-        glTranslated(-x, -y - 43, -z)
+        glTranslated(-x, -y - 23, -z)
 
     def clear_sub_views(self):
         self._sub_views.clear()
 
+    def update_view_timer(self, dt):
+        self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt
 
 class DummyView(BaseView):
 

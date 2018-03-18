@@ -22,6 +22,7 @@ class ClientEngine(Engine):
         self.window.push_handlers(self)
         self.window._stop_func = self.stop
         self._stop_func = None
+        self.clock.schedule_interval(self.window.update_view_timers, 0.033)
 
     def on_window_close(self):
         self.stop()

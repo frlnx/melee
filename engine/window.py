@@ -36,6 +36,10 @@ class Window(pyglet.window.Window):
         if input_handler:
             input_handler.push_handlers(self)
 
+    def update_view_timers(self, dt):
+        for view in self.views:
+            view.update_view_timer(dt)
+
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
             if self.menu:
