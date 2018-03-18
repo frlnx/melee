@@ -92,7 +92,7 @@ class BaseView(object):
         glRotatef(-self._model.yaw, 0, 1, 0)
         glRotatef(-self._model.roll, 0, 0, 1)
         x, y, z = self._model.position
-        glTranslated(-x, -y - 23, -z)
+        glTranslated(-x, -y - 43, -z)
 
     def clear_sub_views(self):
         self._sub_views.clear()
