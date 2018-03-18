@@ -1,4 +1,4 @@
-from pyglet.input import get_joysticks, Joystick
+from pyglet.input import get_joysticks
 from pyglet.window import key
 
 
@@ -43,7 +43,6 @@ class GamePad(InputHandler):
         self.joystick.remove_handlers(target)
 
     def on_joyaxis_motion(self, joystick, axis, value):
-        print(axis)
         negative_axis = "-{}".format(axis)
         if value < 0:
             self.axis[negative_axis] = value ** 2
@@ -56,7 +55,6 @@ class GamePad(InputHandler):
             self.axis[negative_axis] = 0
 
     def on_joybutton_press(self, joystick, button):
-        print(button)
         self.buttons.add(button)
 
     def on_joybutton_release(self, joystick, button):

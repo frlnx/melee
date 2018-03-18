@@ -42,6 +42,8 @@ class Window(pyglet.window.Window):
                 self.close_menu()
             else:
                 self._menu_main_menu()
+        if symbol == pyglet.window.key.F1:
+            print("DEBUG")
 
     def _menu_main_menu(self):
         self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu",

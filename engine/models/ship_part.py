@@ -67,3 +67,6 @@ class ShipPartModel(BaseModel):
     @property
     def state(self):
         return self._state
+
+    def __repr__(self):
+        return "{} @{}".format(self.name, self.position.xyz)

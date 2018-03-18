@@ -45,4 +45,5 @@ class ControlConfigMenu(BaseMenu):
         self.grid_item_presenter.on_joybutton_press(joystick, button)
 
     def on_joyaxis_motion(self, joystick, axis, value):
-        self.grid_item_presenter.on_joyaxis_motion(joystick, axis, value)
+        if abs(value) > 0.9:
+            self.grid_item_presenter.on_joyaxis_motion(joystick, axis, value)

@@ -3,13 +3,14 @@
 from engine.network.client import NetworkClient
 from engine import ClientEngine
 from engine.window import Window
-from engine.input_handlers import Keyboard
+from engine.input_handlers import Keyboard, GamePad
 
 
 def main():
-    window = Window()
-    keyboard = Keyboard(window)
-    engine = ClientEngine(keyboard, window=window)
+    gamepad = GamePad(0)
+    window = Window(input_handler=gamepad)
+    #keyboard = Keyboard(window)
+    engine = ClientEngine(gamepad, window=window)
     host = '192.168.2.2'
     port = 8000
     client = NetworkClient(engine)

@@ -58,16 +58,13 @@ class ValueKeepingGridItem(GridItem):
         self.key = key
         text = self._make_value_text()
         self.label = Label(text, font_name='Times New Roman', font_size=10, x=label_x, y=label_y, width=label_width,
-                           multiline=True)
-        self.bg_label = Label(text, font_name='Times New Roman', font_size=10, x=label_x, y=label_y, width=label_width,
-                              multiline=True, bold=True, color=(0, 0, 0, 255))
+                           multiline=True, color=(255, 255, 255, 255))
 
     def _make_value_text(self):
         return "Axis: {}\nButton: {}\nKey: {}".format(self.axis, self.button, self.key)
 
     def save(self):
-        print("Saving {} {} {}".format(self.axis, self.button, self.key))
-        self.save_function(self.axis, self.button, self.key)
+        self.save_function(axis=self.axis, button=self.button, keyboard=self.key)
 
     def set_input(self, axis=None, button=None, key=None):
         if axis:
@@ -77,10 +74,8 @@ class ValueKeepingGridItem(GridItem):
         if key:
             self.key = key
         self.label.text = self._make_value_text()
-        print("Setting {} {} {} {}".format(self.axis, self.button, self.key, self.label.text))
 
     def draw_text(self):
-        self.bg_label.draw()
         self.label.draw()
 
 
