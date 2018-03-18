@@ -81,13 +81,15 @@ class Window(pyglet.window.Window):
     def set_menu(self, menu):
         if self.menu is not None:
             self.remove_handlers(self.menu)
-            self.input_handler.remove_handlers(self.menu)
+            if self.input_handler:
+                self.input_handler.remove_handlers(self.menu)
         self.menu = menu
         self.push_handlers(self.menu)
 
     def close_menu(self):
         self.remove_handlers(self.menu)
-        self.input_handler.remove_handlers(self.menu)
+        if self.input_handler:
+            self.input_handler.remove_handlers(self.menu)
         self.menu = None
 
     @property
