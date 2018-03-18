@@ -16,7 +16,7 @@ from os import path, listdir
 
 
 class Window(pyglet.window.Window):
-    def __init__(self):
+    def __init__(self, input_handler=None):
         super().__init__(width=1280, height=720)
         files = [path.join("objects", file_name) for file_name in listdir('objects') if file_name.endswith('.obj')]
         self.mesh_factory = OpenGLWaveFrontFactory(files)
@@ -32,6 +32,9 @@ class Window(pyglet.window.Window):
         self._menu_main_menu()
         self._stop_func = None
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
+        self.input_handler = input_handler
+        if input_handler:
+            input_handler.push_handlers(self)
 
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
@@ -58,8 +61,10 @@ class Window(pyglet.window.Window):
         self.set_menu(InputMenu.input_menu("Network", self._menu_connect, 200, 600, self._menu_main_menu, 36))
 
     def _menu_controls(self):
-        self.set_menu(ControlConfigMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu, 200, 600,
-                                                                   self.mesh_factory))
+        menu = ControlConfigMenu.manufacture_for_ship_model(self.center._model, self._menu_main_menu, 200, 600,
+                                                            self.mesh_factory)
+        self.input_handler.push_handlers(menu)
+        self.set_menu(menu)
 
     def exit(self):
         self.close()
@@ -74,11 +79,13 @@ class Window(pyglet.window.Window):
     def set_menu(self, menu):
         if self.menu is not None:
             self.remove_handlers(self.menu)
+            self.input_handler.remove_handlers(self.menu)
         self.menu = menu
         self.push_handlers(self.menu)
 
     def close_menu(self):
         self.remove_handlers(self.menu)
+        self.input_handler.remove_handlers(self.menu)
         self.menu = None
 
     @property
