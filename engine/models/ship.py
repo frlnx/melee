@@ -23,6 +23,12 @@ class ShipModel(BaseModel):
         self._rebuild_observers = set()
         self._own_spawns = []
 
+    def __getstate__(self):
+        d = {k: val for k, val in self.__dict__.items()}
+        d['_observers'] = set()
+        d['_rebuild_observers'] = set()
+        return d
+
     def observe_rebuild(self, func):
         self._rebuild_observers.add(func)
 
