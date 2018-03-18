@@ -43,7 +43,6 @@ class ShipModel(BaseModel):
         return spawns
 
     def add_part(self, part_model):
-        print("Adding part")
         self.parts.add(part_model)
         self.rebuild()
 

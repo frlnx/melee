@@ -29,6 +29,7 @@ class BaseModel(object):
         except AttributeError:
             self._inertia = 1
         self.update_needed = False
+        self._alive = True
 
     def __repr__(self):
         return "{} {}".format(self.__class__.__name__, self.uuid)
@@ -40,7 +41,10 @@ class BaseModel(object):
 
     @property
     def is_alive(self):
-        return True
+        return self._alive
+
+    def set_alive(self, state):
+        self._alive = state
 
     @property
     def data_dict(self):

@@ -1,9 +1,11 @@
 from typing import Set
 
 from engine.models.ship import ShipModel, BaseModel
+from engine.models.projectiles import PlasmaModel
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
+from engine.physics.force import MutableOffsets
 from pyglet.window import key
 
 
@@ -86,3 +88,17 @@ class ShipController(BaseController):
 
     def move_to(self, location):
         self._model.set_position(*location)
+
+    def solve_collision(self, other_model: BaseModel):
+        collides, x, z = self._model.intersection_point(other_model)
+        if collides and isinstance(other_model, PlasmaModel):
+            print("Bang at {} {}".format(x, z))
+
+        if collides and False:
+            position = MutableOffsets(x, 0, z)
+            my_force = self._model.global_momentum_at(position)
+            other_force = other_model.global_momentum_at(position)
+            #other_model.apply_global_force(-other_force)
+            #self._model.apply_global_force(-my_force)
+            other_model.apply_global_force(my_force)
+            self._model.apply_global_force(other_force)

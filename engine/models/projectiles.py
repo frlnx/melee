@@ -12,7 +12,7 @@ class PlasmaModel(BaseModel):
 
     @property
     def is_alive(self):
-        return self._ttl > 0
+        return self._ttl > 0 and self._alive
 
     def count_down(self, dt):
         self._ttl -= dt

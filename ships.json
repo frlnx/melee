@@ -23,12 +23,12 @@
       {"position": [0, 0, 0], "name": "cockpit", "rotation": [0, 0, 0]},
       {"position": [1, 0, 0], "name": "plasma gun", "button": 6, "keyboard": "E"},
       {"position": [-1, 0, 0], "name": "plasma gun", "button": 7, "keyboard": "W"},
-      {"position": [2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "rz", "keyboard": "R"},
-      {"position": [-2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "y", "keyboard": "Q"},
-      {"position": [2, 0, 1], "name": "engine", "rotation": [0, 90, 0], "axis": "-x", "keyboard": "F"},
-      {"position": [-2, 0, 1], "name": "engine", "rotation": [0, -90, 0], "axis": "z", "keyboard": "A"},
-      {"position": [1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-rz", "keyboard": "C"},
-      {"position": [-1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-y", "keyboard": "X"}
+      {"position": [2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "rz", "keyboard": "S"},
+      {"position": [-2, 0, 0], "name": "engine", "rotation": [0, 180, 0], "axis": "y", "keyboard": "D"},
+      {"position": [2, 0, 1], "name": "engine", "rotation": [0, 90, 0], "axis": "-x", "keyboard": "A"},
+      {"position": [-2, 0, 1], "name": "engine", "rotation": [0, -90, 0], "axis": "z", "keyboard": "F"},
+      {"position": [1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-rz", "keyboard": "Q"},
+      {"position": [-1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-y", "keyboard": "R"}
     ]
   },
   {
