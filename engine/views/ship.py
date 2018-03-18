@@ -29,25 +29,13 @@ class ShipView(BaseView):
 
     def draw(self):
         super(ShipView, self).draw()
-        coords = self._model.bounding_box._shape.boundary.coords
-        v3f = [(coord[0], 10.0, coord[1], coord[0], 10.0, coord[1]) for coord in coords]
+        lines  = self._model.bounding_box.lines
+        v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
         v3f = list(chain(*v3f))
-        v3f += v3f[:3]
-        v3f = v3f[3:]
         n_points = int(len(v3f) / 3)
         v3f = ('v3f', v3f)
         c4B = ('c4B', (255, 255, 255, 255) * n_points)
         draw(n_points, GL_LINES, v3f, c4B)
-
-        lines  = self._model.bounding_box.lines
-        v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
-        v3f = list(chain(*v3f))
-        #v3f += v3f[:3]
-        #v3f = v3f[3:]
-        n_points = int(len(v3f) / 3)
-        v3f = ('v3f', v3f)
-        c4B = ('c4B', (255, 255, 255, 255) * n_points)
-        #draw(n_points, GL_LINES, v3f, c4B)
 
     def center_camera(self):
         x, y, z = self._model.position
