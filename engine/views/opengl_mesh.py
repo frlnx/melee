@@ -16,16 +16,33 @@ class OpenGLMesh(WaveFrontObject):
         super().__init__(faces, textured_faces, name, group)
         self.n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
         self.t2f_n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
+        self.materials = {face.material.name: face.material for face in faces}
+        self.materials.update({face.material.name: face.material for face in textured_faces})
         self._sort_faces()
         self._convert_to_c_types()
+
+    def update_material(self, material_name, material_mode, material_channel, value):
+        channels = 'rgba'
+        values = [int(channel not in material_channel) or value for channel in channels]
+        #values = [1, 1, 1, value]
+        self.materials[material_name].update(**{material_mode: values})
+
+    def __copy__(self):
+        copy = self.__class__(self._faces, self._textured_faces, name=self.name, group=self.group)
+        copy.materials = {material.name: material.__copy__() for material in self.materials.values()}
+        copy.n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj for material, obj in copy.n3f_v3f_by_material_n_points.items()}
+        copy.t2f_n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj for material, obj in copy.t2f_n3f_v3f_by_material_n_points.items()}
+        return copy
 
     def _sort_faces(self):
         for face in self._faces:
             n_points = min(face.n_vertices, 5)
-            self.n3f_v3f_by_material_n_points[face.material][n_points] += face.n3f_v3f
+            material = self.materials[face.material.name]
+            self.n3f_v3f_by_material_n_points[material][n_points] += face.n3f_v3f
         for face in self._textured_faces:
             n_points = min(face.n_vertices, 5)
-            self.t2f_n3f_v3f_by_material_n_points[face.material][n_points] += face.t2f_n3f_v3f
+            material = self.materials[face.material.name]
+            self.t2f_n3f_v3f_by_material_n_points[material][n_points] += face.t2f_n3f_v3f
 
     def _convert_to_c_types(self):
         n3f_v3f_by_material_n_points = defaultdict(dict)
@@ -99,15 +116,34 @@ class OpenGLMaterial(Material):
         super().__init__(diffuse, ambient, specular, emissive, shininess, name, alpha)
         emissive = [e * d for e, d in zip(emissive, diffuse)]
         ambient = [a * d for a, d in zip(ambient, diffuse)]
-        self.opengl_diffuse = self._convert_light_values(list(diffuse) + [alpha])
-        self.opengl_ambient = self._convert_light_values(list(ambient) + [alpha])
-        self.opengl_specular = self._convert_light_values(list(specular) + [alpha])
-        self.opengl_emissive = self._convert_light_values(list(emissive) + [alpha])
+        self.opengl_diffuse = self.to_c_arr(list(diffuse) + [alpha])
+        self.opengl_ambient = self.to_c_arr(list(ambient) + [alpha])
+        self.opengl_specular = self.to_c_arr(list(specular) + [alpha])
+        self.opengl_emissive = self.to_c_arr(list(emissive) + [alpha])
         self.opengl_shininess = (shininess / 1000) * 128
+        self.original_opengl_diffuse = self.opengl_diffuse
+        self.original_opengl_ambient = self.opengl_ambient
+        self.original_opengl_specular = self.opengl_specular
+        self.original_opengl_emissive = self.opengl_emissive
+        self.original_opengl_shininess = self.opengl_shininess
 
-    def _convert_light_values(self, values) -> List[c_float]:
+    def update(self, **kwargs):
+        ones = (1, 1, 1, 1)
+        opengl_diffuse = [a * b for a, b in zip(kwargs.get('diffuse', ones), self.original_opengl_diffuse)]
+        self.opengl_diffuse = self.to_c_arr(opengl_diffuse)
+        self.opengl_ambient = self.to_c_arr((a * b for a, b in zip(kwargs.get('ambient', ones), self.original_opengl_ambient)))
+        self.opengl_specular = self.to_c_arr((a * b for a, b in zip(kwargs.get('specular', ones), self.original_opengl_specular)))
+        self.opengl_emissive = self.to_c_arr((a * b for a, b in zip(kwargs.get('emissive', ones), self.original_opengl_emissive)))
+        self.opengl_shininess = (kwargs.get('shininess', self.original_opengl_shininess) / 1000) * 128
+
+    def __copy__(self):
+        return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
+                              emissive=self.emissive, shininess=self.shininess, name=self.name, alpha=self.alpha)
+
+    @staticmethod
+    def to_c_arr(values) -> List[c_float]:
         c_arr = (c_float * 4)
-        return c_arr(*map(self._convert_zero_to_one_values_into_minus_one_to_one_values, values))
+        return c_arr(*values)
 
     @staticmethod
     def _convert_zero_to_one_values_into_minus_one_to_one_values(value: float) -> float:
@@ -119,6 +155,8 @@ class OpenGLMaterial(Material):
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, self.opengl_specular)
         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, self.opengl_emissive)
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, self.opengl_shininess)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
 class OpenGLTexturedMaterial(OpenGLMaterial):
@@ -140,6 +178,12 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
             self.textures[texture_file_name] = self.texture
             assert self._value_is_a_power_of_two(self.texture.width)
             assert self._value_is_a_power_of_two(self.texture.height)
+
+
+    def __copy__(self):
+        return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
+                              emissive=self.emissive, shininess=self.shininess,
+                              texture_file_name=self.texture_file_name, name=self.name, alpha=self.alpha)
 
     @staticmethod
     def _value_is_a_power_of_two(value):

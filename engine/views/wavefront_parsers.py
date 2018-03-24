@@ -226,7 +226,7 @@ class WavefrontObjectFactory(object):
 
     def manufacture(self, name):
         try:
-            return self.object_map[name]
+            return self.object_map[name].__copy__()
         except KeyError:
             print(self.object_map.keys())
             raise

@@ -45,14 +45,17 @@ class ShipPartController(BaseController):
             if self._model.state_spec.get('spawn', False):
                 self.spawn()
             self._force_vector.set_force(1.0 * self._model.state_spec.get('thrust generated', 0))
+            self._model.set_input_value(1.0)
         elif axis_value > 0:
             axis_value = min(1.0, max(0.0, axis_value))
             self._force_vector.set_force(axis_value * self._model.state_spec.get('thrust generated', 0))
+            self._model.set_input_value(axis_value)
             try:
                 self._model.set_state('active')
             except AssertionError:
                 raise
         elif self._model.state_transition_possible_to('idle'):
+            self._model.set_input_value(0.0)
             self._force_vector.set_force(0.0)
             self._model.set_state('idle')
 

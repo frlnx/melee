@@ -15,20 +15,45 @@ class ShipPartModel(BaseModel):
         self._state = "idle"
         self._mesh = part_spec.get('mesh')
         self.nickname = part_spec.get('nickname')
-        self.target_indicator = part_spec.get('target_indicator', False)
-        self.texture_offset = [0, 0, 0]
-        self.texture_rotation = [0, 0, 0]
+        self.material_affected = part_spec.get('material_affected')
+        self.material_mode = part_spec.get('material_mode')
+        self.material_channel = part_spec.get('material_channels')
+        self.material_value = 0
+        self.input_value = 0
         self._spawn = None
         self._time_in_state = 0
+        self._material_observers = set()
+
+    def __getstate__(self):
+        d = super(ShipPartModel, self).__getstate__()
+        d['_material_observers'] = set()
+        return d
 
     def set_controls(self, button=None, keyboard=None, axis=None):
         self.button = button
         self.keyboard = keyboard
         self.axis = axis
 
+    def set_input_value(self, value):
+        self.set_material_value(value)
+        self.input_value = value
+
     def timers(self, dt):
         super().timers(dt)
-        self._time_in_state += dt
+        if 'timeout' in self.state_spec:
+            self._time_in_state += dt
+            self.set_material_value(self._time_in_state / self.state_spec['timeout'])
+
+    def set_material_value(self, value):
+        self.material_value = value
+        self._material_callback()
+
+    def _material_callback(self):
+        for callback in self._material_observers:
+            callback()
+
+    def observe_material(self, callback):
+        self._material_observers.add(callback)
 
     def set_spawn(self, projectile):
         self._spawn = projectile

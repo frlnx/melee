@@ -21,6 +21,8 @@ class BaseModel(object):
         self._spin = spin
         self._observers = set()
         self._mesh = None
+        self.animation = None
+        self.animation_value = 0
         self._bounding_box = bounding_box
         try:
             bb_width = (self._bounding_box.right - self._bounding_box.left)

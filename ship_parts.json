@@ -23,7 +23,10 @@
         "timeout": 5,
         "next state": "idle"
       }
-    ]
+    ],
+    "material_affected": "Plasma_Cannon_tip",
+    "material_mode": "diffuse",
+    "material_channels": "rgba"
   },
   {
     "name": "fuel tank",
@@ -58,7 +61,10 @@
         "fuel consumption": 10,
         "thrust generated": 1
       }
-    ]
+    ],
+    "material_affected": "Fire_front",
+    "material_mode": "diffuse",
+    "material_channels": "a"
   },
   {
     "name": "shield",
