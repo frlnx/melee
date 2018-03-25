@@ -57,9 +57,9 @@ class Engine(TwistedEventLoop):
         self.controllers.add(ship)
         self.ships.add(ship)
 
-        #m2 = self.smf.manufacture("wolf", position=self.random_position())
-        #self._new_model_callback(m2)
-        #self.spawn(m2)
+        m2 = self.smf.manufacture("wolf", position=self.random_position())
+        self._new_model_callback(m2)
+        self.spawn(m2)
 
     @staticmethod
     def random_position():

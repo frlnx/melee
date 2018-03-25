@@ -12,6 +12,7 @@ from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH
 from pywavefront import Wavefront
 import pyglet
 
+from math import hypot
 from collections import namedtuple
 from random import random, randrange
 from os import path, listdir
@@ -135,7 +136,6 @@ class Window(pyglet.window.Window):
 
     def on_draw(self):
         self.clear()
-        glDisable(GL_LIGHTING)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
@@ -153,6 +153,7 @@ class Window(pyglet.window.Window):
 
         x_offset, y_offset, z_offset = -self.center._model.movement
         lines = []
+        colors = []
         self._debris_counter += 0.034
         for debris in self.debris:
             i = (debris.i + self._debris_counter) % 1
@@ -164,18 +165,22 @@ class Window(pyglet.window.Window):
             z1 = (z + z_offset * 2 * (i - 0.05)) - z_offset
             z2 = (z + z_offset * 2 * i) - z_offset
             lines += [x1, y, z1, x2, y, z2]
+            distance = hypot(x2 - self.center._model.position.x, z2 - self.center._model.position.z)
+            color = 255 / (distance ** 2)
+            colors += [0, 0, 0, 0, color, color, color, color]
 
-        pyglet.graphics.draw(20, pyglet.gl.GL_LINES, ('v3f', lines), ('c4f', [0, 0, 0, 0, 255, 255, 255, 255] * 10))
-
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
-        glLightfv(GL_LIGHT0, GL_POSITION, self.lightfv(0, 1, 1, 0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
+        pyglet.graphics.draw(20, pyglet.gl.GL_LINES, ('v3f', lines), ('c4f', colors))
 
         if not self.menu:
+            glEnable(GL_LIGHTING)
+            glEnable(GL_LIGHT0)
+            glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
+            glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat * 4)(0, 1, 1, 0))
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
             for view in self.views:
                 view.draw()
+            glDisable(GL_LIGHTING)
+
         self.integrate_new_views()
         self.remove_views()
         if self.menu:

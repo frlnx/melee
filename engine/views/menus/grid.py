@@ -4,9 +4,10 @@ from itertools import chain
 from pyglet.text import Label
 from pyglet.window import key as keymap
 from pyglet.graphics import draw
-from pyglet.gl import GL_LINES, GL_DEPTH_TEST, GL_PROJECTION, GL_MODELVIEW
+from pyglet.gl import GL_LINES, GL_DEPTH_TEST, GL_PROJECTION, GL_MODELVIEW, GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
+    GL_POSITION, GL_DIFFUSE
 from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glOrtho, glRotatef, glTranslatef, \
-    glPopMatrix, glPushMatrix, glScalef
+    glPopMatrix, glPushMatrix, glScalef, glEnable, glLightfv, GLfloat
 
 
 class GridItem(object):
@@ -33,6 +34,11 @@ class GridItem(object):
         glPopMatrix()
 
     def draw_3d(self):
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
+        glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat * 4)(0, 1, 1, 0))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
         glTranslatef(self.x, 0, self.y)
         glRotatef(self.yaw, 0, 1, 0)
         if self._highlight_part:
@@ -41,6 +47,7 @@ class GridItem(object):
             scale = 0.25
         glScalef(scale, scale, scale)
         self.draw_function()
+        glDisable(GL_LIGHTING)
 
     def draw_2d(self):
         pass

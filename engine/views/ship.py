@@ -1,4 +1,4 @@
-from math import atan2, degrees
+from math import atan2, degrees, hypot
 from itertools import chain
 
 from engine.models.ship import ShipModel
@@ -21,8 +21,13 @@ class ShipView(BaseView):
         tx, ty, tz = self._model.target_pos
         x, y, z = self._model.position
 
-        pitch = sorted([-20, -degrees(atan2(z - tz, 23)) / 2, 30])[1]
-        roll = sorted([-20, degrees(atan2(x - tx, 23)) / 2, 20])[1]
+        distance = hypot(tx - x, tz - z)
+        distance = min(max(distance, 30), 200)
+
+        glTranslated(0, -distance, 0)
+
+        pitch = sorted([-20, -degrees(atan2(z - tz, distance / 2)) / 2, 30])[1]
+        roll = sorted([-20, degrees(atan2(x - tx, distance / 2)) / 2, 20])[1]
         glRotatef(pitch, 1, 0, 0)
         glRotatef(roll, 0, 0, 1)
 
@@ -37,5 +42,4 @@ class ShipView(BaseView):
         draw(n_points, GL_LINES, v3f, c4B)
 
     def center_camera(self):
-        x, y, z = self._model.position
-        glTranslated(-x, -y - 23, -z)
+        glTranslated(*-self._model.position)
