@@ -9,13 +9,15 @@
     "mesh": "plasma gun",
     "states": [
       {
-        "name": "idle"
+        "name": "idle",
+        "material_value": 1.0
       },
       {
         "name": "active",
         "spawn": "plasma projectile",
         "required state": "idle",
-        "next state": "charging"
+        "next state": "charging",
+        "material_value": 1.0
       },
       {
         "name": "charging",
