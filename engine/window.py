@@ -7,12 +7,16 @@ from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfig
 
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
 from pyglet.gl import GL_DIFFUSE, GLfloat, GL_AMBIENT
-from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef, glTranslatef
+from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
 from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 from pywavefront import Wavefront
 import pyglet
 
+from collections import namedtuple
+from random import random, randrange
 from os import path, listdir
+
+Debris  = namedtuple("Debris", ['x', 'y', 'z', 'i'])
 
 
 class Window(pyglet.window.Window):
@@ -33,6 +37,13 @@ class Window(pyglet.window.Window):
         self._stop_func = None
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
         self.input_handler = input_handler
+        self.debris = []
+        for i in range(10):
+            self.debris.append(Debris(randrange(-20, 20),
+                                      randrange(-2, 2),
+                                      randrange(-20, 20),
+                                      random()))
+        self._debris_counter = 0
         if input_handler:
             input_handler.push_handlers(self)
 
@@ -124,28 +135,43 @@ class Window(pyglet.window.Window):
 
     def on_draw(self):
         self.clear()
-        # glMatrixMode(GL_PROJECTION)
+        glDisable(GL_LIGHTING)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glEnable(GL_DEPTH_TEST)  # enable depth testing
+        glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(60., self.perspective, 1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        glEnable(GL_LIGHTING)
 
         glRotatef(90, 1, 0, 0)
         self.center.align_camera()
 
+        self.backdrop.draw()
+
+        self.center.center_camera()
+
+        x_offset, y_offset, z_offset = -self.center._model.movement
+        lines = []
+        self._debris_counter += 0.034
+        for debris in self.debris:
+            i = (debris.i + self._debris_counter) % 1
+            x = self.center._model.position.x + debris.x
+            x1 = (x + x_offset * 2 * (i - 0.05)) - x_offset
+            x2 = (x + x_offset * 2 * i) - x_offset
+            y = -10 + debris.y
+            z = self.center._model.position.z + debris.z
+            z1 = (z + z_offset * 2 * (i - 0.05)) - z_offset
+            z2 = (z + z_offset * 2 * i) - z_offset
+            lines += [x1, y, z1, x2, y, z2]
+
+        pyglet.graphics.draw(20, pyglet.gl.GL_LINES, ('v3f', lines), ('c4f', [0, 0, 0, 0, 255, 255, 255, 255] * 10))
+
+        glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
         glLightfv(GL_LIGHT0, GL_POSITION, self.lightfv(0, 1, 1, 0))
         glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
-        # glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, (GLfloat * 1)(.005))
-        # glEnable(GL_LIGHT0)
-        self.backdrop.draw()
-
-        self.center.center_camera()
 
         if not self.menu:
             for view in self.views:
