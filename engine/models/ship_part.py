@@ -43,6 +43,8 @@ class ShipPartModel(BaseModel):
         if 'timeout' in self.state_spec:
             self._time_in_state += dt
             self.set_material_value(self._time_in_state / self.state_spec['timeout'])
+        if 'material_value' in self.state_spec:
+            self.set_material_value(self.state_spec['material_value'])
 
     def set_material_value(self, value):
         self.material_value = value

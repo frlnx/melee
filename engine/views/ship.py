@@ -12,7 +12,6 @@ class ShipView(BaseView):
     def __init__(self, model: ShipModel, mesh=None):
         super().__init__(model, mesh=mesh)
         self._model = model
-        #self._draw = self.draw_bounding_box
 
     def align_camera(self):
         super().align_camera()
