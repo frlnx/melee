@@ -39,10 +39,10 @@ class Window(pyglet.window.Window):
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
         self.input_handler = input_handler
         self.debris = []
-        for i in range(10):
-            self.debris.append(Debris(randrange(-20, 20),
-                                      randrange(-2, 2),
-                                      randrange(-20, 20),
+        for i in range(30):
+            self.debris.append(Debris(randrange(-40, 40),
+                                      randrange(-4, 4),
+                                      randrange(-40, 40),
                                       random()))
         self._debris_counter = 0
         if input_handler:
@@ -154,7 +154,7 @@ class Window(pyglet.window.Window):
         x_offset, y_offset, z_offset = -self.center._model.movement
         lines = []
         colors = []
-        self._debris_counter += 0.034
+        self._debris_counter += self.center._model.movement.distance / 1000
         for debris in self.debris:
             i = (debris.i + self._debris_counter) % 1
             x = self.center._model.position.x + debris.x
@@ -166,10 +166,10 @@ class Window(pyglet.window.Window):
             z2 = (z + z_offset * 2 * i) - z_offset
             lines += [x1, y, z1, x2, y, z2]
             distance = hypot(x2 - self.center._model.position.x, z2 - self.center._model.position.z)
-            color = 255 / (distance ** 2)
+            color = 255 / (distance ** 2 + 1)
             colors += [0, 0, 0, 0, color, color, color, color]
 
-        pyglet.graphics.draw(20, pyglet.gl.GL_LINES, ('v3f', lines), ('c4f', colors))
+        pyglet.graphics.draw(len(self.debris) * 2, pyglet.gl.GL_LINES, ('v3f', lines), ('c4f', colors))
 
         if not self.menu:
             glEnable(GL_LIGHTING)

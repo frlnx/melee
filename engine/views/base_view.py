@@ -1,8 +1,9 @@
-
 from engine.models.base_model import BaseModel
 
 from pyglet.graphics import glTranslatef, glRotatef, glPushMatrix, glPopMatrix, GLfloat, glGetFloatv, \
     GL_MODELVIEW_MATRIX, glMultMatrixf, glLoadIdentity, glTranslated
+
+from math import sqrt
 
 
 class BaseView(object):
@@ -86,7 +87,7 @@ class BaseView(object):
         glPopMatrix()
 
     def align_camera(self):
-        yaw = -self._model.yaw + self._model.spin.yaw - self.yaw_catchup
+        yaw = -self._model.yaw - (self._model.spin.yaw / 2 - self.yaw_catchup)
         glRotatef(yaw, 0, 1, 0)
 
     def center_camera(self):

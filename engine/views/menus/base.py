@@ -3,6 +3,7 @@ from typing import List, Callable
 from pyglet.graphics import draw
 from pyglet.gl import GL_LINES
 from pyglet.text import Label
+from pyglet.window import key
 
 
 class BaseButton(object):
@@ -71,6 +72,13 @@ class BaseMenu(object):
                                                func=func)
             buttons.append(button)
         return cls(heading, buttons, x, y)
+
+    def on_key_press(self, symbol, modifiers):
+        option_id = symbol - key._1
+        try:
+            self.buttons[option_id].func()
+        except IndexError:
+            pass
 
     def on_mouse_press(self, x, y, button, modifiers):
         for button in self.buttons:
