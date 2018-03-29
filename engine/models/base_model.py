@@ -27,9 +27,9 @@ class BaseModel(object):
         try:
             bb_width = (self._bounding_box.right - self._bounding_box.left)
             bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-            self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+            self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
         except AttributeError:
-            self._inertia = 1
+            self.inertia = 1
         self.update_needed = False
         self._alive = True
 
@@ -72,7 +72,7 @@ class BaseModel(object):
         #force = force.__copy__()
         self.mutate_force_to_local(force)
         self.add_movement(*(force.translation_forces() / self.mass))
-        self.add_spin(0, force.delta_yaw / self._inertia, 0)
+        self.add_spin(0, force.delta_yaw / self.inertia, 0)
 
     def mutate_force_to_local(self, mf: MutableForce):
         self.mutate_offsets_to_local(mf.position)
@@ -106,7 +106,7 @@ class BaseModel(object):
     def tangent_momentum_at(self, local_coordinates: Offsets) -> Offsets:
         if local_coordinates.distance == 0:
             return MutableOffsets(0, 0, 0)
-        yaw = local_coordinates.rotated(90) * (self._spin.yaw_radian * self._inertia / local_coordinates.distance)
+        yaw = local_coordinates.rotated(90) * (self._spin.yaw_radian * self.inertia / local_coordinates.distance)
         return yaw
 
     @property

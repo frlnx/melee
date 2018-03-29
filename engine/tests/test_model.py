@@ -100,7 +100,7 @@ class TestGlobalMomentumAt(object):
         force = self.target.global_momentum_at(measure_point)
         assert round(force.forces.x, 2) == 0
         assert round(force.forces.y, 2) == 0
-        assert round(force.forces.z, 2) == round(rotation_speed_at_distance * self.target._inertia, 2)
+        assert round(force.forces.z, 2) == round(rotation_speed_at_distance * self.target.inertia, 2)
 
 
 class TestApplyForce(object):
@@ -133,7 +133,7 @@ class TestApplyForce(object):
         self.target.apply_global_force(force)
         pitch, yaw, roll = self.target.spin
         assert (round(pitch, 2), round(yaw, 2), round(roll, 2)) == \
-               (0, round(degrees_at_offset / self.target._inertia, 2), 0)
+               (0, round(degrees_at_offset / self.target.inertia, 2), 0)
 
 
 class TestForceTranslationGlobalLocal(object):

@@ -19,7 +19,7 @@ class ShipModel(BaseModel):
         self._mass = sum([part.mass for part in self.parts])
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-        self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
         self._rebuild_observers = set()
         self._own_spawns = []
 
@@ -71,7 +71,7 @@ class ShipModel(BaseModel):
         self._mass = sum([part.mass for part in self.parts])
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-        self._inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
         self.rebuild_callback()
 
     def parts_intersected_by(self, other_model):
