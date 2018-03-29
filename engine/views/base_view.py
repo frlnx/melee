@@ -21,6 +21,10 @@ class BaseView(object):
             self._draw = self._draw_nothing
         self.yaw_catchup = 0
 
+    @property
+    def is_alive(self):
+        return self._model.is_alive
+
     def set_model(self, model: BaseModel):
         self._model.unobserve(self.update)
         self._model = model

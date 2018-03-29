@@ -45,6 +45,5 @@ class ClientEngine(Engine):
         self.window.spawn(model)
 
     def decay(self, controller):
-        self.window.del_view(controller.view)
         self.controllers.remove(controller)
         # TODO: Deregister target

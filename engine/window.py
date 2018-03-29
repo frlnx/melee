@@ -178,7 +178,10 @@ class Window(pyglet.window.Window):
             glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat * 4)(0, 1, 1, 0))
             glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
             for view in self.views:
-                view.draw()
+                if view.is_alive:
+                    view.draw()
+                else:
+                    self.del_view(view)
             glDisable(GL_LIGHTING)
 
         self.integrate_new_views()

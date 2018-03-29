@@ -25,14 +25,15 @@ class ShipController(BaseController):
 
     def self_destruct(self):
         for part in self._model.parts:
-            self.destroy_part(part)
+            part.set_movement(*self._model.momentum_at(part.position).forces)
+            self._model.mutate_offsets_to_global(part.position)
+            part.set_rotation(*self._model.rotation)
+            self._model.add_own_spawn(part)
+            self._model.remove_part(part)
 
     def destroy_part(self, part):
-        part.set_movement(*self._model.momentum_at(part.position).forces)
-        self._model.mutate_offsets_to_global(part.position)
-        part.set_rotation(*self._model.rotation)
-        self._model.add_own_spawn(part)
         self._model.remove_part(part)
+        part.set_alive(False)
 
     @property
     def spawns(self):
@@ -96,7 +97,7 @@ class ShipController(BaseController):
             parts = self._model.parts_intersected_by(other_model)
             for part in parts:
                 self.destroy_part(part)
-            other_model.set_alive(False)
+            #other_model.set_alive(False)
         else:
             collides, x, z = self._model.intersection_point(other_model)
             if collides and False:

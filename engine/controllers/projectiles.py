@@ -11,10 +11,6 @@ class ProjectileController(BaseController):
         super(ProjectileController, self).__init__(model, gamepad)
         self._model = model
 
-    @property
-    def is_alive(self):
-        return self._model.is_alive
-
     def solve_collision(self, other_model: BaseModel):
         collides, x, z = self._model.intersection_point(other_model)
         if collides:

@@ -16,7 +16,7 @@ class BaseController(object):
 
     @property
     def is_alive(self):
-        return True
+        return self._model.is_alive
 
     def add_sub_controller(self, sub_controller):
         self._sub_controllers.add(sub_controller)

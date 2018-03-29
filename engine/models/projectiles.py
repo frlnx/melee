@@ -15,7 +15,8 @@ class PlasmaModel(BaseModel):
         return self._ttl > 0 and self._alive
 
     def count_down(self, dt):
-        self._ttl -= dt
+        if self._ttl > 0:
+            self._ttl -= dt
 
     def timers(self, dt):
         self.count_down(dt)

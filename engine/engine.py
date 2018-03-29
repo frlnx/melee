@@ -23,6 +23,7 @@ class Engine(TwistedEventLoop):
         self.clock.schedule(self.update)
         self.clock.set_fps_limit(60)
         self._new_model_callbacks = set()
+        self._dead_model_callbacks = set()
         self.rnd = random.seed()
         self.gamepad = InputHandler()
         self.models = {}
@@ -46,6 +47,19 @@ class Engine(TwistedEventLoop):
     def unobserve_new_models(self, func: Callable):
         try:
             self._new_model_callbacks.remove(func)
+        except KeyError:
+            pass
+
+    def observe_dead_models(self, func: Callable):
+        self._dead_model_callbacks.add(func)
+
+    def _dead_model_callback(self, model):
+        for _dead_model_observer in self._dead_model_callbacks:
+            _dead_model_observer(model)
+
+    def unobserve_dead_models(self, func: Callable):
+        try:
+            self._dead_model_callbacks.remove(func)
         except KeyError:
             pass
 
@@ -89,7 +103,14 @@ class Engine(TwistedEventLoop):
         self.ships.add(controller)
 
     def decay(self, controller):
+        print("Decay from network", model.uuid)
         self.controllers.remove(controller)
+        # TODO: Deregister target
+
+    def decay_with_callback(self, controller):
+        self.controllers.remove(controller)
+        self._dead_model_callback(controller._model)
+        print("Informing network of decay", controller._model.uuid)
         # TODO: Deregister target
 
     def propagate_target(self, ship):
@@ -106,7 +127,7 @@ class Engine(TwistedEventLoop):
             if not controller.is_alive:
                 decays.append(controller)
         for decaying_controller in decays:
-            self.decay(decaying_controller)
+            self.decay_with_callback(decaying_controller)
         for ship in self.ships:
             for controller in self.controllers:
                 if ship != controller:
