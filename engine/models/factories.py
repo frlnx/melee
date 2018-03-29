@@ -42,8 +42,8 @@ class ShipModelFactory(object):
         if spin is None:
             spin = (0, 0, 0)
         spin = MutableDegrees(*spin)
-        bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
         bounding_box.freeze()
+        bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
                          movement=movement, spin=spin, bounding_box=bounding_box)
         return ship

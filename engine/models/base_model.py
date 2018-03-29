@@ -117,7 +117,7 @@ class BaseModel(object):
         return self._bounding_box.intersection_point(other_model.bounding_box)
 
     def update(self):
-        self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
+        self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)
         self._callback()
         self.update_needed = True
 
