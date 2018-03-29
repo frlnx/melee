@@ -25,12 +25,14 @@ class ShipController(BaseController):
 
     def self_destruct(self):
         for part in self._model.parts:
-            part.set_movement(*self._model.momentum_at(part.position).forces)
-            self._model.mutate_offsets_to_global(part.position)
-            part.set_rotation(*self._model.rotation)
-            self._model.add_own_spawn(part)
-        self._model.parts = []
-        #self._model.rebuild()
+            self.destroy_part(part)
+
+    def destroy_part(self, part):
+        part.set_movement(*self._model.momentum_at(part.position).forces)
+        self._model.mutate_offsets_to_global(part.position)
+        part.set_rotation(*self._model.rotation)
+        self._model.add_own_spawn(part)
+        self._model.remove_part(part)
 
     @property
     def spawns(self):
@@ -90,15 +92,16 @@ class ShipController(BaseController):
         self._model.set_position(*location)
 
     def solve_collision(self, other_model: BaseModel):
-        collides, x, z = self._model.intersection_point(other_model)
-        if collides and isinstance(other_model, PlasmaModel):
-            print("Bang at {} {}".format(x, z))
-
-        if collides and False:
-            position = MutableOffsets(x, 0, z)
-            my_force = self._model.global_momentum_at(position)
-            other_force = other_model.global_momentum_at(position)
-            #other_model.apply_global_force(-other_force)
-            #self._model.apply_global_force(-my_force)
-            other_model.apply_global_force(my_force)
-            self._model.apply_global_force(other_force)
+        if isinstance(other_model, PlasmaModel):
+            parts = self._model.parts_intersected_by(other_model)
+            for part in parts:
+                self.destroy_part(part)
+            other_model.set_alive(False)
+        else:
+            collides, x, z = self._model.intersection_point(other_model)
+            if collides and False:
+                position = MutableOffsets(x, 0, z)
+                my_force = self._model.global_momentum_at(position)
+                other_force = other_model.global_momentum_at(position)
+                other_model.apply_global_force(my_force)
+                self._model.apply_global_force(other_force)

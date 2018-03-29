@@ -50,6 +50,6 @@ class TestBoundingBox(object):
         bb_xes = list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         bb_yes = list(chain(*[[line.y1, line.y2] for line in self.ship1.bounding_box.lines]))
         self.ship1.set_position_and_rotation(0, 0, 0, 0, 0, 0)
-        assert bb_xes == list(chain(*[[line.x1 - 10, line.x2 - 10] for line in self.ship1.bounding_box.lines]))
+        assert bb_xes != list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
+        assert [x - 10 for x in bb_xes] == list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         assert bb_yes == list(chain(*[[line.y1, line.y2] for line in self.ship1.bounding_box.lines]))
-
