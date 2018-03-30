@@ -45,15 +45,24 @@ class ShipController(BaseController):
         self._model.set_spin(0, 0, 0)
 
     def register_target(self, target_model: ShipModel):
-        self._possible_targets.append(target_model)
+        if target_model.mass > 1.0 and target_model not in self._possible_targets:
+            self._possible_targets.append(target_model)
+
+    def deregister_target(self, target_model: ShipModel):
+        try:
+            self._possible_targets.remove(target_model)
+        except ValueError:
+            pass
 
     def select_next_target(self):
-        self.select_target(self.next_target())
+        next_target = self.next_target()
+        self.select_target(next_target)
         self.update_target_position()
 
     def next_target(self) -> BaseModel:
         index = self._possible_targets.index(self._target_model)
         target_model = self._possible_targets[(index + 1) % len(self._possible_targets)]
+        print(index, self._possible_targets)
         return target_model
 
     def select_target(self, target: BaseModel):

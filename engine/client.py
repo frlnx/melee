@@ -10,6 +10,10 @@ class ClientEngine(Engine):
 
     def __init__(self, input_handler=None, window=None):
         super().__init__()
+
+        self.my_model = self.smf.manufacture("wolf", position=self.random_position())
+        self.models[self.my_model.uuid] = self.my_model
+
         if window is None:
             self.window = Window()
         else:
@@ -19,6 +23,11 @@ class ClientEngine(Engine):
             self.gamepad = input_handler
         else:
             self.gamepad = Keyboard(self.window)
+
+        self.my_controller = self.controller_factory.manufacture(self.my_model, input_handler=self.gamepad)
+        self._controllers[self.my_model.uuid] = self.my_controller
+        self.propagate_target(self.my_model)
+
         self.window.push_handlers(self)
         self.window._stop_func = self.stop
         self._stop_func = None
@@ -40,10 +49,18 @@ class ClientEngine(Engine):
         super(ClientEngine, self).spawn(model)
         self.window.spawn(model)
 
+    def spawn_ship(self, controller):
+        super(ClientEngine, self).spawn_ship(controller)
+        self.propagate_target(controller._model)
+
     def spawn_with_callback(self, model: BaseModel):
         super(ClientEngine, self).spawn_with_callback(model)
         self.window.spawn(model)
 
-    def decay(self, controller):
-        self.controllers.remove(controller)
-        # TODO: Deregister target
+    def decay(self, uuid):
+        model = self.models[uuid]
+        self.my_controller.deregister_target(model)
+        super(ClientEngine, self).decay(uuid)
+
+    def propagate_target(self, ship: BaseModel):
+        self.my_controller.register_target(ship)

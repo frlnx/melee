@@ -16,7 +16,8 @@ class EventProtocol(Int32StringReceiver):
             "handshake": self.handshake,
             "ping": self.ping,
             "pong": self.pong,
-            "spawn": self.spawn_model
+            "spawn": self.spawn_model,
+            "decay": self.decay_model
         }
         self.uuid = uuid4()
 
@@ -30,12 +31,12 @@ class EventProtocol(Int32StringReceiver):
             self.send_spawn_model(model)
 
     @staticmethod
-    def serialize(d: dict):
+    def serialize(d: dict) -> bytes:
         ser = pickle.dumps(d, protocol=-1)
         return ser
 
     @staticmethod
-    def deserialize(m: bytes):
+    def deserialize(m: bytes) -> dict:
         return pickle.loads(m)
 
     def send(self, frame: dict):
@@ -46,8 +47,14 @@ class EventProtocol(Int32StringReceiver):
     def send_spawn_model(self, model):
         self.send({"command": "spawn", "model": model})
 
+    def send_decay_model(self, model):
+        self.send({"command": "decay", "model_uuid": model.uuid})
+
     def spawn_model(self, frame):
         self.engine.spawn(frame['model'])
+
+    def decay_model(self, frame):
+        self.engine.decay(frame['model_uuid'])
 
     def connectionLost(self, reason=connectionDone):
         pass

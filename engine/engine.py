@@ -6,7 +6,8 @@ from engine.pigtwisted import TwistedEventLoop
 from engine.input_handlers import InputHandler
 
 import random
-from typing import Callable
+from typing import Callable, Iterable
+from itertools import combinations
 
 
 class Engine(TwistedEventLoop):
@@ -15,7 +16,7 @@ class Engine(TwistedEventLoop):
 
     def __init__(self):
         super().__init__()
-        self.controllers = set()
+        self._controllers = dict()
         self.ships = set()
         self.smf = ShipModelFactory()
         self.controller_factory = ControllerFactory()
@@ -27,8 +28,13 @@ class Engine(TwistedEventLoop):
         self.rnd = random.seed()
         self.gamepad = InputHandler()
         self.models = {}
-        self.my_model = self.smf.manufacture("wolf", position=self.random_position())
-        self.models[self.my_model.uuid] = self.my_model
+
+    @property
+    def controllers(self) -> Iterable["engine.controllers.BaseController"]:
+        return self._controllers.values()
+
+    def controller_by_uuid(self, uuid) -> "engine.controllers.BaseController":
+        return self._controllers[uuid]
 
     def update_model(self, frames):
         for frame in frames:
@@ -64,12 +70,7 @@ class Engine(TwistedEventLoop):
             pass
 
     def on_enter(self):
-        model = self.my_model
-        self._new_model_callback(model)
-        ship = self.controller_factory.manufacture(model, input_handler=self.gamepad)
-        self.propagate_target(ship)
-        self.controllers.add(ship)
-        self.ships.add(ship)
+        self._new_model_callback(self.my_model)
 
         m2 = self.smf.manufacture("wolf", position=self.random_position())
         self._new_model_callback(m2)
@@ -86,7 +87,7 @@ class Engine(TwistedEventLoop):
         self._new_model_callback(model)
         self.models[model.uuid] = model
         controller = self.controller_factory.manufacture(model, input_handler=self.gamepad)
-        self.controllers.add(controller)
+        self._controllers[model.uuid] = controller
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
 
@@ -94,29 +95,29 @@ class Engine(TwistedEventLoop):
         print("Spawning from network", model.uuid)
         controller = self.controller_factory.manufacture(model)
         self.models[model.uuid] = model
-        self.controllers.add(controller)
+        self._controllers[model.uuid] = controller
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
 
     def spawn_ship(self, controller):
-        self.propagate_target(controller)
         self.ships.add(controller)
 
-    def decay(self, controller):
-        print("Decay from network", model.uuid)
-        self.controllers.remove(controller)
-        # TODO: Deregister target
+    def decay(self, uuid):
+        print("Decay from network", uuid)
+        model = self.models[uuid]
+        model.set_alive(False)
+        self.remove_controller_by_uuid(uuid)
+
+    def remove_controller_by_uuid(self, uuid):
+        try:
+            del self._controllers[uuid]
+        except KeyError:
+            pass
 
     def decay_with_callback(self, controller):
-        self.controllers.remove(controller)
+        self.decay(controller._model.uuid)
         self._dead_model_callback(controller._model)
         print("Informing network of decay", controller._model.uuid)
-        # TODO: Deregister target
-
-    def propagate_target(self, ship):
-        for c in self.controllers:
-            c.register_target(ship._model)
-            ship.register_target(c._model)
 
     def update(self, dt):
         spawns = []
@@ -128,11 +129,8 @@ class Engine(TwistedEventLoop):
                 decays.append(controller)
         for decaying_controller in decays:
             self.decay_with_callback(decaying_controller)
-        for ship in self.ships:
-            for controller in self.controllers:
-                if ship != controller:
-                    ship.solve_collision(controller._model)
-        #for c1, c2 in combinations(self.controllers, 2):
-        #    c1.solve_collision(c2._model)
+        for c1, c2 in combinations(self.controllers, 2):
+            c1.solve_collision(c2._model)
+            c2.solve_collision(c1._model)
         for model in spawns:
             self.spawn_with_callback(model)

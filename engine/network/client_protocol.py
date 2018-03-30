@@ -8,7 +8,11 @@ class ClientProtocol(EventProtocol):
     def connectionMade(self):
         super(ClientProtocol, self).connectionMade()
         self.engine.observe_new_models(self.engine_callback_new_model)
+        self.engine.observe_dead_models(self.engine_callback_decay_model)
         self.engine.clock.schedule_interval(self.initiate_ping, interval=10)
 
     def engine_callback_new_model(self, model):
         self.send_spawn_model(model)
+
+    def engine_callback_decay_model(self, model):
+        self.send_decay_model(model)
