@@ -19,6 +19,7 @@ class ClientEngine(Engine):
         else:
             self.window = window
         self.window.spawn(self.my_model)
+        self.window.connect = self.connect
         if input_handler is not None:
             self.gamepad = input_handler
         else:
@@ -31,7 +32,7 @@ class ClientEngine(Engine):
         self.window.push_handlers(self)
         self.window._stop_func = self.stop
         self._stop_func = None
-        self.clock.schedule_interval(self.window.update_view_timers, 0.033)
+        self.connect_func = lambda x: None
 
     def on_window_close(self):
         self.stop()
@@ -43,7 +44,11 @@ class ClientEngine(Engine):
         self._stop_func = func
 
     def bind_connect(self, connect_func):
-        self.window.connect = connect_func
+        self.connect_func = connect_func
+
+    def connect(self, *args, **kwargs):
+        self.connect_func(*args, **kwargs)
+        self.solve_collisions = self._client_solve_collisions
 
     def spawn(self, model: BaseModel):
         super(ClientEngine, self).spawn(model)
@@ -64,3 +69,13 @@ class ClientEngine(Engine):
 
     def propagate_target(self, ship: BaseModel):
         self.my_controller.register_target(ship)
+
+    def update(self, dt):
+        super(ClientEngine, self).update(dt)
+        self.window.update_view_timers(dt)
+
+    def _client_solve_collisions(self):
+        for other_model in self.models.values():
+            if other_model == self.my_model:
+                continue
+            self.my_controller.solve_collision(other_model)

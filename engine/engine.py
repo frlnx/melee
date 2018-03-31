@@ -129,8 +129,11 @@ class Engine(TwistedEventLoop):
                 decays.append(controller)
         for decaying_controller in decays:
             self.decay_with_callback(decaying_controller)
+        self.solve_collisions()
+        for model in spawns:
+            self.spawn_with_callback(model)
+
+    def solve_collisions(self):
         for c1, c2 in combinations(self.controllers, 2):
             c1.solve_collision(c2._model)
             c2.solve_collision(c1._model)
-        for model in spawns:
-            self.spawn_with_callback(model)
