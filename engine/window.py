@@ -17,7 +17,9 @@ from collections import namedtuple
 from random import random, randrange
 from os import path, listdir
 
-Debris = namedtuple("Debris", ['x', 'y', 'z', 'i'])
+from engine.views.debris import Debris
+
+#Debris = namedtuple("Debris", ['x', 'y', 'z', 'i'])
 
 
 class Window(pyglet.window.Window):
@@ -42,11 +44,6 @@ class Window(pyglet.window.Window):
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
         self.input_handler = input_handler
         self.debris = []
-        for i in range(30):
-            self.debris.append(Debris(randrange(-40, 40),
-                                      randrange(-4, 4),
-                                      randrange(-40, 40),
-                                      random()))
         self._debris_counter = 0
 
         if input_handler:
@@ -58,7 +55,9 @@ class Window(pyglet.window.Window):
     def update_view_timers(self, dt):
         for view in self.views:
             view.update_view_timer(dt)
-        self._debris_counter += dt
+        for debris in self.debris:
+            debris.update(dt)
+        #self._debris_counter += dt
 
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
@@ -70,14 +69,9 @@ class Window(pyglet.window.Window):
             print("DEBUG")
 
     def _menu_main_menu(self):
+        functions = [self.close_menu, self._menu_shipyard, self._menu_controls, self._menu_network, self.exit]
         self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu",
-                                                                [
-                                                                    self.close_menu,
-                                                                    self._menu_shipyard,
-                                                                    self._menu_controls,
-                                                                    self._menu_network,
-                                                                    self.exit
-                                                                ], self._menu_left, self._menu_bottom))
+                                                                functions, self._menu_left, self._menu_bottom))
 
     def _menu_shipyard(self):
         self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
@@ -129,6 +123,9 @@ class Window(pyglet.window.Window):
         if self.my_model is None:
             self.my_model = model
             self.my_view = view
+            for i in range(30):
+                self.debris.append(Debris(randrange(-40, 40), randrange(-4, 4), randrange(-40, 40),
+                                          random(), model.movement))
 
     def del_view(self, view: BaseView):
         self.del_views.add(view)
@@ -152,8 +149,8 @@ class Window(pyglet.window.Window):
         if self.menu:
             self.draw_menu()
         else:
-            self.my_view.center_camera()
             self.draw_debris()
+            self.my_view.center_camera()
             self.draw_space()
             self.integrate_new_views()
             self.remove_views()
@@ -170,23 +167,13 @@ class Window(pyglet.window.Window):
         glRotatef(90, 1, 0, 0)
 
     def draw_debris(self):
-        x_offset, y_offset, z_offset = -self.my_model.movement
+        if len(self.debris) == 0:
+            return
         lines = []
         colors = []
         for debris in self.debris:
-            i = (debris.i + self._debris_counter) % 1
-            x = self.my_model.position.x + debris.x
-            x1 = (x + x_offset * 2 * (i - 0.05)) - x_offset
-            x2 = (x + x_offset * 2 * i) - x_offset
-            y = -10 + debris.y
-            z = self.my_model.position.z + debris.z
-            z1 = (z + z_offset * 2 * (i - 0.05)) - z_offset
-            z2 = (z + z_offset * 2 * i) - z_offset
-            lines += [x1, y, z1, x2, y, z2]
-            distance = hypot(x2 - self.my_model.position.x, z2 - self.my_model.position.z)
-            color = 255 / (distance ** 2 + 1)
-            colors += [0, 0, 0, 0, color, color, color, color]
-
+            lines += debris.v3f
+            colors += debris.c4f
         pyglet.graphics.draw(len(self.debris) * 2, pyglet.gl.GL_LINES, ('v3f', lines), ('c4f', colors))
 
     def draw_space(self):
