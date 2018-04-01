@@ -12,14 +12,10 @@ from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH
 from pywavefront import Wavefront
 import pyglet
 
-from math import hypot
-from collections import namedtuple
 from random import random, randrange
 from os import path, listdir
 
 from engine.views.debris import Debris
-
-#Debris = namedtuple("Debris", ['x', 'y', 'z', 'i'])
 
 
 class Window(pyglet.window.Window):
