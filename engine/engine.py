@@ -1,6 +1,6 @@
 from engine.models.base_model import BaseModel
 from engine.models.ship import ShipModel
-from engine.models.factories import ShipModelFactory
+from engine.models.factories import ShipModelFactory, AsteroidModelFactory
 from engine.controllers.factories import ControllerFactory
 from engine.pigtwisted import TwistedEventLoop
 from engine.input_handlers import InputHandler
@@ -19,6 +19,7 @@ class Engine(TwistedEventLoop):
         self._controllers = dict()
         self.ships = set()
         self.smf = ShipModelFactory()
+        self.amf = AsteroidModelFactory()
         self.controller_factory = ControllerFactory()
         self.has_exit = True
         self.clock.schedule(self.update)
@@ -75,6 +76,10 @@ class Engine(TwistedEventLoop):
         m2 = self.smf.manufacture("wolf", position=self.random_position())
         self._new_model_callback(m2)
         self.spawn(m2)
+
+        for i in range(10):
+            model = self.amf.manufacture(self.random_position())
+            self.spawn(model)
 
     @staticmethod
     def random_position():

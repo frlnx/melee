@@ -1,9 +1,12 @@
 import json
 from copy import deepcopy
 from functools import partial
-from math import sin, cos
+from math import sin, cos, pi
+from random import random
 
 from engine.models.projectiles import PlasmaModel
+from engine.models.base_model import BaseModel
+from engine.models.asteroid import AsteroidModel, AsteroidPartModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -135,3 +138,32 @@ class ProjectileModelSpawnFunctionFactory(object):
         movement += ship_model.global_momentum_at(ship_part_model.position).forces
         spin = -ship_model.spin
         return self.factory.manufacture(name, position, rotation, movement, spin)
+
+
+class AsteroidModelFactory(object):
+
+    def __init__(self):
+        pass
+
+    def manufacture(self, position):
+        parts = set()
+        bounding_box = Polygon([])
+        for i in range(10):
+            part = self.manufacture_astroid_part()
+            parts.add(part)
+            bounding_box += part.bounding_box
+        rotation = MutableDegrees(0, 0, 0)
+        movement = MutableOffsets(0, 0, 0)
+        spin = MutableDegrees(0, 0, 0)
+        return AsteroidModel(parts, position, rotation, movement, spin, bounding_box)
+
+    def manufacture_astroid_part(self):
+        yaw = random() * pi * 2 - pi
+        distance = random() * 3 + 2
+        position = MutableOffsets(sin(yaw) * distance, 0, cos(yaw) * distance)
+        rotation = MutableDegrees(0, 0, 0)
+        movement = MutableOffsets(0, 0, 0)
+        spin = MutableDegrees(0, 0, 0)
+        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                            x=position.x, y=position.z, rotation=rotation.yaw)
+        return AsteroidPartModel(position, rotation, movement, spin, bounding_box)

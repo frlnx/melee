@@ -1,6 +1,7 @@
 from typing import Set
 
-from engine.models.ship import ShipModel, BaseModel
+from engine.models.ship import ShipModel
+from engine.models.base_model import BaseModel
 from engine.models.projectiles import PlasmaModel
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController

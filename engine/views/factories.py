@@ -1,5 +1,6 @@
 from engine.views.ship_part import ShipPartView
 from engine.views.ship import ShipView
+from engine.models.asteroid import AsteroidPartModel, AsteroidModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
 from engine.models.base_model import BaseModel
@@ -47,25 +48,15 @@ class ViewFactory(object):
         return ship_view
 
 
-class DummyViewFactory(ViewFactory):
-
-    def __init__(self, view_class=DummyView):
-        self._view = view_class()
-
-    def repurpose(self, model: BaseModel) -> BaseView:
-        return self._view
-
-    def manufacture(self, model: BaseModel) -> BaseView:
-        return self._view
-
-
 class DynamicViewFactory(ViewFactory):
 
     model_view_map = {
         BaseModel: BaseView,
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
-        PlasmaModel: BaseView
+        PlasmaModel: BaseView,
+        AsteroidModel: ShipView,
+        AsteroidPartModel: ShipPartView
     }
 
     def manufacture(self, model: BaseModel):

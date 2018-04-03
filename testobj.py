@@ -4,6 +4,7 @@ from pyglet.gl import *
 from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
 from pywavefront import Wavefront
 import ctypes
+from os import path
 
 
 class TestWindow(Window):
@@ -13,9 +14,12 @@ class TestWindow(Window):
     def __init__(self, obj):
         super().__init__(width=1280, height=720)
         self.obj = obj
-        self.lightfv = ctypes.c_float * 4
+        self._to_cfloat_array = ctypes.c_float * 4
         self.rotation = 0
         pyglet.clock.schedule(self.update)
+
+    def to_cfloat_array(self, *floats):
+        return self._to_cfloat_array(*floats)
 
     def on_resize(self, width, height):
         glMatrixMode(GL_PROJECTION)
@@ -34,18 +38,9 @@ class TestWindow(Window):
         glEnable(GL_LIGHTING)
 
         glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
-        glLightfv(GL_LIGHT0, GL_POSITION, self.lightfv(2, 2, -3, 1))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.5, 1.0, 1.5, 1.0))
-        glEnable(GL_LIGHT1)
-        glLightfv(GL_LIGHT1, GL_POSITION, self.lightfv(-2, 2, -3, 1))
-        glLightfv(GL_LIGHT1, GL_DIFFUSE, (GLfloat * 4)(1.0, 0.5, 0.5, 1.0))
-        glEnable(GL_LIGHT2)
-        glLightfv(GL_LIGHT2, GL_POSITION, self.lightfv(-2, -2, -3, 1))
-        glLightfv(GL_LIGHT2, GL_DIFFUSE, (GLfloat * 4)(0.5, 0.5, 1.0, 1.0))
-        glEnable(GL_LIGHT3)
-        glLightfv(GL_LIGHT3, GL_POSITION, self.lightfv(2, -2, -3, 1))
-        glLightfv(GL_LIGHT3, GL_DIFFUSE, (GLfloat * 4)(0.5, 0.5, 0.5, 1.0))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(1, 1, 1, 1.0))
+        glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 1, 1, 0))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(1.0, 1.0, 1.0, 1.0))
 
         glTranslated(0, 0, -4)
         glRotatef(self.rotation, 0, 1, 0)
@@ -57,7 +52,7 @@ class TestWindow(Window):
 if __name__ == "__main__":
     print(GL_MAX_LIGHTS, GL_LIGHT0)
     op = OpenGLWaveFrontParser()
-    with open("objects\\cockpit.obj", 'r') as f:
+    with open(path.join("objects", "stone.obj"), 'r') as f:
         obj = op.parse(f.readlines())
     #obj = Wavefront("objects\\cockpit.obj")
     win = TestWindow(obj)

@@ -107,6 +107,7 @@ class BaseView(object):
     def update_view_timer(self, dt):
         self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt
 
+
 class DummyView(BaseView):
 
     def __init__(self, *args, **kwargs):
