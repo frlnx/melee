@@ -3,8 +3,6 @@ from engine.models.base_model import BaseModel
 from pyglet.graphics import glTranslatef, glRotatef, glPushMatrix, glPopMatrix, GLfloat, glGetFloatv, \
     GL_MODELVIEW_MATRIX, glMultMatrixf, glLoadIdentity, glTranslated
 
-from math import sqrt
-
 
 class BaseView(object):
 
@@ -17,6 +15,7 @@ class BaseView(object):
         self.update()
         if mesh:
             self._mesh = mesh
+            self._draw = self._draw_mesh
         else:
             self._draw = self._draw_nothing
         self.yaw_catchup = 0

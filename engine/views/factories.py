@@ -5,7 +5,8 @@ from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
 from engine.models.base_model import BaseModel
 from engine.models.projectiles import PlasmaModel
-from engine.views.base_view import BaseView, DummyView
+from engine.models.composite_model import CompositeModel
+from engine.views.base_view import BaseView
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 
@@ -56,7 +57,7 @@ class DynamicViewFactory(ViewFactory):
         ShipPartModel: ShipPartView,
         PlasmaModel: BaseView,
         AsteroidModel: ShipView,
-        AsteroidPartModel: ShipPartView
+        AsteroidPartModel: BaseView
     }
 
     def manufacture(self, model: BaseModel):
@@ -65,15 +66,14 @@ class DynamicViewFactory(ViewFactory):
             mesh = self.mesh_factory.manufacture(model.mesh)
         else:
             mesh = None
-        ship_view = view_class(model, mesh=mesh)
-        if hasattr(model, 'parts') and isinstance(model, ShipModel):
-            self.rebuild_subviews(ship_view, model)
-            model.observe_rebuild(lambda model: self.rebuild_subviews(ship_view, model))
-        return ship_view
+        view = view_class(model, mesh=mesh)
+        if hasattr(model, 'parts') and isinstance(model, CompositeModel):
+            self.rebuild_subviews(view, model)
+            model.observe_rebuild(lambda model: self.rebuild_subviews(view, model))
+        return view
 
-    def rebuild_subviews(self, ship_view: BaseView, model: ShipModel):
+    def rebuild_subviews(self, ship_view: BaseView, model: CompositeModel):
         ship_view.clear_sub_views()
         for part in model.parts:
             sub_view = self.manufacture(part)
             ship_view.add_sub_view(sub_view)
-

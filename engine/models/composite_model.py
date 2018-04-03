@@ -10,8 +10,6 @@ class CompositeModel(BaseModel):
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
                  bounding_box: Polygon):
         super().__init__(position, rotation, movement, spin, bounding_box)
-        if len(parts) == 0:
-            print("Warning, empty compositemodel")
         self._parts = {(part.x, part.z): part for part in parts}
         self._mass = sum([part.mass for part in self.parts])
         bb_width = (self._bounding_box.right - self._bounding_box.left)

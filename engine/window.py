@@ -113,7 +113,6 @@ class Window(pyglet.window.Window):
         return float(self.width) / self.height
 
     def spawn(self, model):
-        print("view", model.__class__.__name__)
         view = self.view_factory.manufacture(model)
         #  self.spawn_sound.play()
         self.new_views.add(view)
