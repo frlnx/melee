@@ -20,7 +20,7 @@ class BaseModel(object):
         self._movement = movement
         self._spin = spin
         self._observers = set()
-        self._mesh = None
+        self._mesh_name = None
         self.animation = None
         self.animation_value = 0
         self._bounding_box = bounding_box
@@ -126,8 +126,8 @@ class BaseModel(object):
         return self.__class__.__name__
 
     @property
-    def mesh(self):
-        return self._mesh
+    def mesh_name(self):
+        return self._mesh_name
 
     def observe(self, func: Callable):
         self._observers.add(func)

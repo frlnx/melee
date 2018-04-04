@@ -1,12 +1,12 @@
 [
   {
     "name": "cockpit",
-    "mesh": "cockpit",
+    "mesh_name": "cockpit",
     "critical": true
   },
   {
     "name": "plasma gun",
-    "mesh": "plasma gun",
+    "mesh_name": "plasma gun",
     "states": [
       {
         "name": "idle",
@@ -32,7 +32,7 @@
   },
   {
     "name": "fuel tank",
-    "mesh": "fuel tank",
+    "mesh_name": "fuel tank",
     "states": [
       {
         "name": "idle",
@@ -42,7 +42,7 @@
   },
   {
     "name": "generator",
-    "mesh": "generator",
+    "mesh_name": "generator",
     "states": [
       {
         "name": "idle",
@@ -53,7 +53,7 @@
   },
   {
     "name": "engine",
-    "mesh": "engine",
+    "mesh_name": "engine",
     "states": [
       {
         "name": "idle"
@@ -70,7 +70,7 @@
   },
   {
     "name": "shield",
-    "mesh": "shield",
+    "mesh_name": "shield",
     "states": [
       {
         "name": "idle",

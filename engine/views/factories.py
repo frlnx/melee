@@ -32,8 +32,8 @@ class ViewFactory(object):
 
     def repurpose(self, model: BaseModel) -> BaseView:
         view = self.pre_factorized_views.pop()
-        if model.mesh is not None:
-            view.set_mesh(self.mesh_factory.manufacture(model.mesh))
+        if model.mesh_name is not None:
+            view.set_mesh(self.mesh_factory.manufacture(model.mesh_name))
         view.set_model(model)
         print(len(self.pre_factorized_views), " views left")
         return view
@@ -41,8 +41,8 @@ class ViewFactory(object):
     def manufacture(self, model: BaseModel) -> BaseView:
         if self.pre_factorized_views != []:
             return self.repurpose(model)
-        if model.mesh is not None:
-            mesh = self.mesh_factory.manufacture(model.mesh)
+        if model.mesh_name is not None:
+            mesh = self.mesh_factory.manufacture(model.mesh_name)
         else:
             mesh = None
         ship_view = self._view_class(model, mesh=mesh)
@@ -62,8 +62,8 @@ class DynamicViewFactory(ViewFactory):
 
     def manufacture(self, model: BaseModel):
         view_class = self.model_view_map[model.__class__]
-        if model.mesh is not None:
-            mesh = self.mesh_factory.manufacture(model.mesh)
+        if model.mesh_name is not None:
+            mesh = self.mesh_factory.manufacture(model.mesh_name)
         else:
             mesh = None
         view = view_class(model, mesh=mesh)

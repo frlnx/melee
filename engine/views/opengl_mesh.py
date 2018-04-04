@@ -25,7 +25,6 @@ class OpenGLMesh(WaveFrontObject):
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
         values = [int(channel not in material_channel) or value for channel in channels]
-        #values = [1, 1, 1, value]
         self.materials[material_name].update(**{material_mode: values})
 
     def __copy__(self):

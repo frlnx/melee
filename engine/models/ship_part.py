@@ -13,7 +13,7 @@ class ShipPartModel(BaseModel):
         self.keyboard = part_spec.get('keyboard')
         self.axis = part_spec.get('axis')
         self._state = "idle"
-        self._mesh = part_spec.get('mesh')
+        self._mesh_name = part_spec.get('mesh_name')
         self.nickname = part_spec.get('nickname')
         self.material_affected = part_spec.get('material_affected')
         self.material_mode = part_spec.get('material_mode')

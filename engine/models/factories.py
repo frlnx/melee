@@ -152,9 +152,12 @@ class AsteroidModelFactory(object):
             part = self.manufacture_astroid_part()
             parts.add(part)
             bounding_box += part.bounding_box
+        position = MutableOffsets(*position)
         rotation = MutableDegrees(0, 0, 0)
         movement = MutableOffsets(0, 0, 0)
         spin = MutableDegrees(0, 0, 0)
+        bounding_box.freeze()
+        bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
         return AsteroidModel(parts, position, rotation, movement, spin, bounding_box)
 
     def manufacture_astroid_part(self):

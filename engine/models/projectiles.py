@@ -22,5 +22,5 @@ class PlasmaModel(BaseModel):
         self.count_down(dt)
 
     @property
-    def mesh(self):
+    def mesh_name(self):
         return "plasma"
