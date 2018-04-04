@@ -11,4 +11,4 @@ class AsteroidPartModel(BaseModel):
     def __init__(self, position: 'MutableOffsets', rotation: 'MutableDegrees', movement: 'MutableOffsets',
                  spin: 'MutableDegrees', bounding_box: 'Polygon'):
         super().__init__(position, rotation, movement, spin, bounding_box)
-        self._mesh = 'stone'
+        self._mesh = 'asteroid'

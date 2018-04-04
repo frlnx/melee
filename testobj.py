@@ -1,8 +1,7 @@
 from pyglet.window import Window
 import pyglet
 from pyglet.gl import *
-from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
-from pywavefront import Wavefront
+from engine.views.opengl_mesh import OpenGLWaveFrontParser
 import ctypes
 from os import path
 
@@ -54,7 +53,7 @@ class TestWindow(Window):
 if __name__ == "__main__":
     print(GL_MAX_LIGHTS, GL_LIGHT0)
     op = OpenGLWaveFrontParser()
-    with open(path.join("objects", "backdrop.obj"), 'r') as f:
+    with open(path.join("objects", "asteroid.obj"), 'r') as f:
         obj = op.parse(f.readlines())
     #obj = Wavefront("objects\\cockpit.obj")
     win = TestWindow(obj)
