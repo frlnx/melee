@@ -25,7 +25,7 @@ class TestWindow(Window):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glEnable(GL_DEPTH_TEST)
-        gluPerspective(60., float(width)/height, 1., 100.)
+        gluPerspective(60., float(width)/height, 1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         return True
 
@@ -47,12 +47,14 @@ class TestWindow(Window):
         glRotatef(self.rotation / 10, 1, 0, 0)
 
         self.obj.draw()
+        return
+
 
 
 if __name__ == "__main__":
     print(GL_MAX_LIGHTS, GL_LIGHT0)
     op = OpenGLWaveFrontParser()
-    with open(path.join("objects", "stone.obj"), 'r') as f:
+    with open(path.join("objects", "backdrop.obj"), 'r') as f:
         obj = op.parse(f.readlines())
     #obj = Wavefront("objects\\cockpit.obj")
     win = TestWindow(obj)

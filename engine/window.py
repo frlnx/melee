@@ -9,7 +9,6 @@ from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_
 from pyglet.gl import GL_DIFFUSE, GL_AMBIENT
 from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
 from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
-from pywavefront import Wavefront
 import pyglet
 
 from random import random, randrange
@@ -32,7 +31,7 @@ class Window(pyglet.window.Window):
         self.my_view = None
         self.menu = None
         self._exit = False
-        self.backdrop = Wavefront("objects/backdrop.obj")
+        self.backdrop = self.mesh_factory.manufacture("backdrop")
         self._menu_left = 200
         self._menu_bottom = 600
         self._menu_main_menu()

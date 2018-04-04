@@ -2,6 +2,7 @@ from pyglet.gl import *
 import pyglet
 from ctypes import c_float
 from collections import defaultdict
+from itertools import chain
 from typing import List, Tuple
 import os
 
@@ -99,14 +100,22 @@ class OpenGLTexturedFace(TexturedFace):
     def __init__(self, vertices: list, texture_coords: list, normals: list, material: 'OpenGLTexturedMaterial'):
         super().__init__(vertices, texture_coords, normals, material)
         self.t2f_n3f_v3f = self._t2f_n3f_v3f()
+        self.t2f_v3f = self._t2f_v3f()
 
     def _t2f_n3f_v3f(self):
         t2f_n3f_v3f = []
         for n, t, v in zip(self._normals, self._texture_coords, self._vertices):
-            t2f_n3f_v3f += n
             t2f_n3f_v3f += t
+            t2f_n3f_v3f += n
             t2f_n3f_v3f += v
         return t2f_n3f_v3f
+
+    def _t2f_v3f(self):
+        t2f_v3f = []
+        for t, v in zip(self._texture_coords, self._vertices):
+            t2f_v3f += t
+            t2f_v3f += v
+        return t2f_v3f
 
 
 class OpenGLMaterial(Material):
@@ -170,15 +179,15 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
             self.texture = self.textures[texture_file_name]
         except:
             try:
-                self.texture = pyglet.image.load(texture_file_name).texture
+                image = pyglet.image.load(texture_file_name)
             except FileNotFoundError:
                 file_name = os.path.split(texture_file_name)[-1]
                 local_path = os.path.join("objects", file_name)
-                self.texture = pyglet.image.load(local_path).texture
+                image = pyglet.image.load(local_path)
+            self.texture = image.get_texture()
             self.textures[texture_file_name] = self.texture
-            assert self._value_is_a_power_of_two(self.texture.width)
-            assert self._value_is_a_power_of_two(self.texture.height)
-
+            assert self._value_is_a_power_of_two(image.width)
+            assert self._value_is_a_power_of_two(image.height)
 
     def __copy__(self):
         return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
@@ -190,10 +199,10 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
         return ((value & (value - 1)) == 0) and value != 0
 
     def set_material(self):
-        glEnable(self.texture.target)
-        glBindTexture(self.texture.target, self.texture.id)
-        gl.glTexParameterf(self.texture.target, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
-        gl.glTexParameterf(self.texture.target, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        gl.glTexParameterf(GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+        gl.glTexParameterf(GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
         super(OpenGLTexturedMaterial, self).set_material()
 
 
