@@ -1,8 +1,7 @@
-from .composite_model import CompositeModel
 from .base_model import BaseModel
 
 
-class AsteroidModel(CompositeModel):
+class AsteroidModel(BaseModel):
     pass
 
 

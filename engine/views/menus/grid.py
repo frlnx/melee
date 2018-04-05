@@ -217,7 +217,7 @@ class GridItemValueSetter(GridItemPresenter):
         items = {}
         slot_size = 100
         for part in ship_model.parts:
-            mesh = mesh_factory.manufacture(part.mesh)
+            mesh = mesh_factory.manufacture(part.mesh_name)
             label_x = part.x * slot_size + x + slot_size / 5
             label_y = -part.z * slot_size + (720 - y) - slot_size / 5
             item = ValueKeepingGridItem(part.x, part.z, part.yaw, part.set_controls, mesh.draw,
@@ -269,7 +269,7 @@ class GridItemArranger(GridItemPresenter):
                         vertical_slots, slot_size):
         items = {}
         for part in ship_model.parts:
-            mesh = mesh_factory.manufacture(part.mesh)
+            mesh = mesh_factory.manufacture(part.mesh_name)
             item = MovableGridItem(part.x, part.z, part.yaw, part.set_position_and_rotation, mesh.draw)
             items[(part.x, part.z)] = item
 
@@ -283,7 +283,7 @@ class GridItemArranger(GridItemPresenter):
         new_items = {}
         new_item_x = 5 # int(horizontal_slots / 2) + 1
         for i, part_config in enumerate(ship_part_model_factory.all_parts):
-            mesh = mesh_factory.manufacture(part_config['mesh'])
+            mesh = mesh_factory.manufacture(part_config['mesh_name'])
             new_item_y = i - 3 #int(vertical_slots / 2)
             new_items[(new_item_x, new_item_y)] = NewGridItem(new_item_x, new_item_y, 0,
                                                               new_ship_model(part_config['name']), mesh.draw)

@@ -56,7 +56,7 @@ class DynamicViewFactory(ViewFactory):
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
         PlasmaModel: BaseView,
-        AsteroidModel: ShipView,
+        AsteroidModel: DynamicMeshView,
         AsteroidPartModel: BaseView
     }
 

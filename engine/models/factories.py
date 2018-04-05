@@ -1,12 +1,11 @@
 import json
 from copy import deepcopy
 from functools import partial
-from math import sin, cos, pi
-from random import random
+from math import sin, cos, radians
+from random import random, normalvariate
 
 from engine.models.projectiles import PlasmaModel
-from engine.models.base_model import BaseModel
-from engine.models.asteroid import AsteroidModel, AsteroidPartModel
+from engine.models.asteroid import AsteroidModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -146,27 +145,12 @@ class AsteroidModelFactory(object):
         pass
 
     def manufacture(self, position):
-        parts = set()
-        bounding_box = Polygon([])
-        for i in range(10):
-            part = self.manufacture_astroid_part()
-            parts.add(part)
-            bounding_box += part.bounding_box
         position = MutableOffsets(*position)
         rotation = MutableDegrees(0, 0, 0)
         movement = MutableOffsets(0, 0, 0)
         spin = MutableDegrees(0, 0, 0)
-        bounding_box.freeze()
-        bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
-        return AsteroidModel(parts, position, rotation, movement, spin, bounding_box)
-
-    def manufacture_astroid_part(self):
-        yaw = random() * pi * 2 - pi
-        distance = random() * 3 + 2
-        position = MutableOffsets(sin(yaw) * distance, 0, cos(yaw) * distance)
-        rotation = MutableDegrees(0, 0, 0)
-        movement = MutableOffsets(0, 0, 0)
-        spin = MutableDegrees(0, 0, 0)
-        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                            x=position.x, y=position.z, rotation=rotation.yaw)
-        return AsteroidPartModel(position, rotation, movement, spin, bounding_box)
+        coords = [(sin(radians(d)), 0, cos(radians(d))) for d in range(0, 360, 45)]
+        distances = [abs(normalvariate(25, 5)) for i in coords]
+        coords = [(x * d, 0, y * d) for (x, y), d in zip(coords, distances)]
+        bounding_box = Polygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
+        return AsteroidModel(position, rotation, movement, spin, bounding_box)
