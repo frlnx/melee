@@ -33,6 +33,14 @@ class DynamicMeshView(BaseView):
             normals = [(1, 0, 0), (0, 0, 1), (0, 1, 0), (1, 1, 0)]
             face = OpenGLTexturedFace(vertices, texture_coords, normals, material)
             faces.append(face)
+            vertices = [(line.original_x1, 0, line.original_y1),
+                        (line.original_x2, 0, line.original_y2),
+                        (middle_x2, -10, middle_y2),
+                        (middle_x1, -10, middle_y1)]
+            texture_coords = [(0, 0), (1, 0), (1, 1), (0, 1)]
+            normals = [(1, -1, 0), (0, -1, 1), (0, 0, 0), (1, 0, 0)]
+            face = OpenGLTexturedFace(vertices, texture_coords, normals, material)
+            faces.append(face)
             vertices = [(middle_x1, 10, middle_y1),
                         (middle_x2, 10, middle_y2),
                         (bb.x, 15, bb.y)]

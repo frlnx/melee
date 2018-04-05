@@ -22,12 +22,12 @@ class ShipView(BaseView):
         x, y, z = self._model.position
 
         distance = hypot(tx - x, tz - z)
-        distance = min(max(distance, 30), 200)
+        distance = min(max(distance, 50), 200)
 
         glTranslated(0, -distance, 0)
 
-        pitch = sorted([-20, -degrees(atan2(z - tz, distance / 2)) / 2, 30])[1]
-        roll = sorted([-20, degrees(atan2(x - tx, distance / 2)) / 2, 20])[1]
+        pitch = sorted([-50, -degrees(atan2(z - tz, distance / 2)) / 2, 50])[1]
+        roll = sorted([-50, degrees(atan2(x - tx, distance / 2)) / 2, 50])[1]
         glRotatef(pitch, 1, 0, 0)
         glRotatef(roll, 0, 0, 1)
 
