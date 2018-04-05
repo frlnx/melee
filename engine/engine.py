@@ -78,14 +78,14 @@ class Engine(TwistedEventLoop):
         self.spawn(m2)
 
         for i in range(10):
-            model = self.amf.manufacture(self.random_position())
+            model = self.amf.manufacture(self.random_position(area=200))
             self.spawn(model)
 
     @staticmethod
-    def random_position():
-        x = random.randint(-20, 20)
+    def random_position(area=20):
+        x = random.randint(-area, area)
         y = 0
-        z = random.randint(-20, 20)
+        z = random.randint(-area, area)
         return x, y, z
 
     def spawn_with_callback(self, model: BaseModel):

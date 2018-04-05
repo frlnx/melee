@@ -1,5 +1,6 @@
 from engine.views.ship_part import ShipPartView
 from engine.views.ship import ShipView
+from engine.views.dynamic_mesh_view import DynamicMeshView
 from engine.models.asteroid import AsteroidPartModel, AsteroidModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
