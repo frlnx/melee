@@ -149,8 +149,8 @@ class AsteroidModelFactory(object):
         rotation = MutableDegrees(0, 0, 0)
         movement = MutableOffsets(0, 0, 0)
         spin = MutableDegrees(0, 0, 0)
-        coords = [(sin(radians(d)), 0, cos(radians(d))) for d in range(0, 360, 45)]
+        coords = [(sin(radians(d)), cos(radians(d))) for d in range(0, 360, 45)]
         distances = [abs(normalvariate(25, 5)) for i in coords]
-        coords = [(x * d, 0, y * d) for (x, y), d in zip(coords, distances)]
+        coords = [(x * d, y * d) for (x, y), d in zip(coords, distances)]
         bounding_box = Polygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
         return AsteroidModel(position, rotation, movement, spin, bounding_box)
