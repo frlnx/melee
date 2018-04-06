@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 from functools import partial
 from math import sin, cos, radians
-from random import random, normalvariate
+from random import normalvariate
 
 from engine.models.projectiles import PlasmaModel
 from engine.models.asteroid import AsteroidModel
@@ -73,7 +73,7 @@ class ShipPartModelFactory(object):
         config['movement'] = MutableOffsets(*placement_config.get('movement', (0, 0, 0)))
         config['spin'] = MutableDegrees(*placement_config.get('spin', (0, 0, 0)))
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                            x=position.x, y=position.z, rotation=rotation.yaw)
+                                           x=position.x, y=position.z, rotation=rotation.yaw)
         config['bounding_box'] = bounding_box
         part = ShipPartModel(**config)
         return part
@@ -88,7 +88,7 @@ class ProjectileModelFactory(object):
     def __init__(self):
         self.projectile_configs = {"plasma": {}}
         self.projectiles = {"plasma": []}
-        plasmas = [self._pre_manufacture("plasma") for i in range(100)]
+        plasmas = [self._pre_manufacture("plasma") for _ in range(100)]
         self.projectiles["plasma"] = plasmas
 
     def _pre_manufacture(self, name):
@@ -96,8 +96,8 @@ class ProjectileModelFactory(object):
                                 MutableOffsets(0, 0, 0), MutableDegrees(0, 0, 0))
 
     def repurpose(self, name,
-                    position: MutableOffsets, rotation: MutableDegrees,
-                    movement: MutableOffsets, spin: MutableDegrees):
+                  position: MutableOffsets, rotation: MutableDegrees,
+                  movement: MutableOffsets, spin: MutableDegrees):
         projectile = self.projectiles[name].pop()
         print(len(self.projectiles[name]), "left")
         projectile.set_movement(*movement)
@@ -108,11 +108,11 @@ class ProjectileModelFactory(object):
     def manufacture(self, name,
                     position: MutableOffsets, rotation: MutableDegrees,
                     movement: MutableOffsets, spin: MutableDegrees) -> PlasmaModel:
-        if self.projectiles[name] != []:
+        if self.projectiles[name]:
             return self.repurpose(name, position, rotation, movement, spin)
-        config = deepcopy(self.projectiles[name])
+        #  config = deepcopy(self.projectiles[name])
         bounding_box = Polygon.manufacture([(0, 0), (0, 1)],
-                            x=position.x, y=position.z, rotation=rotation.yaw)
+                                           x=position.x, y=position.z, rotation=rotation.yaw)
         projectile = PlasmaModel(position.__copy__(), rotation.__copy__(),
                                  movement.__copy__(), spin.__copy__(), bounding_box)
         return projectile
@@ -144,13 +144,14 @@ class AsteroidModelFactory(object):
     def __init__(self):
         pass
 
-    def manufacture(self, position):
+    @staticmethod
+    def manufacture(position):
         position = MutableOffsets(*position)
         rotation = MutableDegrees(0, 0, 0)
         movement = MutableOffsets(0, 0, 0)
         spin = MutableDegrees(0, 0, 0)
-        coords = [(sin(radians(d)), cos(radians(d))) for d in range(0, 360, 45)]
-        distances = [abs(normalvariate(25, 5)) for i in coords]
+        coords = [(sin(radians(d)), cos(radians(d))) for d in range(0, 360, 18)]
+        distances = [abs(normalvariate(25, 5)) for _ in coords]
         coords = [(x * d, y * d) for (x, y), d in zip(coords, distances)]
         bounding_box = Polygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
         return AsteroidModel(position, rotation, movement, spin, bounding_box)
