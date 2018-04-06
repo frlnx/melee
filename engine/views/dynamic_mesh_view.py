@@ -19,7 +19,7 @@ class DynamicMeshView(BaseView):
                                           specular=zeroes, alpha=1.0, name="Rock Surface",
                                           texture_file_name="ROCKS001.TGA")
         bb = model.bounding_box
-        for line in bb.lines:
+        for line_nr, line in enumerate(bb.lines):
             middle_factor = sin(radians(45))
             middle_x1 = line.original_x1 * middle_factor
             middle_y1 = line.original_y1 * middle_factor
@@ -29,22 +29,25 @@ class DynamicMeshView(BaseView):
                         (line.original_x2, 0, line.original_y2),
                         (middle_x2, 10, middle_y2),
                         (middle_x1, 10, middle_y1)]
-            texture_coords = [(0, 0), (1, 0), (1, 1), (0, 1)]
+            texture_x1 = line_nr % 2
+            texture_x2 = (line_nr + 1) % 2
+            texture_coords = [(texture_x1, 0), (texture_x2, 0), (texture_x2, 1), (texture_x1, 1)]
             normals = [(1, 0, 0), (0, 0, 1), (0, 1, 0), (1, 1, 0)]
             face = OpenGLTexturedFace(vertices, texture_coords, normals, material)
             faces.append(face)
-            vertices = [(line.original_x1, 0, line.original_y1),
-                        (line.original_x2, 0, line.original_y2),
+            vertices = [(middle_x1, -10, middle_y1),
                         (middle_x2, -10, middle_y2),
-                        (middle_x1, -10, middle_y1)]
-            texture_coords = [(0, 0), (1, 0), (1, 1), (0, 1)]
-            normals = [(1, -1, 0), (0, -1, 1), (0, 0, 0), (1, 0, 0)]
+                        (line.original_x2, 0, line.original_y2),
+                        (line.original_x1, 0, line.original_y1),
+                        ]
+            texture_coords = [(texture_x1, 1), (texture_x2, 1), (texture_x2, 0), (texture_x1, 0)]
+            normals = [(1, 0, 0), (0, 0, 1), (0, 1, 0), (1, 1, 0)]
             face = OpenGLTexturedFace(vertices, texture_coords, normals, material)
             faces.append(face)
             vertices = [(middle_x1, 10, middle_y1),
                         (middle_x2, 10, middle_y2),
                         (bb.x, 15, bb.y)]
-            texture_coords = [(0, 0), (1, 0), (1, 1)]
+            texture_coords = [(texture_x1, 1), (texture_x2, 1), (0.5, 0)]
             normals = [(1, 0, 0), (0, 0, 1), (0, 1, 0)]
             face = OpenGLTexturedFace(vertices, texture_coords, normals, material)
             faces.append(face)
