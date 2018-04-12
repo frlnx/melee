@@ -1,6 +1,5 @@
 from typing import List, Tuple
 from math import *
-from copy import deepcopy
 
 
 class Point(object):
@@ -111,7 +110,7 @@ class Line(BaseLine):
         other.rotate(-original_other_radii)
         self.rotate(-original_other_radii)
         dx = self.x1 - other.x1
-        if self.x1 == self.x2:
+        if round(self.x1, 8) == round(self.x2, 8):
             intersects = other.x1 == self.x1
             point_x = self.x1
             point_y = (min(self.top, other.top) + max(self.bottom, other.bottom)) / 2

@@ -107,3 +107,24 @@ class TestLineIntersectionMutation(object):
         assert self.line2.x2 == 0
         assert self.line2.y1 == -2
         assert self.line2.y2 == -1
+
+
+class TestLineIntersectionMutationOnHorizontalLine(object):
+
+    def setup(self):
+        self.line1 = Line([(-10, 0), (0, 0)])
+        self.line2 = Line([(10, 0), (0, 0)])
+        self.line1.intersection_point(self.line2)
+
+
+    def test_finding_intersection_point_does_not_alter_left_hand_line(self):
+        assert self.line1.x1 == -10
+        assert self.line1.x2 == 0
+        assert self.line1.y1 == 0
+        assert self.line1.y2 == 0
+
+    def test_finding_intersection_point_does_not_alter_right_hand_line(self):
+        assert self.line2.x1 == 10
+        assert self.line2.x2 == 0
+        assert self.line2.y1 == 0
+        assert self.line2.y2 == 0

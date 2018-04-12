@@ -106,7 +106,7 @@ class ShipController(BaseController):
                 self.destroy_part(part)
         else:
             collides, x, z = self._model.intersection_point(other_model)
-            if collides and False:
+            if collides:
                 position = MutableOffsets(x, 0, z)
                 my_force = self._model.global_momentum_at(position)
                 other_force = other_model.global_momentum_at(position)

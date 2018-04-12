@@ -7,23 +7,27 @@ from engine.physics.line import Line
 
 class BasePolygon(object):
 
+
     def __init__(self, lines: List[Line]):
         self._lines = lines
         self.rotation = 0
         self.x = 0
         self.y = 0
 
-    @staticmethod
-    def manufacture(coords, x=0, y=0, rotation=0):
+    @classmethod
+    def coords_to_lines(cls, coords, **kwargs):
         last_coord = coords[0]
         lines = [Line([coords[-1], coords[0]])]
         for coord in coords[1:]:
             lines.append(Line([last_coord, coord]))
             last_coord = coord
+        return lines
 
+    @classmethod
+    def manufacture(cls, coords, x=0, y=0, rotation=0):
+        lines = cls.coords_to_lines(coords)
         polygon = Polygon(lines)
         polygon.set_position_rotation(x, y, rotation)
-        #polygon.freeze()
         return polygon
 
     @property
@@ -72,6 +76,8 @@ class Polygon(BasePolygon):
         return True
 
     def intersection_point(self, other: BasePolygon):
+        if not self.bounding_box_intersects(other):
+            return False, None, None
         n_intersections = 0
         sum_x = 0
         sum_y = 0
