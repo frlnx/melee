@@ -90,7 +90,7 @@ class BaseView(object):
         glPopMatrix()
 
     def align_camera(self):
-        yaw = -self._model.yaw - (self._model.spin.yaw / 2 - self.yaw_catchup)
+        yaw = -self._model.yaw #- (self._model.spin.yaw / 2 - self.yaw_catchup)
         glRotatef(yaw, 0, 1, 0)
 
     def center_camera(self):
@@ -104,7 +104,7 @@ class BaseView(object):
         self._sub_views.clear()
 
     def update_view_timer(self, dt):
-        self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt
+        self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt * 2
 
 
 class DummyView(BaseView):
