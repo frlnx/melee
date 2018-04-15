@@ -1,6 +1,6 @@
 from typing import List, Tuple
 from itertools import product
-from math import hypot
+from math import hypot, degrees
 
 from engine.physics.force import MutableOffsets, MutableDegrees
 from .line import Line
@@ -30,6 +30,10 @@ class MovingLine(Line):
         side2.freeze()
         self._opposite.freeze()
         return side1, side2, self._opposite
+
+    def set_position_rotation(self, x, y, radii):
+        super(MovingLine, self).set_position_rotation(x, y, radii)
+
 
     def bounding_box_intersects_in_timeframe(self, other: 'MovingLine', timeframe: float):
         self_x = self._movement.x * timeframe
@@ -61,40 +65,40 @@ class MovingLine(Line):
             collision_times.add(collision_time)
         return collision_times != set(), collision_times
 
-    def time_to_impact(self, other: 'MovingLine'):
+    def movement_in_relation_to(self, other: 'MovingLine') -> MutableOffsets:
         delta_movement = self._movement - other._movement
+        return delta_movement
+
+    def time_to_impact(self, other: 'MovingLine'):
         original_other_radii = other.radii
+        delta_movement = self.movement_in_relation_to(other)
         other.rotate(-original_other_radii)
         self.rotate(-original_other_radii)
-        delta_movement.rotate(-original_other_radii)
-        if delta_movement.x == 0:
-            intersects = self.left < other.x1 < self.right
-            self.dx
-        else:
-            dx, dy = self.min_distance(other)
-            k = delta_movement.y / delta_movement.x
-            if other.x1 < self.left:
-                dx = self.left - other.x1
-            elif other.x1 > self.right:
-                dx = self.right - other.x1
-            elif self.left < other.x1 < self.right:
-                dx = 0
-            else:
-                dx = 0
-            rotated_y = k * dx +
-            ############################
-            k = self.dy / self.dx
-            dx = self.x1 - other.x1
-            rotated_y = k * dx + self.y1
-            rotated_x = other.x1
-            intersects = other.bottom < rotated_y < other.top and self.left < rotated_x < self.right
-            cos_val = cos(original_other_radii)
-            sin_val = sin(original_other_radii)
-            point_x = rotated_x * cos_val - rotated_y * sin_val
-            point_y = rotated_x * sin_val + rotated_y * cos_val
+        delta_movement.rotate(-degrees(original_other_radii))
+
+        k = delta_movement.z / delta_movement.x
+        other_x = other.x1
+        dx1 = other_x - self.x1
+        dx2 = other_x - self.x2
+        impact_y1 = self.y1 + k * dx1
+        impact_y2 = self.y2 + k * dx2
+        impact1 = other.bottom < impact_y1 < other.top
+        impact2 = other.bottom < impact_y2 < other.top
+
         other.rotate(original_other_radii)
         self.rotate(original_other_radii)
-        return intersects, point_x, point_y
+
+        if not impact1 and not impact2:
+            return None
+
+        time_to_impact1 = dx1 / delta_movement.x
+        time_to_impact2 = dx2 / delta_movement.x
+
+        if impact1 and not impact2:
+            return time_to_impact1
+        if impact2 and not impact1:
+            return time_to_impact2
+        return min(time_to_impact1, time_to_impact2)
 
 
 class MovingPolygon(Polygon):

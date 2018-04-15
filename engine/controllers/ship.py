@@ -104,11 +104,4 @@ class ShipController(BaseController):
             parts = self._model.parts_intersected_by(other_model)
             for part in parts:
                 self.destroy_part(part)
-        else:
-            collides, x, z = self._model.intersection_point(other_model)
-            if collides:
-                position = MutableOffsets(x, 0, z)
-                my_force = self._model.global_momentum_at(position)
-                other_force = other_model.global_momentum_at(position)
-                other_model.apply_global_force(my_force)
-                self._model.apply_global_force(other_force)
+        super(ShipController, self).solve_collision(other_model)

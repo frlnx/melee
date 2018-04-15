@@ -11,3 +11,4 @@ class AsteroidPartModel(BaseModel):
                  spin: 'MutableDegrees', bounding_box: 'Polygon'):
         super().__init__(position, rotation, movement, spin, bounding_box)
         self._mesh = 'asteroid'
+        self._mass = 100000000
