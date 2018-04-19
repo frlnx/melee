@@ -74,16 +74,39 @@ class MovingLine(Line):
         delta_movement = self.movement_in_relation_to(other)
         other.rotate(-original_other_radii)
         self.rotate(-original_other_radii)
-        delta_movement.rotate(-degrees(original_other_radii))
 
-        k = delta_movement.z / delta_movement.x
         other_x = other.x1
         dx1 = other_x - self.x1
         dx2 = other_x - self.x2
+
+        if self.dx != 0:
+            own_k = self.dy / self.dx
+            own_impact_y = self.y1 + own_k * dx1
+        else:
+            own_impact_y = self.y1
+        if self.left < other_x < self.right and other.bottom < own_impact_y < other.top:
+            return 0
+
+        delta_movement.rotate(-degrees(original_other_radii))
+        if delta_movement.x == 0:
+            return None
+
+        k = delta_movement.z / delta_movement.x
+
+        if (dx1 > 0) != (dx2 > 0):
+            print("Invert the lines!")
+            return None
+
         impact_y1 = self.y1 + k * dx1
         impact_y2 = self.y2 + k * dx2
+        if min(impact_y1, impact_y2) < other.bottom < other.top < max(impact_y1, impact_y2):
+            print("Invert the lines!")
+            return None
+
         impact1 = other.bottom < impact_y1 < other.top
         impact2 = other.bottom < impact_y2 < other.top
+        print(dx1, dx2, k)
+        print(other.bottom, other.top, impact_y1, impact_y2)
 
         other.rotate(original_other_radii)
         self.rotate(original_other_radii)
