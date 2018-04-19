@@ -2,9 +2,9 @@ from pyglet.gl import *
 import pyglet
 from ctypes import c_float
 from collections import defaultdict
-from itertools import chain
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 import os
+from copy import deepcopy
 
 from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
 from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
@@ -20,7 +20,7 @@ class OpenGLMesh(WaveFrontObject):
         self.materials = {face.material.name: face.material for face in faces}
         self.materials.update({face.material.name: face.material for face in textured_faces})
         self._sort_faces()
-        self._convert_to_c_types()
+        self._convert_types(self._convert_c_float_arr)
 
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
@@ -30,9 +30,21 @@ class OpenGLMesh(WaveFrontObject):
     def __copy__(self):
         copy = self.__class__(self._faces, self._textured_faces, name=self.name, group=self.group)
         copy.materials = {material.name: material.__copy__() for material in self.materials.values()}
-        copy.n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj for material, obj in copy.n3f_v3f_by_material_n_points.items()}
-        copy.t2f_n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj for material, obj in copy.t2f_n3f_v3f_by_material_n_points.items()}
+        copy.n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj
+                                             for material, obj in copy.n3f_v3f_by_material_n_points.items()}
+        copy.t2f_n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj
+                                                 for material, obj in copy.t2f_n3f_v3f_by_material_n_points.items()}
         return copy
+
+    def __getstate__(self):
+        self._convert_types(self._revert_from_c_float_arr)
+        d = {k: deepcopy(val) for k, val in self.__dict__.items()}
+        self._convert_types(self._convert_c_float_arr)
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._convert_types(self._convert_c_float_arr)
 
     def _sort_faces(self):
         for face in self._faces:
@@ -44,21 +56,26 @@ class OpenGLMesh(WaveFrontObject):
             material = self.materials[face.material.name]
             self.t2f_n3f_v3f_by_material_n_points[material][n_points] += face.t2f_n3f_v3f
 
-    def _convert_to_c_types(self):
+    def _convert_types(self, converter: Callable):
         n3f_v3f_by_material_n_points = defaultdict(dict)
         for material, n_points_dict in self.n3f_v3f_by_material_n_points.items():
             for n_points, n3f_v3f_list in n_points_dict.items():
-                n3f_v3f_by_material_n_points[material][n_points] = self._convert_c_float_arr(n3f_v3f_list)
+                n3f_v3f_by_material_n_points[material][n_points] = converter(n3f_v3f_list)
         self.n3f_v3f_by_material_n_points = n3f_v3f_by_material_n_points
         t2f_n3f_v3f_by_material_n_points = defaultdict(dict)
         for material, n_points_dict in self.t2f_n3f_v3f_by_material_n_points.items():
             for n_points, t2f_n3f_v3f_list in n_points_dict.items():
-                t2f_n3f_v3f_by_material_n_points[material][n_points] = self._convert_c_float_arr(t2f_n3f_v3f_list)
+                t2f_n3f_v3f_by_material_n_points[material][n_points] = converter(t2f_n3f_v3f_list)
         self.t2f_n3f_v3f_by_material_n_points = t2f_n3f_v3f_by_material_n_points
 
-    def _convert_c_float_arr(self, values: List) -> List[c_float]:
+    @staticmethod
+    def _convert_c_float_arr(values: List) -> List[c_float]:
         c_arr = c_float * len(values)
         return c_arr(*values)
+
+    @staticmethod
+    def _revert_from_c_float_arr(values):
+        return list(values)
 
     def draw(self):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -148,10 +165,32 @@ class OpenGLMaterial(Material):
         return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
                               emissive=self.emissive, shininess=self.shininess, name=self.name, alpha=self.alpha)
 
+    def __getstate__(self):
+        d = {}
+        for k, val in  self.__dict__.items():
+            if 'opengl' in k and 'opengl_shininess' not in k:
+                d[k] = list(val)
+            else:
+                d[k] = val
+        return d
+
+    def __setstate__(self, state):
+        d = {}
+        for k, val in state.items():
+            if 'opengl' in k and 'opengl_shininess' not in k:
+                d[k] = self.to_c_arr(val)
+            else:
+                d[k] = val
+        self.__dict__.update(state)
+
     @staticmethod
     def to_c_arr(values) -> List[c_float]:
         c_arr = (c_float * 4)
         return c_arr(*values)
+
+    @staticmethod
+    def _revert_from_c_float_arr(values):
+        return list(values)
 
     @staticmethod
     def _convert_zero_to_one_values_into_minus_one_to_one_values(value: float) -> float:
