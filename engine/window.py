@@ -1,7 +1,6 @@
 import ctypes
 
 from engine.views.base_view import BaseView
-from engine.views.opengl_mesh import OpenGLWaveFrontFactory
 from engine.views.factories import DynamicViewFactory
 from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfigMenu
 
@@ -10,9 +9,8 @@ from pyglet.gl import GL_DIFFUSE, GL_AMBIENT
 from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
 from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 import pyglet
-
+import pickle
 from random import random, randrange
-from os import path, listdir
 
 from engine.views.debris import Debris
 
@@ -20,8 +18,8 @@ from engine.views.debris import Debris
 class Window(pyglet.window.Window):
     def __init__(self, input_handler=None):
         super().__init__(width=1280, height=720)
-        files = [path.join("objects", file_name) for file_name in listdir('objects') if file_name.endswith('.obj')]
-        self.mesh_factory = OpenGLWaveFrontFactory(files)
+        with open('meshfactory.pkl', 'rb') as f:
+            self.mesh_factory = pickle.load(f)
         self._to_cfloat_array = ctypes.c_float * 4
         self.view_factory = DynamicViewFactory(self.mesh_factory)
         self.views = set()
