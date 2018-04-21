@@ -38,8 +38,8 @@ class OpenGLMesh(WaveFrontObject):
 
     def __getstate__(self):
         self._convert_types(self._revert_from_c_float_arr)
-        d = {k: deepcopy(val) for k, val in self.__dict__.items()}
-        self._convert_types(self._convert_c_float_arr)
+        d = {k: val for k, val in self.__dict__.items()}
+        #self._convert_types(self._convert_c_float_arr)
         return d
 
     def __setstate__(self, state):
@@ -213,24 +213,37 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
                  texture_file_name: str, name: str, alpha: float):
         super().__init__(diffuse, ambient, specular, emissive, shininess, name, alpha)
         self.texture_file_name = texture_file_name
+        self.texture = self.load_texture()
+
+    def load_texture(self):
         try:
-            self.texture = self.textures[texture_file_name]
+            texture = self.textures[self.texture_file_name]
         except:
             try:
-                image = pyglet.image.load(texture_file_name)
+                image = pyglet.image.load(self.texture_file_name)
             except FileNotFoundError:
-                file_name = os.path.split(texture_file_name)[-1]
+                file_name = os.path.split(self.texture_file_name)[-1]
                 local_path = os.path.join("objects", file_name)
                 image = pyglet.image.load(local_path)
-            self.texture = image.get_texture()
-            self.textures[texture_file_name] = self.texture
+            texture = image.get_texture()
+            self.textures[self.texture_file_name] = texture
             assert self._value_is_a_power_of_two(image.width)
             assert self._value_is_a_power_of_two(image.height)
+        return texture
 
     def __copy__(self):
         return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
                               emissive=self.emissive, shininess=self.shininess,
                               texture_file_name=self.texture_file_name, name=self.name, alpha=self.alpha)
+
+    def __getstate__(self):
+        d = super(OpenGLTexturedMaterial, self).__getstate__()
+        #del d['textures']
+        d['texture'] = None
+
+    def __setstate__(self, state):
+        super(OpenGLTexturedMaterial, self).__setstate__(state)
+        self.texture = self.load_texture()
 
     @staticmethod
     def _value_is_a_power_of_two(value):
