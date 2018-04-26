@@ -25,14 +25,26 @@ class ClientEngine(Engine):
         else:
             self.gamepad = Keyboard(self.window)
 
+        self.window.push_handlers(self)
+        self.window._stop_func = self.stop
+        self.window._start_local_func = self.start_local
+        self._stop_func = None
+        self.connect_func = lambda x: None
+
+    def start_local(self):
+        self.spawn_self()
+
+        m2 = self.smf.manufacture("wolf", position=self.random_position())
+        self._new_model_callback(m2)
+        self.spawn(m2)
+
+        self.spawn_asteroids(10)
+
+    def spawn_self(self):
         self.my_controller = self.controller_factory.manufacture(self.my_model, input_handler=self.gamepad)
         self._controllers[self.my_model.uuid] = self.my_controller
         self.propagate_target(self.my_model)
-
-        self.window.push_handlers(self)
-        self.window._stop_func = self.stop
-        self._stop_func = None
-        self.connect_func = lambda x: None
+        self._new_model_callback(self.my_model)
 
     def on_window_close(self):
         self.stop()
@@ -47,6 +59,7 @@ class ClientEngine(Engine):
         self.connect_func = connect_func
 
     def connect(self, *args, **kwargs):
+        self.spawn_self()
         self.connect_func(*args, **kwargs)
         self.solve_collisions = self._client_solve_collisions
 

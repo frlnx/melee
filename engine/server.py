@@ -2,4 +2,6 @@ from engine.engine import Engine
 
 
 class ServerEngine(Engine):
-    pass
+
+    def on_enter(self):
+        self.spawn_asteroids(10)

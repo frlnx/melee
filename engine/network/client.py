@@ -20,3 +20,6 @@ class NetworkClient(object):
         factory = EventClientFactory(self.engine, update_protocol)
         self.reactor.connectTCP(host, port, factory)
         self.reactor.listenUDP(port+2, update_protocol)
+
+    def disconnect(self):
+        print("I would but I don't know how!")

@@ -30,7 +30,7 @@ class ShipModelFactory(object):
             parts.add(part)
             if part.position.y == 0:
                 bounding_box += part.bounding_box
-        ship_id = self.ship_id_counter
+        ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
         if position is None:
             position = (0, 0, 0)

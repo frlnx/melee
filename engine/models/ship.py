@@ -15,6 +15,9 @@ class ShipModel(CompositeModel):
         self._target_position = self.position
         self._target_rotation = self.rotation
 
+    def set_ship_id(self, identification):
+        self.ship_id = identification
+
     def apply_global_force(self, force: 'MutableForce'):
         super(ShipModel, self).apply_global_force(force)
 

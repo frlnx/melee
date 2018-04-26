@@ -32,12 +32,15 @@ class Window(pyglet.window.Window):
         self.backdrop = self.mesh_factory.manufacture("backdrop")
         self._menu_left = 200
         self._menu_bottom = 600
-        self._menu_main_menu()
+        self._main_menu_functions = [self._menu_start_local, self._menu_shipyard, self._menu_controls,
+                                     self._menu_network, self.exit]
+        self.callsign = None
+        self._menu_login()
         self._stop_func = None
+        self._start_local_func = None
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
         self.input_handler = input_handler
         self.debris = []
-        self._debris_counter = 0
 
         if input_handler:
             input_handler.push_handlers(self)
@@ -50,21 +53,36 @@ class Window(pyglet.window.Window):
             view.update_view_timer(dt)
         for debris in self.debris:
             debris.update(dt)
-        #self._debris_counter += dt
 
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
-            if self.menu:
+            if self.menu and self.callsign:
                 self.close_menu()
             else:
-                self._menu_main_menu()
-        if symbol == pyglet.window.key.F1:
-            print("DEBUG")
+                if self.callsign:
+                    self._menu_main_menu()
+                else:
+                    self._menu_login()
+
+    def _menu_login(self):
+        login_menu = InputMenu.input_menu("Callsign", self._menu_set_callsign, self._menu_left, self._menu_bottom,
+                                          self.exit, 36)
+        self.set_menu(login_menu)
+
+    def _menu_set_callsign(self, callsign: ''):
+        self.callsign = callsign
+        self.my_model.set_ship_id(callsign)
+        self._menu_main_menu()
 
     def _menu_main_menu(self):
-        functions = [self.close_menu, self._menu_shipyard, self._menu_controls, self._menu_network, self.exit]
-        self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu",
-                                                                functions, self._menu_left, self._menu_bottom))
+        self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu", self._main_menu_functions,
+                                                                self._menu_left, self._menu_bottom))
+
+    def _menu_start_local(self):
+        self._start_local_func()
+        self._main_menu_functions = [self.close_menu, self._menu_shipyard, self._menu_controls,
+                                     self._menu_network, self.exit]
+        self.close_menu()
 
     def _menu_shipyard(self):
         self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,

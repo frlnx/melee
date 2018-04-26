@@ -16,18 +16,18 @@ class Engine(TwistedEventLoop):
 
     def __init__(self):
         super().__init__()
-        self._controllers = dict()
-        self.ships = set()
         self.smf = ShipModelFactory()
         self.amf = AsteroidModelFactory()
         self.controller_factory = ControllerFactory()
         self.has_exit = True
         self.clock.schedule(self.update)
         self.clock.set_fps_limit(60)
-        self._new_model_callbacks = set()
-        self._dead_model_callbacks = set()
         self.rnd = random.seed()
         self.gamepad = InputHandler()
+        self._new_model_callbacks = set()
+        self._dead_model_callbacks = set()
+        self._controllers = dict()
+        self.ships = set()
         self.models = {}
 
     @property
@@ -70,14 +70,15 @@ class Engine(TwistedEventLoop):
         except KeyError:
             pass
 
-    def on_enter(self):
-        self._new_model_callback(self.my_model)
+    def stop_game(self):
+        self._new_model_callbacks = set()
+        self._dead_model_callbacks = set()
+        self._controllers = dict()
+        self.ships = set()
+        self.models = {}
 
-        m2 = self.smf.manufacture("wolf", position=self.random_position())
-        self._new_model_callback(m2)
-        self.spawn(m2)
-
-        for i in range(10):
+    def spawn_asteroids(self, n):
+        for i in range(n):
             model = self.amf.manufacture(self.random_position(area=200))
             self.spawn(model)
 
