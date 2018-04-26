@@ -26,6 +26,12 @@ class Keyboard(InputHandler):
         except KeyError:
             pass
 
+    def push_handlers(self, target):
+        pass
+
+    def remove_handlers(self, target):
+        pass
+
 
 class GamePad(InputHandler):
 

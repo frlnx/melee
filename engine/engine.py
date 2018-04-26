@@ -23,7 +23,7 @@ class Engine(TwistedEventLoop):
         self.clock.schedule(self.update)
         self.clock.set_fps_limit(60)
         self.rnd = random.seed()
-        self.gamepad = InputHandler()
+        self.input_handler = InputHandler()
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
         self._controllers = dict()
@@ -92,7 +92,7 @@ class Engine(TwistedEventLoop):
     def spawn_with_callback(self, model: BaseModel):
         self._new_model_callback(model)
         self.models[model.uuid] = model
-        controller = self.controller_factory.manufacture(model, input_handler=self.gamepad)
+        controller = self.controller_factory.manufacture(model, input_handler=self.input_handler)
         self._controllers[model.uuid] = controller
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
