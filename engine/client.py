@@ -51,11 +51,11 @@ class ClientEngine(Engine):
                     self._menu_login()
 
     def _menu_login(self):
-        login_menu = InputMenu.input_menu("Callsign", self._menu_set_callsign, self._menu_left, self._menu_bottom,
+        login_menu = InputMenu.input_menu("Log in", self._menu_start, self._menu_left, self._menu_bottom,
                                           self._menu_exit, 36)
         self.set_menu(login_menu)
 
-    def _menu_set_callsign(self, callsign: ''):
+    def _menu_start(self, callsign: ''):
         self.callsign = callsign
         self.my_model.set_ship_id(callsign)
         self._menu_main_menu()

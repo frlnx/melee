@@ -9,24 +9,26 @@ import inspect
 class InputBox(BaseButton):
     def __init__(self, field_name, left, right, bottom, top, default_text, cast_to):
         width = right - left
+        font_size = 30
         field_name = field_name.capitalize()
         drawable = pyglet.graphics.Batch()
         self.cast_to = cast_to
         self.document = pyglet.text.document.UnformattedDocument(default_text)
         self.document.set_style(0, len(self.document.text),
-                                dict(color=(255, 255, 255, 255))
+                                dict(color=(255, 255, 255, 255), font_size=font_size)
                                 )
         font = self.document.get_font()
         height = font.ascent - font.descent
 
         self.layout = pyglet.text.layout.IncrementalTextLayout(
-            self.document, width, height * 1.5, multiline=False, batch=drawable)
-        self.caret = pyglet.text.caret.Caret(self.layout)
-        self.layout.x = (right - left) / 2 + left
+            self.document, width, height, multiline=False, batch=drawable)
+        self.caret = pyglet.text.caret.Caret(self.layout, color=(255, 255, 255))
+        self.layout.x = left + 10 #  (right - left) / 2 + left
         self.layout.y = bottom
 
-        text_y = top - 10 - height * 1.5
-        Label(field_name, font_name='Times New Roman', font_size=height * 1.5, x=left + 10, y=text_y, batch=drawable)
+        ingress_font_size = int(font_size / 3)
+        text_y = top - 2 - ingress_font_size
+        Label(field_name, font_name='Courier', font_size=ingress_font_size, x=left + 10, y=text_y, batch=drawable)
         def func():
             pass
         super().__init__(drawable, left, right, bottom, top, func)

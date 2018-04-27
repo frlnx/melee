@@ -26,7 +26,7 @@ class BaseButton(object):
     @classmethod
     def labeled_button(cls, text, font_size, left, right, bottom, top, func: Callable):
         bottom_padding = int(font_size * 0.35)
-        drawable = Label(text, font_name='Times New Roman', font_size=font_size, x=left, y=bottom + bottom_padding)
+        drawable = Label(text, font_name='Courier', font_size=font_size, x=left, y=bottom + bottom_padding)
         return cls(drawable, left, right, bottom, top, func)
 
     def mouse_enter(self):
@@ -49,7 +49,7 @@ class BaseMenu(object):
     
     def __init__(self, heading: str, buttons: List[BaseButton], x, y):
         self.heading = heading
-        self.heading_label = Label(heading, font_name='Times New Roman', font_size=50, x=x, y=y)
+        self.heading_label = Label(heading, font_name='Courier', font_size=50, x=x, y=y)
         self.buttons = buttons
         self.highlightables = list(buttons)
         self.x = x

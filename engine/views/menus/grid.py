@@ -64,7 +64,7 @@ class ValueKeepingGridItem(GridItem):
         self.button = button
         self.key = key
         text = self._make_value_text()
-        self.label = Label(text, font_name='Times New Roman', font_size=10, x=label_x, y=label_y, width=label_width,
+        self.label = Label(text, font_name='Courier', font_size=10, x=label_x, y=label_y, width=label_width,
                            multiline=True, color=(255, 255, 255, 255))
 
     def _make_value_text(self):
