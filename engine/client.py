@@ -30,8 +30,8 @@ class ClientEngine(Engine):
             self.input_handler = Keyboard(self.window)
 
         self.window.push_handlers(self)
-        self._stop_func = None
-        self.connect_func = lambda x, y: None
+        self._stop_func = lambda: print("nothing bound to stop")
+        self.connect_func = lambda x, y: print("nothing bound to connect")
 
         self._menu_left = 200
         self._menu_bottom = 600
@@ -52,7 +52,7 @@ class ClientEngine(Engine):
 
     def _menu_login(self):
         login_menu = InputMenu.input_menu("Callsign", self._menu_set_callsign, self._menu_left, self._menu_bottom,
-                                          self.exit, 36)
+                                          self._menu_exit, 36)
         self.set_menu(login_menu)
 
     def _menu_set_callsign(self, callsign: ''):
@@ -67,7 +67,7 @@ class ClientEngine(Engine):
     def _menu_start_local(self):
         self.start_local()
         self._main_menu_functions = [self.close_menu, self._menu_shipyard, self._menu_controls,
-                                     self._menu_network, self.exit]
+                                     self._menu_network, self._menu_exit]
         self.close_menu()
 
     def _menu_shipyard(self):
@@ -87,7 +87,7 @@ class ClientEngine(Engine):
             self.input_handler.push_handlers(menu)
         self.set_menu(menu)
 
-    def exit(self):
+    def _menu_exit(self):
         self.window.close()
         self._stop_func()
 
@@ -127,12 +127,6 @@ class ClientEngine(Engine):
         self._controllers[self.my_model.uuid] = self.my_controller
         self.propagate_target(self.my_model)
         self._new_model_callback(self.my_model)
-
-    def on_window_close(self):
-        self.stop()
-
-    def stop(self):
-        self._stop_func()
 
     def bind_stop(self, func):
         self._stop_func = func
