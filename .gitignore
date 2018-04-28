@@ -95,3 +95,7 @@ ENV/
 # Rope project settings
 .ropeproject
 
+.idea/*
+.DS_Store
+*.pkl
+__cache__
