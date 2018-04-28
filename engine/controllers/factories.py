@@ -5,7 +5,7 @@ from engine.controllers.base_controller import BaseController
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.projectiles import PlasmaModel
-from engine.models.asteroid import AsteroidModel, AsteroidPartModel
+from engine.models.asteroid import AsteroidModel
 from engine.input_handlers import InputHandler
 
 
@@ -18,7 +18,6 @@ class ControllerFactory(object):
             ShipPartModel: ShipPartControllerFactory().manufacture,
             PlasmaModel: BaseFactory().manufacture,
             AsteroidModel: BaseFactory().manufacture,
-            AsteroidPartModel: BaseFactory().manufacture
         }
 
     def manufacture(self, model, input_handler=None):

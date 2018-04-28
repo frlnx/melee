@@ -1,7 +1,7 @@
 from engine.views.ship_part import ShipPartView
 from engine.views.ship import ShipView
 from engine.views.dynamic_mesh_view import DynamicMeshView
-from engine.models.asteroid import AsteroidPartModel, AsteroidModel
+from engine.models.asteroid import AsteroidModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
 from engine.models.base_model import BaseModel
@@ -57,8 +57,7 @@ class DynamicViewFactory(ViewFactory):
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
         PlasmaModel: BaseView,
-        AsteroidModel: DynamicMeshView,
-        AsteroidPartModel: BaseView
+        AsteroidModel: DynamicMeshView
     }
 
     def manufacture(self, model: BaseModel):
