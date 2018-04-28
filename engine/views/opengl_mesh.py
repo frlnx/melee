@@ -240,6 +240,7 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
         d = super(OpenGLTexturedMaterial, self).__getstate__()
         #del d['textures']
         d['texture'] = None
+        return d
 
     def __setstate__(self, state):
         super(OpenGLTexturedMaterial, self).__setstate__(state)

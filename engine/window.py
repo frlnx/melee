@@ -112,9 +112,9 @@ class Window(pyglet.window.Window):
     def draw_space(self):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 0.5))
-        glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0.5, 0.5, 0, 1.0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(1.0, 1.0, 1.0, 1.0))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 1.0))
+        glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 0.3, 1, 0))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(3.0, 3.0, 3.0, 1.0))
         for view in self.views:
             if view.is_alive:
                 view.draw()
