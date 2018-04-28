@@ -4,7 +4,6 @@ from ctypes import c_float
 from collections import defaultdict
 from typing import List, Tuple, Callable
 import os
-from copy import deepcopy
 
 from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
 from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
