@@ -23,7 +23,7 @@ class CompositeModel(BaseModel):
         return self._parts.get((int(round(x)), int(round(z))), None)
 
     @property
-    def parts(self):
+    def parts(self) -> Set[BaseModel]:
         return set(self._parts.values())
 
     def __getstate__(self):
