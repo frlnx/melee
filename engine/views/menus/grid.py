@@ -34,11 +34,6 @@ class GridItem(object):
         glPopMatrix()
 
     def draw_3d(self):
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat * 4)(1, 1, 1, 1.0))
-        glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat * 4)(0, 1, 1, 0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat * 4)(1.0, 1.0, 1.0, 1.0))
         glTranslatef(self.x, 0, self.y)
         glRotatef(self.yaw, 0, 1, 0)
         if self._highlight_part:
@@ -47,7 +42,6 @@ class GridItem(object):
             scale = 0.25
         glScalef(scale, scale, scale)
         self.draw_function()
-        glDisable(GL_LIGHTING)
 
     def draw_2d(self):
         pass
