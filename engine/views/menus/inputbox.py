@@ -28,7 +28,7 @@ class InputBox(BaseButton):
 
         ingress_font_size = int(font_size / 3)
         text_y = top - 2 - ingress_font_size
-        Label(field_name, font_name='Courier', font_size=ingress_font_size, x=left + 10, y=text_y, batch=drawable)
+        Label(field_name, font_name='Courier New', font_size=ingress_font_size, x=left + 10, y=text_y, batch=drawable)
         def func():
             pass
         super().__init__(drawable, left, right, bottom, top, func)
@@ -39,10 +39,11 @@ class InputBox(BaseButton):
 
 
 class InputMenu(BaseMenu):
-    def __init__(self, heading: str, buttons: List[BaseButton], inputboxes: List[InputBox], x, y):
+    def __init__(self, heading: str, buttons: List[BaseButton], inputboxes: List[InputBox], x, y, default_action=None):
         super().__init__(heading, buttons, x, y)
         self.inputboxes = inputboxes
         self.focus = None
+        self.default_action = default_action
         if len(self.inputboxes) > 0:
             self.set_focus(self.inputboxes[0])
 
@@ -96,7 +97,7 @@ class InputMenu(BaseMenu):
         button = BaseButton.labeled_button(name, font_size=font_size, left=left, right=right,
                                            bottom=bottom, top=top, func=prepared_func)
         buttons.append(button)
-        return cls(heading, buttons, inputboxes, x, y)
+        return cls(heading, buttons, inputboxes, x, y, default_action=prepared_func)
 
     def draw(self):
         super(InputMenu, self).draw()
@@ -145,6 +146,8 @@ class InputMenu(BaseMenu):
                 dir = 0
 
             self.set_focus(self.inputboxes[(i + dir) % len(self.inputboxes)])
+        elif symbol == pyglet.window.key.ENTER:
+            self.default_action()
 
     def set_focus(self, focus):
         if self.focus:
