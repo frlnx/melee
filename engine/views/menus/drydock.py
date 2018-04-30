@@ -44,18 +44,26 @@ class Drydock(object):
         pass
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        pass
+        distance = self.distance_to_item(self.highlighted_item, x, y)
+        if distance < 50:
+            self.held_item = self.highlighted_item
+            if distance < 25:
+                self.moving = True
+            else:
+                self.rotating = True
 
     def on_mouse_release(self, x, y, button, modifiers):
-        pass
+        self.moving = False
+        self.rotating = False
+        self.held_item = None
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_x, self.mouse_y = x, y
         self.highlighted_item.set_highlight(False, False)
         self.highlighted_item = self.find_closest_item_to(x, y)
         distance = self.distance_to_item(self.highlighted_item, x, y)
-        model_highlight = 0 <= distance < 25
-        circle_highlight = 25 <= distance < 50
+        model_highlight = 0. <= distance < 25
+        circle_highlight = 25. <= distance < 50
         self.highlighted_item.set_highlight(model_highlight, circle_highlight)
 
     def find_closest_item_to(self, x, y):
