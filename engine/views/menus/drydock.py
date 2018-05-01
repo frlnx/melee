@@ -2,8 +2,9 @@ from typing import List
 import ctypes
 
 from engine.models.ship import ShipModel
-from engine.physics.polygon import Polygon
-from engine.views.opengl_mesh import OpenGLWaveFrontFactory
+from engine.models.ship_part import ShipPartModel
+from engine.models.factories import ShipPartModelFactory
+from engine.views.opengl_mesh import OpenGLWaveFrontFactory, OpenGLMesh
 
 from math import hypot, atan2, degrees, cos, sin, radians
 from itertools import chain
@@ -16,25 +17,18 @@ from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTran
 
 
 class DrydockItem(object):
-    def __init__(self, x, y, yaw, save_function, draw_function):
-        self.x = x
-        self.y = y
+    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
+        self.model = model
+        self.bbox = model.bounding_box.__copy__()
+        self.mesh = mesh
+        self.x, self.y, self.yaw = model.x, model.z, model.yaw
         self._to_cfloat_array = ctypes.c_float * 4
-        self.yaw = yaw
-        self.draw_function = draw_function
-        self.save_function = save_function
         self._highlight_part = False
         self._highlight_circle = False
+        self._bb_color = (1., 1., 1., 0.1)
 
     def to_cfloat_array(self, *floats):
         return self._to_cfloat_array(*floats)
-
-    def save(self):
-        self.save_function(self.x, 0, self.y, 0, self.yaw, 0)
-
-    def set_highlight(self, part=False, circle=False):
-        self._highlight_part = part
-        self._highlight_circle = circle
 
     def draw(self):
         glPushMatrix()
@@ -42,9 +36,6 @@ class DrydockItem(object):
         self.draw_3d()
         self.draw_2d()
         glPopMatrix()
-
-    def draw_bb(self):
-        pass
 
     def draw_3d(self):
         glEnable(GL_LIGHTING)
@@ -60,20 +51,23 @@ class DrydockItem(object):
         else:
             scale = 0.25
         glScalef(scale, scale, scale)
-        self.draw_function()
+        self.mesh.draw()
         glDisable(GL_LIGHTING)
+
+    def draw_bb(self):
+        glRotatef(90, 1, 0, 0)
+        bb_v2f = list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self.bbox.lines]))
+        n_points = len(self.bbox.lines) * 2
+        draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', self._bb_color * n_points))
+        glRotatef(-90, 1, 0, 0)
 
     def draw_2d(self):
         pass
 
-    def draw_text(self):
-        pass
-
 
 class DockableItem(DrydockItem):
-    def __init__(self, x, y, yaw, save_function, draw_function, bbox: Polygon):
-        super().__init__(x, y, yaw, save_function, draw_function)
-        self.bbox = bbox
+    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
+        super().__init__(model, mesh)
         step = 36
         circle = [(cos(radians(d)), sin(radians(d)), cos(radians(d + step)), sin(radians(d + step))) for d in
                   range(0, 360, step)]
@@ -82,10 +76,13 @@ class DockableItem(DrydockItem):
         self.n_points = int(len(self.circle) / 2)
         self.c4B = ('c4B', [150, 200, 255, 128] * self.n_points)
         self.c4B_highlight = ('c4B', [0, 0, 255, 255] * self.n_points)
-        self.tint = (1., 1., 1., 0.1)
 
     def save(self):
-        self.save_function(self.x, 0, self.y, 0, self.yaw, 0)
+        self.model.set_position_and_rotation(self.x, 0, self.y, 0, self.yaw, 0)
+
+    def set_highlight(self, part=False, circle=False):
+        self._highlight_part = part
+        self._highlight_circle = circle
 
     def draw_2d(self):
         glRotatef(90, 1, 0, 0)
@@ -99,13 +96,6 @@ class DockableItem(DrydockItem):
         else:
             draw(self.n_points, GL_LINES, self.v2f, self.c4B)
 
-    def draw_bb(self):
-        glRotatef(90, 1, 0, 0)
-        bb_v2f = list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self.bbox.lines]))
-        n_points = len(self.bbox.lines) * 2
-        draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', self.tint * n_points))
-        glRotatef(-90, 1, 0, 0)
-
     def set_xy(self, x, y):
         self.x = x
         self.y = y
@@ -117,8 +107,8 @@ class DockableItem(DrydockItem):
 
 
 class NewGridItem(DockableItem):
-    def __init__(self, x, y, yaw, save_function, draw_function, bbox: Polygon):
-        super(NewGridItem, self).__init__(x, y, yaw, save_function, draw_function, bbox)
+    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
+        super(NewGridItem, self).__init__(model, mesh)
         self._draw_2d = self.draw_2d
         self.draw_2d = self.do_nothing
         self._set_xy = self.set_xy
@@ -126,7 +116,7 @@ class NewGridItem(DockableItem):
         self.place_on_ship = self.place_on_ship
 
     def copy(self):
-        return self.__class__(self.x, self.y, self.yaw, self.save_function, self.draw_function)
+        return self.__class__(self.model, self.mesh)
 
     def do_nothing(self):
         pass
@@ -140,19 +130,17 @@ class NewGridItem(DockableItem):
 class Drydock(object):
 
     def __init__(self, ship: ShipModel, mesh_factory: OpenGLWaveFrontFactory):
+        self.ship = ship
+        self.mesh_factory = mesh_factory
+        self.part_factory = ShipPartModelFactory()
         self.x_offset = 720
         self.y_offset = 360
         self.scale = 100
         self.gl_scale_f = [self.scale] * 3
         self._items = []
         for part in ship.parts:
-            draw_function = mesh_factory.manufacture(part.mesh_name).draw
-            bbox = Polygon.manufacture(
-                [(l.original_x1, l.original_y1) for l in part.bounding_box.lines],
-                part.bounding_box.x, part.bounding_box.y, part.bounding_box.rotation
-            )
-            item = DockableItem(part.x, part.z, part.yaw,
-                                part.set_position_and_rotation, draw_function=draw_function, bbox=bbox)
+            mesh = mesh_factory.manufacture(part.mesh_name)
+            item = DockableItem(part, mesh)
             self._items.append(item)
         self.highlighted_item = self._items[0]
         self._held_item = None
@@ -163,6 +151,12 @@ class Drydock(object):
 
     def debug(self):
         self._debug = True
+
+    def reset(self):
+        self._items = [self.manufacture_item("cockpit")]
+
+    def manufacture_item(self, name):
+        return DockableItem(self.part_factory.manufacture(name), self.mesh_factory.manufacture(name))
 
     @property
     def held_item(self) -> DockableItem:
@@ -175,6 +169,7 @@ class Drydock(object):
     def save_all(self):
         for item in self.items:
             item.save()
+        self.ship.set_parts({item.model for item in self.items})
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.held_item:
@@ -247,5 +242,4 @@ class Drydock(object):
         glScalef(*self.gl_scale_f)
         for item in self.items:
             item.draw()
-            item.draw_text()
         glDisable(GL_LIGHTING)

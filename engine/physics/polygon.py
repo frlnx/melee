@@ -103,3 +103,6 @@ class Polygon(BasePolygon):
     def __iadd__(self, other):
         self._lines += [Line([(line.x1, line.y1), (line.x2, line.y2)]) for line in other.lines]
         return self
+
+    def __copy__(self):
+        return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines],self.x, self.y, self.rotation)

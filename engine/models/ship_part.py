@@ -23,6 +23,7 @@ class ShipPartModel(BaseModel):
         self._spawn = None
         self._time_in_state = 0
         self._material_observers = set()
+        self._connected_parts = set()
 
     def __getstate__(self):
         d = super(ShipPartModel, self).__getstate__()

@@ -51,6 +51,11 @@ class CompositeModel(BaseModel):
                 spawns.append(part.pop_spawn())
         return spawns
 
+    def set_parts(self, parts):
+        self.parts.clear()
+        self.parts.update(parts)
+        self.rebuild()
+
     def add_part(self, part_model):
         x, z = part_model.x, part_model.z
         self._parts[(x, z)] = part_model
