@@ -107,6 +107,10 @@ class MovableGridItem(GridItem):
         else:
             draw(self.n_points, GL_LINES, self.v2f, self.c4B)
 
+    def translate(self, dx, dy):
+        self.x += dx
+        self.y += dy
+
     def set_xy(self, x, y):
         self.x = x
         self.y = y

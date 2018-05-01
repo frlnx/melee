@@ -1,6 +1,7 @@
 from typing import List
 from math import radians
 from itertools import product
+from functools import reduce
 
 from engine.physics.line import Line
 
@@ -75,22 +76,28 @@ class Polygon(BasePolygon):
             return False
         return True
 
-    def intersection_point(self, other: BasePolygon):
+    def intersection_point(self, other: "Polygon"):
+        intersects, x, y = self._intersection_point(other)
+        if intersects:
+            return intersects, x, y
+        return other._intersection_point(self)
+
+    def _intersection_point(self, other: BasePolygon):
         if not self.bounding_box_intersects(other):
             return False, None, None
-        n_intersections = 0
-        sum_x = 0
-        sum_y = 0
+        x_es = []
+        y_es = []
         for line1, line2 in product(self.lines, other.lines):
             if not line1.bounding_box_intersects(line2):
                 continue
             intersects, x, y = line1.intersection_point(line2)
             if intersects:
-                sum_x += x
-                sum_y += y
-                n_intersections += 1
-        if n_intersections > 0:
-            return True, sum_x / n_intersections, sum_y / n_intersections
+                x_es.append(x)
+                y_es.append(y)
+        if x_es:
+            x = reduce(lambda a, b: a + b, x_es) / len(x_es)
+            y = reduce(lambda a, b: a + b, y_es) / len(y_es)
+            return True, x, y
         return False, None, None
 
     def __iadd__(self, other):

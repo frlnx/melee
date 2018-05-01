@@ -16,7 +16,8 @@ class ShipBuildMenu(BaseMenu):
     def manufacture_for_ship_model(cls, ship_model, close_menu_function: Callable, x, y, mesh_factory, font_size=36):
         grid_item_arranger = Drydock(ship_model, mesh_factory)
         heading = "Shipyard"
-        callables = [("<- Back", close_menu_function), ("Save", grid_item_arranger.save_all)]
+        callables = [("<- Back", close_menu_function), ("Save", grid_item_arranger.save_all),
+                     ("Debug", grid_item_arranger.debug)]
         height = int(font_size * 1.6)
         width = int(height * 6)
         height_spacing = int(height * 1.1)
