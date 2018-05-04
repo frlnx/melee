@@ -36,7 +36,7 @@ class TestLineIntersection(object):
         assert self.target[0]
 
 
-class TestAnotherLineIntersection(object):
+class _TestAnotherLineIntersection(object):
 
     def setup(self):
         line1 = Line([(-2, -3), (1, 0)])

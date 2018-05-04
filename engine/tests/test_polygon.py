@@ -1,3 +1,6 @@
+import pytest
+from itertools import product
+
 from engine.physics.polygon import Polygon
 
 
@@ -46,3 +49,12 @@ class TestPolygonMovement(object):
         self.target.set_position_rotation(-1, 0, 0)
         self.target.freeze()
         assert set([line.original_x1 for line in self.target.lines]) == {-6, 4}
+
+
+p1 = Polygon.manufacture([(0.46, -1.21), (1.29, -1.78), (1.86, -0.95), (1.03, -0.38)])
+p2 = Polygon.manufacture([(0.5, 0.5), (-0.5, 0.5), (-0.5, -0.5), (0.5, -0.5)])
+@pytest.mark.parametrize("line1,line2", product(p1.lines, p2.lines))
+def test_lines_that_should_not_intersect(line1, line2):
+    if line1.bounding_box_intersects(line2):
+        intersects, x, y = line1.intersection_point(line2)
+        assert not intersects

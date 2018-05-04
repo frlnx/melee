@@ -27,6 +27,9 @@ class DrydockItem(object):
         self._highlight_circle = False
         self._bb_color = (1., 1., 1., 0.1)
 
+    def set_bb_color(self, *bb_color):
+        self._bb_color = bb_color
+
     def to_cfloat_array(self, *floats):
         return self._to_cfloat_array(*floats)
 
@@ -180,9 +183,9 @@ class Drydock(object):
                 dx, dy = mx - self.held_item.x, my - self.held_item.y
                 self._held_item.set_yaw(degrees(atan2(dx, dy)))
             if self._held_item_legal_placement():
-                self._held_item.tint = (1., 1., 1., 0.1)
+                self._held_item.set_bb_color(1., 1., 1., 0.1)
             else:
-                self._held_item.tint = (1., .2, .2, 0.1)
+                self._held_item.set_bb_color(1., .2, .2, 0.1)
         else:
             distance = self.distance_to_item(self.highlighted_item, x, y)
             if distance < 50:
@@ -193,13 +196,13 @@ class Drydock(object):
                     self.rotating = True
 
     def _held_item_legal_placement(self):
-        if self._debug:
-            print("DEBUG")
         for item in self.items:
             if item == self.held_item:
                 continue
             intersects, x, y = item.bbox.intersection_point(self.held_item.bbox)
             if intersects:
+                if self._debug:
+                    print("DEBUG")
                 return False
         return True
 

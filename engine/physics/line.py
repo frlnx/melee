@@ -1,5 +1,7 @@
 from typing import List, Tuple
 from math import *
+from shapely.geometry import LineString
+
 
 
 class Point(object):
@@ -106,23 +108,32 @@ class Line(BaseLine):
         return True
 
     def intersection_point(self, other: 'Line'):
-        original_other_radii = other.radii
-        other.rotate(-original_other_radii)
-        self.rotate(-original_other_radii)
-        dx = self.x1 - other.x1
-        if round(self.x1, 8) == round(self.x2, 8):
-            intersects = other.x1 == self.x1
-            point_x = self.x1
-            point_y = (min(self.top, other.top) + max(self.bottom, other.bottom)) / 2
+        # original_other_radii = other.radii
+        # other.rotate(-original_other_radii)
+        # self.rotate(-original_other_radii)
+        # dx = self.x1 - other.x1
+        # if round(self.x1, 8) == round(self.x2, 8):
+        #     intersects = other.x1 == self.x1
+        #     point_x = self.x1
+        #     point_y = (min(self.top, other.top) + max(self.bottom, other.bottom)) / 2
+        # else:
+        #     k = (self.y1 - self.y2) / (self.x1 - self.x2)
+        #     rotated_y = k * dx + self.y1
+        #     rotated_x = other.x1
+        #     intersects = (other.bottom < rotated_y < other.top and
+        #                   self.left < rotated_x < self.right)
+        #     cos_val = cos(original_other_radii)
+        #     sin_val = sin(original_other_radii)
+        #     point_x = rotated_x * cos_val - rotated_y * sin_val
+        #     point_y = rotated_x * sin_val + rotated_y * cos_val
+        # other.rotate(original_other_radii)
+        # self.rotate(original_other_radii)
+
+        sg_line1 = LineString([(self.x1, self.y1), (self.x2, self.y2)])
+        sg_line2 = LineString([(other.x1, other.y1), (other.x2, other.y2)])
+        intersection = sg_line1.intersection(sg_line2)
+        if not intersection.is_empty:
+            point_x, point_y = intersection.centroid.x, intersection.centroid.y
         else:
-            k = (self.y1 - self.y2) / (self.x1 - self.x2)
-            rotated_y = k * dx + self.y1
-            rotated_x = other.x1
-            intersects = other.bottom < rotated_y < other.top and self.left < rotated_x < self.right
-            cos_val = cos(original_other_radii)
-            sin_val = sin(original_other_radii)
-            point_x = rotated_x * cos_val - rotated_y * sin_val
-            point_y = rotated_x * sin_val + rotated_y * cos_val
-        other.rotate(original_other_radii)
-        self.rotate(original_other_radii)
-        return intersects, point_x, point_y
+            point_x, point_y = 0, 0
+        return not intersection.is_empty, point_x, point_y
