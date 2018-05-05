@@ -1,8 +1,11 @@
 import json
 from copy import deepcopy
 from functools import partial
-from math import sin, cos, radians
+from itertools import combinations, chain
+from math import sin, cos, radians, hypot
 from random import normalvariate
+
+from shapely.geometry import MultiPoint
 
 from engine.models.projectiles import PlasmaModel
 from engine.models.asteroid import AsteroidModel
@@ -23,13 +26,15 @@ class ShipModelFactory(object):
 
     def manufacture(self, name, position=None, rotation=None, movement=None, spin=None) -> ShipModel:
         config = deepcopy(self.ships[name])
-        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)])
         parts = set()
         for part_config in config['parts']:
             part = self.ship_part_model_factory.manufacture(**part_config)
             parts.add(part)
-            if part.position.y == 0:
-                bounding_box += part.bounding_box
+        points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in part.bounding_box.lines] for part in parts])))
+
+        bounding_box = Polygon.manufacture(points.convex_hull.exterior.coords)
+        #for part in parts:
+        #    bounding_box += part.bounding_box
         ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
         if position is None:
@@ -72,7 +77,7 @@ class ShipPartModelFactory(object):
         config['rotation'] = rotation
         config['movement'] = MutableOffsets(*placement_config.get('movement', (0, 0, 0)))
         config['spin'] = MutableDegrees(*placement_config.get('spin', (0, 0, 0)))
-        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+        bounding_box = Polygon.manufacture([(-0.6, -0.6), (0.6, -0.6), (0.6, 0.6), (-0.6, 0.6)],
                                            x=position.x, y=position.z, rotation=rotation.yaw)
         config['bounding_box'] = bounding_box
         part = ShipPartModel(**config)

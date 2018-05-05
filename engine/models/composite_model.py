@@ -1,5 +1,7 @@
 from typing import Set
+from itertools import chain
 
+from shapely.geometry import MultiPoint
 from engine.physics.polygon import Polygon
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.models.base_model import BaseModel
@@ -72,6 +74,10 @@ class CompositeModel(BaseModel):
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in part.bounding_box.lines] for part in self.parts])))
+        bounding_box = Polygon.manufacture(points.convex_hull.exterior.coords)
+        bounding_box.freeze()
+        bounding_box.set_position_rotation(self.position.x, self.position.z, self.rotation.yaw)
         self.rebuild_callback()
 
     def parts_intersected_by(self, other_model):

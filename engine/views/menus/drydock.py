@@ -201,8 +201,6 @@ class Drydock(object):
                 continue
             intersects, x, y = item.bbox.intersection_point(self.held_item.bbox)
             if intersects:
-                if self._debug:
-                    print("DEBUG")
                 return False
         return True
 

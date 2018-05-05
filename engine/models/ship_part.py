@@ -25,6 +25,10 @@ class ShipPartModel(BaseModel):
         self._material_observers = set()
         self._connected_parts = set()
 
+    def connect(self, other_part: "ShipPartModel"):
+        self._connected_parts.add(other_part)
+        other_part._connected_parts.add(self)
+
     def __getstate__(self):
         d = super(ShipPartModel, self).__getstate__()
         d['_material_observers'] = set()

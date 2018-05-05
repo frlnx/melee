@@ -29,35 +29,26 @@ class ShipPartController(BaseController):
 
     def update(self, dt):
         super().update(dt)
-        axis_value = self._gamepad.axis.get(self._model.axis, 0)
+        input_value = (self._model.button in self._gamepad.buttons) + \
+                      (self._model.keyboard in self._gamepad.buttons) + \
+                      self._gamepad.axis.get(self._model.axis, 0.0)
+        if 'next_state' in self._model.state_spec:
+            new_state = self._model.state_spec.get('next state', self._model.state)
+        elif input_value > 0:
+            new_state = 'active'
+        elif self._model.state_transition_possible_to('idle'):
+            new_state = 'idle'
+        else:
+            new_state = self._model.state
         if self._model.state_timeout > 0:
-            return
-        if 'next state' in self._model.state_spec and \
-                self._model.state_transition_possible_to(self._model.state_spec['next state']):
-            self._model.set_state(self._model.state_spec['next state'])
-
-        if (self._model.button in self._gamepad.buttons or self._model.keyboard in self._gamepad.buttons) and \
-                self._model.state_transition_possible_to('active'):
-            try:
-                self._model.set_state('active')
-            except AssertionError:
-                pass
+            pass
+        elif self._model.state_transition_possible_to(new_state):
+            self._model.set_state(new_state)
+            self._force_vector.set_force(input_value * self._model.state_spec.get('thrust generated', 0))
+            self._model.set_input_value(input_value)
             if self._model.state_spec.get('spawn', False):
                 self.spawn()
-            self._force_vector.set_force(1.0 * self._model.state_spec.get('thrust generated', 0))
-            self._model.set_input_value(1.0)
-        elif axis_value > 0:
-            axis_value = min(1.0, max(0.0, axis_value))
-            self._force_vector.set_force(axis_value * self._model.state_spec.get('thrust generated', 0))
-            self._model.set_input_value(axis_value)
-            try:
-                self._model.set_state('active')
-            except AssertionError:
-                raise
-        elif self._model.state_transition_possible_to('idle'):
-            self._model.set_input_value(0.0)
-            self._force_vector.set_force(0.0)
-            self._model.set_state('idle')
+
 
     def spawn(self):
         if not self._model.spawn:

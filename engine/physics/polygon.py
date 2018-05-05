@@ -3,6 +3,8 @@ from math import radians
 from itertools import product
 from functools import reduce
 
+from shapely.geometry import LinearRing, LineString
+
 from engine.physics.line import Line
 
 
@@ -34,6 +36,15 @@ class BasePolygon(object):
     @property
     def lines(self) -> List[Line]:
         return self._lines
+
+    def make_shape(self):
+        if len(self.lines) > 1:
+            coords = [(l.x1, l.y1) for l in self.lines]
+            coords.append((self.lines[-1].x2, self.lines[-1].y2))
+            return LinearRing(coords)
+        else:
+            line = self.lines[0]
+            return LineString([(line.x1, line.y1), (line.x2, line.y2)])
 
     def set_position_rotation(self, x, y, yaw_degrees):
         for line in self.lines:
@@ -77,32 +88,42 @@ class Polygon(BasePolygon):
         return True
 
     def intersection_point(self, other: "Polygon"):
-        intersects, x, y = self._intersection_point(other)
-        if intersects:
-            return intersects, x, y
-        return other._intersection_point(self)
+        return self._intersection_point(other)
 
     def _intersection_point(self, other: BasePolygon):
         if not self.bounding_box_intersects(other):
             return False, None, None
-        x_es = []
-        y_es = []
-        for line1, line2 in product(self.lines, other.lines):
-            if not line1.bounding_box_intersects(line2):
-                continue
-            intersects, x, y = line1.intersection_point(line2)
-            if intersects:
-                x_es.append(x)
-                y_es.append(y)
-        if x_es:
-            x = reduce(lambda a, b: a + b, x_es) / len(x_es)
-            y = reduce(lambda a, b: a + b, y_es) / len(y_es)
-            return True, x, y
-        return False, None, None
+        p1 = self.make_shape()
+        p2 = other.make_shape()
+        intersection = p1.intersection(p2)
+        if not intersection.is_empty:
+            point_x, point_y = intersection.centroid.x, intersection.centroid.y
+        else:
+            point_x, point_y = 0, 0
+        return not intersection.is_empty, point_x, point_y
+        #
+        # x_es = []
+        # y_es = []
+        # for line1, line2 in product(self.lines, other.lines):
+        #     if not line1.bounding_box_intersects(line2):
+        #         continue
+        #     intersects, x, y = line1.intersection_point(line2)
+        #     if intersects:
+        #         x_es.append(x)
+        #         y_es.append(y)
+        # if x_es:
+        #     x = reduce(lambda a, b: a + b, x_es) / len(x_es)
+        #     y = reduce(lambda a, b: a + b, y_es) / len(y_es)
+        #     return True, x, y
+        # return False, None, None
 
-    def __iadd__(self, other):
-        self._lines += [Line([(line.x1, line.y1), (line.x2, line.y2)]) for line in other.lines]
-        return self
+    def __iadd__(self, other: "Polygon"):
+        p1 = self.make_shape()
+        p2 = other.make_shape()
+        new_shape = p1.union(p2)
+        return self.manufacture(new_shape.coords)
+        #self._lines += [Line([(line.x1, line.y1), (line.x2, line.y2)]) for line in other.lines]
+        #return self
 
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines],self.x, self.y, self.rotation)
