@@ -18,21 +18,40 @@ class ShipPartModel(BaseModel):
         self.material_affected = part_spec.get('material_affected')
         self.material_mode = part_spec.get('material_mode')
         self.material_channel = part_spec.get('material_channels')
+        self.needs_connection_to = set(part_spec['needs_connection_to'])
         self.material_value = 0
         self.input_value = 0
         self._spawn = None
         self._time_in_state = 0
         self._material_observers = set()
         self._connected_parts = set()
+        self._working = False
+        self.update_working_status()
+
+    @property
+    def working(self):
+        return self._working
+
+    def update_working_status(self):
+        names_of_connected_parts = set([part.name for part in self.connected_parts])
+        self._working = len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
 
     def connect(self, other_part: "ShipPartModel"):
+        self._connect(other_part)
+        other_part._connect(self)
+
+    def _connect(self, other_part: "ShipPartModel"):
         self._connected_parts.add(other_part)
-        other_part._connected_parts.add(self)
+        self.update_working_status()
 
     def disconnect(self, other_part: "ShipPartModel"):
+        self._disconnect(other_part)
+        other_part._disconnect(self)
+
+    def _disconnect(self, other_part: "ShipPartModel"):
         try:
             self._connected_parts.remove(other_part)
-            other_part._connected_parts.remove(self)
+            self.update_working_status()
         except AttributeError:
             pass
 

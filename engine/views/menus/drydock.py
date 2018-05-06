@@ -7,7 +7,7 @@ from engine.models.factories import ShipPartModelFactory
 from engine.views.opengl_mesh import OpenGLWaveFrontFactory, OpenGLMesh
 
 from math import hypot, atan2, degrees, cos, sin, radians
-from itertools import chain
+from itertools import chain, combinations
 
 from pyglet.graphics import draw
 from pyglet.gl import GL_LINES, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
@@ -27,6 +27,22 @@ class DrydockItem(object):
         self._highlight_part = False
         self._highlight_circle = False
         self._bb_color = [1., 1., 1., 0.1]
+        self._connected_parts = set()
+
+    def connect(self, other_part: "DrydockItem"):
+        self._connected_parts.add(other_part)
+        other_part._connected_parts.add(self)
+
+    def disconnect(self, other_part: "DrydockItem"):
+        try:
+            self._connected_parts.remove(other_part)
+            other_part._connected_parts.remove(self)
+        except KeyError:
+            pass
+
+    @property
+    def connected_items(self):
+        return self._connected_parts
 
     def set_bb_color(self, *bb_color):
         self._bb_color = bb_color
@@ -36,45 +52,52 @@ class DrydockItem(object):
 
     def draw(self):
         glPushMatrix()
-        self.draw_bb()
-        self.draw_3d()
-        self.draw_2d()
+        self.draw_global_2d()
+        self.localize()
+        self.light_on()
+        self.draw_local_3d()
+        self.light_off()
+        self.draw_local_2d()
         glPopMatrix()
 
-    def draw_3d(self):
+    def localize(self):
+        glTranslatef(self.x, 0, self.y)
+        glRotatef(self.yaw, 0, 1, 0)
+
+    def light_on(self):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 0.1))
         glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 1, -1, 0))
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(13.0, 13.0, 13.0, 1.0))
 
-        glTranslatef(self.x, 0, self.y)
-        glRotatef(self.yaw, 0, 1, 0)
+    def light_off(self):
+        glDisable(GL_LIGHTING)
+
+    def draw_local_3d(self):
         if self._highlight_part:
             scale = 0.4
         else:
             scale = 0.25
         glScalef(scale, scale, scale)
         self.mesh.draw()
-        glDisable(GL_LIGHTING)
 
-    def draw_bb(self):
+    def draw_global_2d(self):
         glPushMatrix()
         glRotatef(90, 1, 0, 0)
         bb_v2f = list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self.bbox.lines]))
         n_points = len(self.bbox.lines) * 2
         draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', self._bb_color * n_points))
-        glPopMatrix()
 
-    def draw_2d(self):
-        glPushMatrix()
-        glRotatef(90, 1, 0, 0)
-        lines = [(self.model.x, self.model.z, part.x, part.z) for part in self.model.connected_parts]
+        lines = [(self.x, self.y, item.x, item.y) for item in self.connected_items]
         bb_v2f = list(chain(*lines))
         n_points = len(lines) * 2
         draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
+
         glPopMatrix()
 
+    def draw_local_2d(self):
+        pass
 
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
@@ -96,8 +119,8 @@ class DockableItem(DrydockItem):
         self._highlight_part = part
         self._highlight_circle = circle
 
-    def draw_2d(self):
-        super(DockableItem, self).draw_2d()
+    def draw_local_2d(self):
+        super(DockableItem, self).draw_local_2d()
         glRotatef(90, 1, 0, 0)
         if self._highlight_circle:
             scale = 4 * 0.4
@@ -155,11 +178,11 @@ class Drydock(object):
             mesh = mesh_factory.manufacture(part.mesh_name)
             item = DockableItem(part, mesh)
             self._items.append(item)
+        self._update_connections()
         self.highlighted_item = self._items[0]
         self._held_item = None
         self.rotating = False
         self.moving = False
-        self.mouse_x, self.mouse_y = 0, 0
         self._debug = False
 
     def debug(self):
@@ -200,20 +223,33 @@ class Drydock(object):
                 self.rotating = not self.moving
 
     def move_to(self, x, y):
+        x, y = self._screen_to_model(x, y)
+        self._move_x_to(x)
+        self._move_y_to(y)
+
+    def _move_x_to(self, x):
         o_x, o_y = self.held_item.x, self.held_item.y
-        self._held_item.set_xy(*self._screen_to_model(x, y))
+        self._held_item.set_xy(x, self.held_item.y)
+        if not self._held_item_legal_placement():
+            self._held_item.set_xy(o_x, o_y)
+        else:
+            self._update_connections()
+
+    def _move_y_to(self, y):
+        o_x, o_y = self.held_item.x, self.held_item.y
+        self._held_item.set_xy(self.held_item.x, y)
         if not self._held_item_legal_placement():
             self._held_item.set_xy(o_x, o_y)
         else:
             self._update_connections()
 
     def _update_connections(self):
-        for item in self.items:
-            distance = hypot(item.x - self.held_item.x, item.y - self.held_item.y)
-            if distance < 80:
-                item.model.connect(self.held_item.model)
+        for item1, item2 in combinations(self.items, 2):
+            distance = hypot(item1.x - item2.x, item1.y - item2.y)
+            if distance < 1.7:
+                item1.connect(item2)
             else:
-                item.model.disconnect(self.held_item.model)
+                item1.disconnect(item2)
 
     def rotate_to(self, yaw):
         o_yaw = self.held_item.yaw
@@ -236,13 +272,13 @@ class Drydock(object):
         self._held_item = None
 
     def on_mouse_motion(self, x, y, dx, dy):
-        self.mouse_x, self.mouse_y = x, y
-        self.highlighted_item.set_highlight(False, False)
-        self.highlighted_item = self.find_closest_item_to(x, y)
-        distance = self.distance_to_item(self.highlighted_item, x, y)
-        model_highlight = 0. <= distance < 25
-        circle_highlight = 25. <= distance < 50
-        self.highlighted_item.set_highlight(model_highlight, circle_highlight)
+        if not self.held_item:
+            self.highlighted_item.set_highlight(False, False)
+            self.highlighted_item = self.find_closest_item_to(x, y)
+            distance = self.distance_to_item(self.highlighted_item, x, y)
+            model_highlight = 0. <= distance < 25
+            circle_highlight = 25. <= distance < 50
+            self.highlighted_item.set_highlight(model_highlight, circle_highlight)
 
     def find_closest_item_to(self, x, y):
         closest_item = None
