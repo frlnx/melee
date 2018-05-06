@@ -22,10 +22,11 @@ class DrydockItem(object):
         self.bbox = model.bounding_box.__copy__()
         self.mesh = mesh
         self.x, self.y, self.yaw = model.x, model.z, model.yaw
+        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
         self._to_cfloat_array = ctypes.c_float * 4
         self._highlight_part = False
         self._highlight_circle = False
-        self._bb_color = (1., 1., 1., 0.1)
+        self._bb_color = [1., 1., 1., 0.1]
 
     def set_bb_color(self, *bb_color):
         self._bb_color = bb_color
@@ -58,22 +59,30 @@ class DrydockItem(object):
         glDisable(GL_LIGHTING)
 
     def draw_bb(self):
+        glPushMatrix()
         glRotatef(90, 1, 0, 0)
         bb_v2f = list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self.bbox.lines]))
         n_points = len(self.bbox.lines) * 2
         draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', self._bb_color * n_points))
-        glRotatef(-90, 1, 0, 0)
+        glPopMatrix()
 
     def draw_2d(self):
-        pass
+        glPushMatrix()
+        glRotatef(90, 1, 0, 0)
+        lines = [(self.model.x, self.model.z, part.x, part.z) for part in self.model.connected_parts]
+        bb_v2f = list(chain(*lines))
+        n_points = len(lines) * 2
+        draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
+        glPopMatrix()
 
 
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
         super().__init__(model, mesh)
         step = 36
-        circle = [(cos(radians(d)), sin(radians(d)), cos(radians(d + step)), sin(radians(d + step))) for d in
-                  range(0, 360, step)]
+        r_step = radians(step)
+        ten_radians = [radians(d) for d in range(0, 360, step)]
+        circle = [(cos(d), sin(d), cos(d + r_step), sin(d + r_step)) for d in ten_radians]
         self.circle = [x for x in chain(*circle)]
         self.v2f = ('v2f', self.circle)
         self.n_points = int(len(self.circle) / 2)
@@ -88,6 +97,7 @@ class DockableItem(DrydockItem):
         self._highlight_circle = circle
 
     def draw_2d(self):
+        super(DockableItem, self).draw_2d()
         glRotatef(90, 1, 0, 0)
         if self._highlight_circle:
             scale = 4 * 0.4
@@ -102,11 +112,11 @@ class DockableItem(DrydockItem):
     def set_xy(self, x, y):
         self.x = x
         self.y = y
-        self.bbox.set_position_rotation(self.x, self.y, self.yaw)
+        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
 
     def set_yaw(self, yaw):
         self.yaw = yaw
-        self.bbox.set_position_rotation(self.x, self.y, self.yaw)
+        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
 
 
 class NewGridItem(DockableItem):
@@ -177,23 +187,39 @@ class Drydock(object):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.held_item:
             if self.moving:
-                self._held_item.set_xy(*self._screen_to_model(x, y))
+                self.move_to(x, y)
             if self.rotating:
                 mx, my = self._screen_to_model(x, y)
                 dx, dy = mx - self.held_item.x, my - self.held_item.y
-                self._held_item.set_yaw(degrees(atan2(dx, dy)))
-            if self._held_item_legal_placement():
-                self._held_item.set_bb_color(1., 1., 1., 0.1)
-            else:
-                self._held_item.set_bb_color(1., .2, .2, 0.1)
+                self.rotate_to(degrees(atan2(dx, dy)))
         else:
             distance = self.distance_to_item(self.highlighted_item, x, y)
             if distance < 50:
                 self._held_item = self.highlighted_item
-                if distance < 25:
-                    self.moving = True
-                else:
-                    self.rotating = True
+                self.moving = distance < 25
+                self.rotating = not self.moving
+
+    def move_to(self, x, y):
+        o_x, o_y = self.held_item.x, self.held_item.y
+        self._held_item.set_xy(*self._screen_to_model(x, y))
+        if not self._held_item_legal_placement():
+            self._held_item.set_xy(o_x, o_y)
+        else:
+            self._update_connections()
+
+    def _update_connections(self):
+        for item in self.items:
+            distance = hypot(item.x - self.held_item.x, item.y - self.held_item.y)
+            if distance < 80:
+                item.model.connect(self.held_item.model)
+            else:
+                item.model.disconnect(self.held_item.model)
+
+    def rotate_to(self, yaw):
+        o_yaw = self.held_item.yaw
+        self._held_item.set_yaw(yaw)
+        if not self._held_item_legal_placement():
+            self._held_item.set_yaw(o_yaw)
 
     def _held_item_legal_placement(self):
         for item in self.items:

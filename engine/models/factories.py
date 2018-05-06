@@ -77,7 +77,7 @@ class ShipPartModelFactory(object):
         config['rotation'] = rotation
         config['movement'] = MutableOffsets(*placement_config.get('movement', (0, 0, 0)))
         config['spin'] = MutableDegrees(*placement_config.get('spin', (0, 0, 0)))
-        bounding_box = Polygon.manufacture([(-0.6, -0.6), (0.6, -0.6), (0.6, 0.6), (-0.6, 0.6)],
+        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                                            x=position.x, y=position.z, rotation=rotation.yaw)
         config['bounding_box'] = bounding_box
         part = ShipPartModel(**config)

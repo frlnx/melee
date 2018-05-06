@@ -29,6 +29,17 @@ class ShipPartModel(BaseModel):
         self._connected_parts.add(other_part)
         other_part._connected_parts.add(self)
 
+    def disconnect(self, other_part: "ShipPartModel"):
+        try:
+            self._connected_parts.remove(other_part)
+            other_part._connected_parts.remove(self)
+        except AttributeError:
+            pass
+
+    @property
+    def connected_parts(self):
+        return self._connected_parts
+
     def __getstate__(self):
         d = super(ShipPartModel, self).__getstate__()
         d['_material_observers'] = set()
