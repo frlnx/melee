@@ -19,30 +19,38 @@ from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTran
 class DrydockItem(object):
     def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
         self.model = model
-        self.bbox = model.bounding_box.__copy__()
         self.mesh = mesh
-        self.x, self.y, self.yaw = model.x, model.z, model.yaw
         self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
         self._to_cfloat_array = ctypes.c_float * 4
         self._highlight_part = False
         self._highlight_circle = False
         self._bb_color = [1., 1., 1., 0.1]
-        self._connected_parts = set()
+
+    @property
+    def bbox(self):
+        return self.model.bounding_box
+
+    @property
+    def x(self):
+        return self.model.x
+
+    @property
+    def y(self):
+        return self.model.z
+
+    @property
+    def yaw(self):
+        return self.model.yaw
 
     def connect(self, other_part: "DrydockItem"):
-        self._connected_parts.add(other_part)
-        other_part._connected_parts.add(self)
+        self.model.connect(other_part.model)
 
     def disconnect(self, other_part: "DrydockItem"):
-        try:
-            self._connected_parts.remove(other_part)
-            other_part._connected_parts.remove(self)
-        except KeyError:
-            pass
+        self.model.disconnect(other_part.model)
 
     @property
     def connected_items(self):
-        return self._connected_parts
+        return self.model.connected_parts
 
     def set_bb_color(self, *bb_color):
         self._bb_color = bb_color
@@ -89,7 +97,7 @@ class DrydockItem(object):
         n_points = len(self.bbox.lines) * 2
         draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', self._bb_color * n_points))
 
-        lines = [(self.x, self.y, item.x, item.y) for item in self.connected_items]
+        lines = [(self.x, self.y, item.x, item.z) for item in self.connected_items]
         bb_v2f = list(chain(*lines))
         n_points = len(lines) * 2
         draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
@@ -98,6 +106,7 @@ class DrydockItem(object):
 
     def draw_local_2d(self):
         pass
+
 
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
@@ -133,13 +142,12 @@ class DockableItem(DrydockItem):
             draw(self.n_points, GL_LINES, self.v2f, self.c4B)
 
     def set_xy(self, x, y):
-        self.x = x
-        self.y = y
-        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
+        self.model.set_position(x, 0, y)
+        #self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
 
     def set_yaw(self, yaw):
-        self.yaw = yaw
-        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
+        self.model.set_rotation(0, yaw, 0)
+        #self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
 
 
 class NewGridItem(DockableItem):

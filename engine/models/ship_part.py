@@ -52,7 +52,7 @@ class ShipPartModel(BaseModel):
         try:
             self._connected_parts.remove(other_part)
             self.update_working_status()
-        except AttributeError:
+        except KeyError:
             pass
 
     @property

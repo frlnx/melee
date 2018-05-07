@@ -49,7 +49,8 @@
         "fuel consumption": 10,
         "power generation": 150
       }
-    ]
+    ],
+    "needs_connection_to": ["fuel tank"]
   },
   {
     "name": "engine",
@@ -66,20 +67,27 @@
     ],
     "material_affected": "Fire_front",
     "material_mode": "diffuse",
-    "material_channels": "a"
+    "material_channels": "a",
+    "needs_connection_to": ["fuel tank"]
   },
   {
     "name": "shield",
     "mesh_name": "shield",
     "states": [
       {
-        "name": "idle",
+        "name": "idle"
+      },
+      {
+        "name": "active",
         "power required": 100,
         "shield arc": [
           10,
           160
         ]
       }
-    ]
+    ],
+    "material_affected": "Shield_Arc",
+    "material_mode": "diffuse",
+    "material_channels": "a"
   }
 ]
