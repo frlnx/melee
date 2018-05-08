@@ -41,8 +41,9 @@ class ShipPartModel(BaseModel):
         other_part._connect(self)
 
     def _connect(self, other_part: "ShipPartModel"):
-        self._connected_parts.add(other_part)
-        self.update_working_status()
+        if other_part.name in self.needs_connection_to:
+            self._connected_parts.add(other_part)
+            self.update_working_status()
 
     def disconnect(self, other_part: "ShipPartModel"):
         self._disconnect(other_part)

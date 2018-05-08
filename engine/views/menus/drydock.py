@@ -143,11 +143,9 @@ class DockableItem(DrydockItem):
 
     def set_xy(self, x, y):
         self.model.set_position(x, 0, y)
-        #self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
 
     def set_yaw(self, yaw):
         self.model.set_rotation(0, yaw, 0)
-        #self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
 
 
 class NewGridItem(DockableItem):
