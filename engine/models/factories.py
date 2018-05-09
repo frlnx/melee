@@ -71,7 +71,6 @@ class ShipPartModelFactory(object):
         config['button'] = placement_config.get('button')
         config['keyboard'] = placement_config.get('keyboard')
         config['axis'] = placement_config.get('axis')
-        config['needs_connection_to'] = placement_config.get('needs_connection_to', [])
         position = MutableOffsets(*placement_config.get('position', (0, 0, 0)))
         rotation = MutableDegrees(*placement_config.get('rotation', (0, 0, 0)))
         config['position'] = position

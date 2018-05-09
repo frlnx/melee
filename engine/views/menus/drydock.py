@@ -8,6 +8,7 @@ from engine.views.opengl_mesh import OpenGLWaveFrontFactory, OpenGLMesh
 
 from math import hypot, atan2, degrees, cos, sin, radians
 from itertools import chain, combinations
+from functools import partial
 
 from pyglet.graphics import draw
 from pyglet.gl import GL_LINES, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
@@ -16,15 +17,81 @@ from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTran
     glPopMatrix, glPushMatrix, glScalef, glEnable, glLightfv
 
 
-class DrydockItem(object):
-    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
-        self.model = model
+class DrydockElement(object):
+
+    _to_cfloat_array = ctypes.c_float * 4
+
+    def __init__(self, mesh: OpenGLMesh, x=0, y=0):
         self.mesh = mesh
-        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
-        self._to_cfloat_array = ctypes.c_float * 4
+        self._x = x
+        self._y = y
         self._highlight_part = False
+
+    def to_cfloat_array(self, *floats):
+        return self._to_cfloat_array(*floats)
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def yaw(self):
+        return 0
+
+    def draw(self):
+        glPushMatrix()
+        self.draw_global_2d()
+        self.light_on()
+        self.localize()
+        self.draw_local_3d()
+        self.light_off()
+        self.draw_local_2d()
+        glPopMatrix()
+
+    def localize(self):
+        glTranslatef(self.x, 0, self.y)
+        glRotatef(self.yaw, 0, 1, 0)
+
+    def light_on(self):
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 0.1))
+        glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 1, -1, 0))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(13.0, 13.0, 13.0, 1.0))
+
+    @staticmethod
+    def light_off():
+        glDisable(GL_LIGHTING)
+
+    def draw_local_3d(self):
+        if self._highlight_part:
+            scale = 0.4
+        else:
+            scale = 0.25
+        glScalef(scale, scale, scale)
+        self.mesh.draw()
+
+    def draw_global_2d(self):
+        pass
+
+    def draw_local_2d(self):
+        pass
+
+
+class DrydockItem(DrydockElement):
+    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
+        super().__init__(mesh)
+        self.model = model
+        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
         self._highlight_circle = False
         self._bb_color = [1., 1., 1., 0.1]
+        self._light_color = self.to_cfloat_array(13., 13., 13., 1.)
+        self._light_direction = self.to_cfloat_array(0, 1, -1, 0)
+        self._light_ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
 
     @property
     def bbox(self):
@@ -42,53 +109,18 @@ class DrydockItem(object):
     def yaw(self):
         return self.model.yaw
 
+    def light_on(self):
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self._light_ambience)
+        glLightfv(GL_LIGHT0, GL_POSITION, self._light_direction)
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self._light_color)
+
     def connect(self, other_part: "DrydockItem"):
         self.model.connect(other_part.model)
 
     def disconnect(self, other_part: "DrydockItem"):
         self.model.disconnect(other_part.model)
-
-    @property
-    def connected_items(self):
-        return self.model.connected_parts
-
-    def set_bb_color(self, *bb_color):
-        self._bb_color = bb_color
-
-    def to_cfloat_array(self, *floats):
-        return self._to_cfloat_array(*floats)
-
-    def draw(self):
-        glPushMatrix()
-        self.draw_global_2d()
-        self.localize()
-        self.light_on()
-        self.draw_local_3d()
-        self.light_off()
-        self.draw_local_2d()
-        glPopMatrix()
-
-    def localize(self):
-        glTranslatef(self.x, 0, self.y)
-        glRotatef(self.yaw, 0, 1, 0)
-
-    def light_on(self):
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 0.1))
-        glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 1, -1, 0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(13.0, 13.0, 13.0, 1.0))
-
-    def light_off(self):
-        glDisable(GL_LIGHTING)
-
-    def draw_local_3d(self):
-        if self._highlight_part:
-            scale = 0.4
-        else:
-            scale = 0.25
-        glScalef(scale, scale, scale)
-        self.mesh.draw()
 
     def draw_global_2d(self):
         glPushMatrix()
@@ -104,8 +136,12 @@ class DrydockItem(object):
 
         glPopMatrix()
 
-    def draw_local_2d(self):
-        pass
+    @property
+    def connected_items(self):
+        return self.model.connected_parts
+
+    def set_bb_color(self, *bb_color):
+        self._bb_color = bb_color
 
 
 class DockableItem(DrydockItem):
@@ -120,6 +156,7 @@ class DockableItem(DrydockItem):
         self.n_points = int(len(self.circle) / 2)
         self.c4B = ('c4B', [150, 200, 255, 128] * self.n_points)
         self.c4B_highlight = ('c4B', [0, 0, 255, 255] * self.n_points)
+        self.update_status()
 
     def save(self):
         self.model.set_position_and_rotation(self.x, 0, self.y, 0, self.yaw, 0)
@@ -141,32 +178,42 @@ class DockableItem(DrydockItem):
         else:
             draw(self.n_points, GL_LINES, self.v2f, self.c4B)
 
+    def connect(self, other_part: "DrydockItem"):
+        super(DockableItem, self).connect(other_part)
+        self.update_status()
+    
+    def disconnect(self, other_part: "DrydockItem"):
+        super(DockableItem, self).disconnect(other_part)
+        self.update_status()
+
     def set_xy(self, x, y):
         self.model.set_position(x, 0, y)
+        self.update_status()
 
     def set_yaw(self, yaw):
         self.model.set_rotation(0, yaw, 0)
 
+    def update_status(self):
+        if not self.model.connected_parts:
+            effect_value = 0.0
+        elif not self.model.working:
+            effect_value = 0.1
+        else:
+            effect_value = 1.0
+        self._light_color = self.to_cfloat_array(13., 13. * effect_value, 13. * effect_value, 13.0)
+        if self.model.material_affected:
+            self.mesh.update_material(self.model.material_affected, self.model.material_mode,
+                                      self.model.material_channel, effect_value)
 
-class NewGridItem(DockableItem):
-    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
-        super(NewGridItem, self).__init__(model, mesh)
-        self._draw_2d = self.draw_2d
-        self.draw_2d = self.do_nothing
-        self._set_xy = self.set_xy
-        self.set_xy = self.place_on_ship
-        self.place_on_ship = self.place_on_ship
 
-    def copy(self):
-        return self.__class__(self.model, self.mesh)
+class ItemSpawn(DrydockElement):
+    def __init__(self, spawn_func, x, y, mesh):
+        super().__init__(mesh, x, y)
+        self.spawn_func = spawn_func
+        self.mesh = mesh
 
-    def do_nothing(self):
-        pass
-
-    def place_on_ship(self, x, y):
-        self._set_xy(x, y)
-        self.place_on_ship = self._set_xy
-        self.draw_2d = self._draw_2d
+    def get_item(self):
+        return self.spawn_func()
 
 
 class Drydock(object):
@@ -190,6 +237,21 @@ class Drydock(object):
         self.rotating = False
         self.moving = False
         self._debug = False
+        self._new_items = []
+        for i, part_name in enumerate(self.part_factory.ship_parts):
+            spawn_func = partial(self.new_item, part_name)
+            x = -self.x_offset / self.scale + i + 0.5
+            y = self.y_offset / self.scale - 0.5
+            mesh = self.mesh_factory.manufacture(part_name)
+            item = ItemSpawn(spawn_func, x, y, mesh)
+            self._new_items.append(item)
+
+    def new_item(self, name) -> DockableItem:
+        model = self.part_factory.manufacture(name)
+        mesh = self.mesh_factory.manufacture(name)
+        item = DockableItem(model, mesh)
+        self._held_item = item
+        return item
 
     def debug(self):
         self._debug = True
@@ -217,7 +279,7 @@ class Drydock(object):
         if self.held_item:
             if self.moving:
                 self.move_to(x, y)
-            if self.rotating:
+            elif self.rotating:
                 mx, my = self._screen_to_model(x, y)
                 dx, dy = mx - self.held_item.x, my - self.held_item.y
                 self.rotate_to(degrees(atan2(dx, dy)))
@@ -227,6 +289,18 @@ class Drydock(object):
                 self._held_item = self.highlighted_item
                 self.moving = distance < 25
                 self.rotating = not self.moving
+            else:
+                self._new_item_drag(x, y, dx, dy, buttons, modifiers)
+
+    def _new_item_drag(self, x, y, dx, dy, buttons, modifiers):
+        for item in self._new_items:
+            distance = self.distance_to_item(item, x, y)
+            if distance < 50:
+                self.items.append(item.get_item())
+                self.moving = True
+                self.move_to(x, y)
+                break
+
 
     def move_to(self, x, y):
         x, y = self._screen_to_model(x, y)
@@ -310,5 +384,7 @@ class Drydock(object):
         glTranslatef(self.x_offset, -100, -self.y_offset)
         glScalef(*self.gl_scale_f)
         for item in self.items:
+            item.draw()
+        for item in self._new_items:
             item.draw()
         glDisable(GL_LIGHTING)

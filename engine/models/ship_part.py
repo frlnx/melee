@@ -18,7 +18,7 @@ class ShipPartModel(BaseModel):
         self.material_affected = part_spec.get('material_affected')
         self.material_mode = part_spec.get('material_mode')
         self.material_channel = part_spec.get('material_channels')
-        self.needs_connection_to = set(part_spec['needs_connection_to'])
+        self.needs_connection_to = set(part_spec.get('needs_connection_to', []))
         self.material_value = 0
         self.input_value = 0
         self._spawn = None
@@ -41,9 +41,8 @@ class ShipPartModel(BaseModel):
         other_part._connect(self)
 
     def _connect(self, other_part: "ShipPartModel"):
-        if other_part.name in self.needs_connection_to:
-            self._connected_parts.add(other_part)
-            self.update_working_status()
+        self._connected_parts.add(other_part)
+        self.update_working_status()
 
     def disconnect(self, other_part: "ShipPartModel"):
         self._disconnect(other_part)
