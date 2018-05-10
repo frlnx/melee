@@ -1,10 +1,12 @@
 from typing import List
 import ctypes
 
+from engine.models.base_model import PositionalModel
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.factories import ShipPartModelFactory
 from engine.views.opengl_mesh import OpenGLWaveFrontFactory, OpenGLMesh
+from engine.views.base_view import BaseView
 
 from math import hypot, atan2, degrees, cos, sin, radians
 from itertools import chain, combinations
@@ -22,6 +24,8 @@ class DrydockElement(object):
     _to_cfloat_array = ctypes.c_float * 4
 
     def __init__(self, mesh: OpenGLMesh, x=0, y=0):
+        self._model = PositionalModel(x=x, z=y)
+        self._view = BaseView(self._model)
         self.mesh = mesh
         self._x = x
         self._y = y

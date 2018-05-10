@@ -73,6 +73,7 @@
   {
     "name": "shield",
     "mesh_name": "shield",
+    "sub_parts": ["shield arc"],
     "states": [
       {
         "name": "idle"
@@ -89,5 +90,11 @@
     "material_affected": "Shield_Arc",
     "material_mode": "diffuse",
     "material_channels": "a"
+  },
+  {
+    "name": "shield arc",
+    "states": [
+      {"name": "idle"}
+    ]
   }
 ]

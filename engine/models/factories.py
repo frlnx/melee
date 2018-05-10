@@ -10,6 +10,7 @@ from shapely.geometry import MultiPoint
 from engine.models.projectiles import PlasmaModel
 from engine.models.asteroid import AsteroidModel
 from engine.models.ship_part import ShipPartModel
+from engine.models.shield import ShieldArcModel
 from engine.models.ship import ShipModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
@@ -26,10 +27,7 @@ class ShipModelFactory(object):
 
     def manufacture(self, name, position=None, rotation=None, movement=None, spin=None) -> ShipModel:
         config = deepcopy(self.ships[name])
-        parts = set()
-        for part_config in config['parts']:
-            part = self.ship_part_model_factory.manufacture(**part_config)
-            parts.add(part)
+        parts = self.ship_part_model_factory.manufacture_all(config['parts'])
         points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in part.bounding_box.lines] for part in parts])))
 
         bounding_box = Polygon.manufacture(points.convex_hull.exterior.coords)
@@ -59,12 +57,24 @@ class ShipModelFactory(object):
 class ShipPartModelFactory(object):
 
     ship_parts = {}
+    model_map = {"shield arc": ShieldArcModel}
 
     def __init__(self):
         if len(self.ship_parts) == 0:
             with open("ship_parts.json", 'r') as f:
                 ship_parts = json.load(f)
             self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
+
+    def manufacture_all(self, part_configs: list):
+        parts = set()
+        for part_config in part_configs:
+            part = self.manufacture(**part_config)
+            parts.add(part)
+            for sub_part_name in part_config.get('sub_parts', []):
+                model_class = self.model_map.get(sub_part_name, ShipPartModel)
+                sub_part = model_class(part)
+                parts.add(sub_part)
+        return parts
 
     def manufacture(self, name,  **placement_config) -> ShipPartModel:
         config = deepcopy(self.ship_parts[name])
@@ -80,7 +90,8 @@ class ShipPartModelFactory(object):
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                                            x=position.x, y=position.z, rotation=rotation.yaw)
         config['bounding_box'] = bounding_box
-        part = ShipPartModel(**config)
+        model_class = self.model_map.get(name, ShipPartModel)
+        part = model_class(**config)
         return part
 
     @property

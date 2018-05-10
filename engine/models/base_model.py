@@ -5,7 +5,42 @@ from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, Mutabl
 from uuid import uuid4
 
 
-class BaseModel(object):
+class PositionalModel(object):
+
+    def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, mesh_name=None):
+        self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
+        self.mesh_name = mesh_name
+
+    @property
+    def position(self):
+        return (self.x, self.y, self.z)
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def z(self):
+        return self._z
+
+    @property
+    def pitch(self):
+        return self._pitch
+
+    @property
+    def yaw(self):
+        return self._yaw
+
+    @property
+    def roll(self):
+        return self._roll
+
+
+class BaseModel(PositionalModel):
 
     def __init__(self,
                  position: MutableOffsets,
