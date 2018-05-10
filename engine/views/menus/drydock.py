@@ -201,6 +201,8 @@ class DockableItem(DrydockItem):
         else:
             effect_value = 1.0
         self._light_color = self.to_cfloat_array(13., 13. * effect_value, 13. * effect_value, 13.0)
+        inverse_effect_value = 1 - effect_value
+        self._light_ambience = self.to_cfloat_array(.1 + inverse_effect_value, .1, .1, 1.0)
         if self.model.material_affected:
             self.mesh.update_material(self.model.material_affected, self.model.material_mode,
                                       self.model.material_channel, effect_value)
