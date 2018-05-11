@@ -1,4 +1,5 @@
 from typing import List
+import json
 import ctypes
 
 from engine.models.base_model import PositionalModel
@@ -248,9 +249,13 @@ class Drydock(object):
             spawn_func = partial(self.new_item, part_name)
             x = -self.x_offset / self.scale + i + 0.5
             y = self.y_offset / self.scale - 0.5
-            mesh = self.mesh_factory.manufacture(part_name)
-            item = ItemSpawn(spawn_func, x, y, mesh)
-            self._new_items.append(item)
+            try:
+                mesh = self.mesh_factory.manufacture(part_name)
+            except KeyError:
+                print("No mesh for {}, ignoring".format(part_name))
+            else:
+                item = ItemSpawn(spawn_func, x, y, mesh)
+                self._new_items.append(item)
 
     def new_item(self, name) -> DockableItem:
         model = self.part_factory.manufacture(name)
@@ -280,6 +285,18 @@ class Drydock(object):
         for item in self.items:
             item.save()
         self.ship.set_parts({item.model for item in self.items})
+        part_data = [
+            {
+                "position": list(item.model.position),
+                "rotation": list(item.model.rotation),
+                "name": item.model.name,
+                "axis": item.model.axis,
+                "button": item.model.button,
+                "keyboard": item.model.keyboard
+            } for item in self.items
+        ]
+        with open('ship.json', 'w') as fp:
+            json.dump({"name": "ship", "parts": part_data}, fp)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.held_item:

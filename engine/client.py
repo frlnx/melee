@@ -14,7 +14,7 @@ class ClientEngine(Engine):
     def __init__(self, input_handler=None, window=None):
         super().__init__()
 
-        self.my_model = self.smf.manufacture("wolf", position=self.random_position())
+        self.my_model = self.smf.manufacture("ship", position=self.random_position())
         self.models[self.my_model.uuid] = self.my_model
         self.my_controller = None
 

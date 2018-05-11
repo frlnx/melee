@@ -9,7 +9,21 @@ class PositionalModel(object):
 
     def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, mesh_name=None):
         self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
-        self.mesh_name = mesh_name
+        self._mesh_name = mesh_name
+        self._observers = set()
+
+    def observe(self, func: Callable):
+        self._observers.add(func)
+
+    def _callback(self):
+        for observer in self._observers:
+            observer()
+
+    def unobserve(self, func: Callable):
+        try:
+            self._observers.remove(func)
+        except KeyError:
+            pass
 
     @property
     def position(self):
@@ -48,14 +62,13 @@ class BaseModel(PositionalModel):
                  movement: MutableOffsets,
                  spin: MutableDegrees,
                  bounding_box: Polygon):
+        super(BaseModel, self).__init__()
         self.uuid = uuid4()
         self._mass = 1
         self._position = position
         self._rotation = rotation
         self._movement = movement
         self._spin = spin
-        self._observers = set()
-        self._mesh_name = None
         self.animation = None
         self.animation_value = 0
         self._bounding_box = bounding_box
@@ -163,19 +176,6 @@ class BaseModel(PositionalModel):
     @property
     def mesh_name(self):
         return self._mesh_name
-
-    def observe(self, func: Callable):
-        self._observers.add(func)
-
-    def _callback(self):
-        for observer in self._observers:
-            observer()
-
-    def unobserve(self, func: Callable):
-        try:
-            self._observers.remove(func)
-        except KeyError:
-            pass
 
     def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
         if self._position.set(x, y, z) or self._rotation.set(pitch, yaw, roll):
