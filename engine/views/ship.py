@@ -1,18 +1,22 @@
-from math import atan2, degrees, hypot
+from math import atan2, degrees, hypot, ceil
 from itertools import chain
 
 from engine.models.ship import ShipModel
 from engine.views.base_view import BaseView
 
 from pyglet.graphics import glRotatef, glTranslated
-from pyglet.graphics import draw, GL_LINES
+from pyglet.graphics import draw, GL_LINES, GL_QUADS
 
 
 class ShipView(BaseView):
     def __init__(self, model: ShipModel, mesh=None):
         super().__init__(model, mesh=mesh)
         self._model = model
-        self.v3f = ('v3f', [-10, -10, -10, 10, -10, -10, 10, -10, 10, -10, -10, 10])
+        coords = []
+        _box_coords = [(-0.1, -10., -0.1), (0.1, -10., -0.1), (0.1, -10., 0.1), (-0.1, -10., 0.1)]
+        for i in range(10):
+            coords += [(x + (i - 5) * 0.3, y, z) for x, y, z in _box_coords]
+        self.fuel_gage_v3f = list(chain(*coords))
 
     def align_camera(self):
         self.angle_camera_to_target()
@@ -35,7 +39,19 @@ class ShipView(BaseView):
         #glRotatef(roll, 0, 0, 1)
 
     def _draw_local(self):
-        draw(4, GL_LINES, self.v3f, ('c4f', [1., 1., 1., 1.] * 4))
+        self._draw_fuel_gage()
+
+    def _draw_fuel_gage(self):
+        n_filled_boxes = int(ceil(self._model.fuel_percentage * 10))
+        n_unfilled_boxes = 10 - n_filled_boxes
+        green_color_box = [0., 1., .3, 1.] * 4
+        red_color_box = [1., .3, .3, 1.] * 4
+        n_boxes_to_draw = 10
+        n_points_to_use = n_boxes_to_draw * 4
+        n_coords = n_points_to_use * 3
+        draw(n_points_to_use, GL_QUADS, ('v3f', self.fuel_gage_v3f[:n_coords]),
+             ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
+
 
     def _draw_global(self):
         lines  = self._model.bounding_box.lines
