@@ -62,7 +62,7 @@
       {
         "name": "active",
         "fuel consumption": 10,
-        "thrust generated": 1
+        "thrust generated": 5
       }
     ],
     "material_affected": "Fire_front",

@@ -12,6 +12,7 @@ class ShipView(BaseView):
     def __init__(self, model: ShipModel, mesh=None):
         super().__init__(model, mesh=mesh)
         self._model = model
+        self.v3f = ('v3f', [-10, -10, -10, 10, -10, -10, 10, -10, 10, -10, -10, 10])
 
     def align_camera(self):
         self.angle_camera_to_target()
@@ -33,8 +34,10 @@ class ShipView(BaseView):
         glRotatef(yaw, 0, 1, 0)
         #glRotatef(roll, 0, 0, 1)
 
-    def draw(self):
-        super(ShipView, self).draw()
+    def _draw_local(self):
+        draw(4, GL_LINES, self.v3f, ('c4f', [1., 1., 1., 1.] * 4))
+
+    def _draw_global(self):
         lines  = self._model.bounding_box.lines
         v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
         v3f = list(chain(*v3f))

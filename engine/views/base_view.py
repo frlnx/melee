@@ -1,15 +1,21 @@
 from engine.models.base_model import BaseModel
+import ctypes
 
-from pyglet.graphics import glTranslatef, glRotatef, glPushMatrix, glPopMatrix, GLfloat, glGetFloatv, \
-    GL_MODELVIEW_MATRIX, glMultMatrixf, glLoadIdentity, glTranslated
+from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
+    GL_POSITION, GL_DIFFUSE, GL_MODELVIEW_MATRIX
+from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, \
+    glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
 
 
 class BaseView(object):
+    _to_cfloat_array = ctypes.c_float * 4
 
     def __init__(self, model: BaseModel, mesh=None):
         self._model = model
         self._sub_views = set()
-
+        self._light_color = self.to_cfloat_array(3., 3., 3., 1.)
+        self._light_direction = self.to_cfloat_array(0, 0.3, 1, 0)
+        self._light_ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
         self._model_view_matrix = (GLfloat * 16)()
         self._model.observe(self.update)
         self.update()
@@ -19,6 +25,9 @@ class BaseView(object):
         else:
             self._draw = self._draw_nothing
         self.yaw_catchup = 0
+
+    def to_cfloat_array(self, *floats):
+        return self._to_cfloat_array(*floats)
 
     @property
     def is_alive(self):
@@ -66,8 +75,29 @@ class BaseView(object):
     def draw(self):
         self.set_up_matrix()
         self.draw_sub_views()
+        self.light_on()
         self._draw()
+        self.light_off()
+        self._draw_local()
         self.tear_down_matrix()
+        self._draw_global()
+
+    def _draw_local(self):
+        pass
+
+    def _draw_global(self):
+        pass
+
+    def light_on(self):
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self._light_ambience)
+        #lLightfv(GL_LIGHT0, GL_POSITION, self._light_direction)
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self._light_color)
+
+    @staticmethod
+    def light_off():
+        glDisable(GL_LIGHTING)
 
     def set_up_matrix(self):
         glPushMatrix()
