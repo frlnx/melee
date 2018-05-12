@@ -6,13 +6,12 @@ from engine.models.base_model import PositionalModel
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.factories import ShipPartModelFactory
-from engine.views.opengl_mesh import OpenGLWaveFrontFactory
 from engine.views.factories import DynamicViewFactory
 from engine.views.base_view import BaseView
 from engine.views.ship_part import ShipPartView
 
-from math import hypot, atan2, degrees, cos, sin, radians
-from itertools import chain, combinations
+from math import hypot, atan2, degrees
+from itertools import combinations
 from functools import partial
 
 from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING
@@ -70,15 +69,7 @@ class DrydockItem(DrydockElement):
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, view: BaseView):
         super().__init__(model, view)
-        step = 36
-        r_step = radians(step)
-        ten_radians = [radians(d) for d in range(0, 360, step)]
-        circle = [(cos(d), sin(d), cos(d + r_step), sin(d + r_step)) for d in ten_radians]
-        self.circle = [x for x in chain(*circle)]
-        self.v2f = ('v2f', self.circle)
-        self.n_points = int(len(self.circle) / 2)
-        self.c4B = ('c4B', [150, 200, 255, 128] * self.n_points)
-        self.c4B_highlight = ('c4B', [0, 0, 255, 255] * self.n_points)
+
         self.update_status()
 
     def save(self):
@@ -140,6 +131,7 @@ class Drydock(object):
         self._items = []
         for part in ship.parts:
             view = self.view_factory.manufacture(part)
+            view.set_mesh_scale(0.5)
             item = DockableItem(part, view)
             self._items.append(item)
         self._update_connections()
@@ -156,6 +148,7 @@ class Drydock(object):
             model = PositionalModel(x=x, z=y, mesh_name=part_name)
             try:
                 view = self.view_factory.manufacture(model, view_class=ShipPartView)
+                view.set_mesh_scale(0.5)
             except KeyError:
                 print("No mesh for {}, ignoring".format(part_name))
             else:

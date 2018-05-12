@@ -3,16 +3,18 @@ import ctypes
 
 from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
     GL_POSITION, GL_DIFFUSE, GL_MODELVIEW_MATRIX
-from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, \
+from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScalef, \
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
 
 
 class BaseView(object):
     _to_cfloat_array = ctypes.c_float * 4
+    _to_cfloat_three_array = ctypes.c_float * 3
 
     def __init__(self, model: BaseModel, mesh=None):
         self._model = model
         self._sub_views = set()
+        self._mesh_scale = self.to_cfloat_array(1., 1., 1.)
         self._light_color = self.to_cfloat_array(3., 3., 3., 1.)
         self._light_direction = self.to_cfloat_array(0, 0.3, 1, 0)
         self._light_ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
@@ -27,11 +29,17 @@ class BaseView(object):
         self.yaw_catchup = 0
 
     def to_cfloat_array(self, *floats):
+        if len(floats) == 3:
+            return self._to_cfloat_three_array(*floats)
         return self._to_cfloat_array(*floats)
 
     @property
     def is_alive(self):
         return self._model.is_alive
+
+    def set_mesh_scale(self, scale):
+        self._mesh_scale = self.to_cfloat_array(scale, scale, scale)
+        self.update()
 
     def set_model(self, model: BaseModel):
         self._model.unobserve(self.update)
@@ -53,6 +61,7 @@ class BaseView(object):
         glRotatef(self.pitch, 1, 0, 0)
         glRotatef(self.yaw, 0, 1, 0)
         glRotatef(self.roll, 0, 0, 1)
+        glScalef(*self._mesh_scale)
         glGetFloatv(GL_MODELVIEW_MATRIX, self._model_view_matrix)
         glPopMatrix()
 
@@ -75,9 +84,9 @@ class BaseView(object):
     def draw(self):
         self.set_up_matrix()
         self.draw_sub_views()
-        self.light_on()
+        self._light_on()
         self._draw()
-        self.light_off()
+        self._light_off()
         self._draw_local()
         self.tear_down_matrix()
         self._draw_global()
@@ -88,7 +97,7 @@ class BaseView(object):
     def _draw_global(self):
         pass
 
-    def light_on(self):
+    def _light_on(self):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightfv(GL_LIGHT0, GL_AMBIENT, self._light_ambience)
@@ -96,7 +105,7 @@ class BaseView(object):
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self._light_color)
 
     @staticmethod
-    def light_off():
+    def _light_off():
         glDisable(GL_LIGHTING)
 
     def set_up_matrix(self):
