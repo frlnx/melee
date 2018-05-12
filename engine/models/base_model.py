@@ -11,6 +11,7 @@ class PositionalModel(object):
         self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
         self._mesh_name = mesh_name
         self._observers = set()
+        self._material_observers = set()
 
     def observe(self, func: Callable):
         self._observers.add(func)
@@ -24,6 +25,21 @@ class PositionalModel(object):
             self._observers.remove(func)
         except KeyError:
             pass
+
+    def set_material_value(self, value):
+        self.material_value = value
+        self._material_callback()
+
+    def _material_callback(self):
+        for callback in self._material_observers:
+            callback()
+
+    def observe_material(self, callback):
+        self._material_observers.add(callback)
+
+    @property
+    def mesh_name(self):
+        return self._mesh_name
 
     @property
     def position(self):
@@ -172,10 +188,6 @@ class BaseModel(PositionalModel):
     @property
     def name(self):
         return self.__class__.__name__
-
-    @property
-    def mesh_name(self):
-        return self._mesh_name
 
     def set_position_and_rotation(self, x, y, z, pitch, yaw, roll):
         if self._position.set(x, y, z) or self._rotation.set(pitch, yaw, roll):

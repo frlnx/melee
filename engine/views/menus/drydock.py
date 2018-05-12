@@ -6,101 +6,30 @@ from engine.models.base_model import PositionalModel
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.factories import ShipPartModelFactory
-from engine.views.opengl_mesh import OpenGLWaveFrontFactory, OpenGLMesh
+from engine.views.opengl_mesh import OpenGLWaveFrontFactory
+from engine.views.factories import DynamicViewFactory
 from engine.views.base_view import BaseView
+from engine.views.ship_part import ShipPartView
 
 from math import hypot, atan2, degrees, cos, sin, radians
 from itertools import chain, combinations
 from functools import partial
 
-from pyglet.graphics import draw
-from pyglet.gl import GL_LINES, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
-    GL_POSITION, GL_DIFFUSE
-from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, \
-    glPopMatrix, glPushMatrix, glScalef, glEnable, glLightfv
+from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING
+from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, glScalef
 
 
 class DrydockElement(object):
 
     _to_cfloat_array = ctypes.c_float * 4
 
-    def __init__(self, mesh: OpenGLMesh, x=0, y=0):
-        self._model = PositionalModel(x=x, z=y)
-        self._view = BaseView(self._model)
-        self.mesh = mesh
-        self._x = x
-        self._y = y
+    def __init__(self, view: BaseView, x=0, y=0):
+        self.model = PositionalModel(x=x, z=y)
+        self._view = view
         self._highlight_part = False
 
     def to_cfloat_array(self, *floats):
         return self._to_cfloat_array(*floats)
-
-    @property
-    def x(self):
-        return self._x
-
-    @property
-    def y(self):
-        return self._y
-
-    @property
-    def yaw(self):
-        return 0
-
-    def draw(self):
-        glPushMatrix()
-        self.draw_global_2d()
-        self.light_on()
-        self.localize()
-        self.draw_local_3d()
-        self.light_off()
-        self.draw_local_2d()
-        glPopMatrix()
-
-    def localize(self):
-        glTranslatef(self.x, 0, self.y)
-        glRotatef(self.yaw, 0, 1, 0)
-
-    def light_on(self):
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 0.1))
-        glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 1, -1, 0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(13.0, 13.0, 13.0, 1.0))
-
-    @staticmethod
-    def light_off():
-        glDisable(GL_LIGHTING)
-
-    def draw_local_3d(self):
-        if self._highlight_part:
-            scale = 0.4
-        else:
-            scale = 0.25
-        glScalef(scale, scale, scale)
-        self.mesh.draw()
-
-    def draw_global_2d(self):
-        pass
-
-    def draw_local_2d(self):
-        pass
-
-
-class DrydockItem(DrydockElement):
-    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
-        super().__init__(mesh)
-        self.model = model
-        self.bbox.set_position_rotation(self.x, self.y, -self.yaw)
-        self._highlight_circle = False
-        self._bb_color = [1., 1., 1., 0.1]
-        self._light_color = self.to_cfloat_array(13., 13., 13., 1.)
-        self._light_direction = self.to_cfloat_array(0, 1, -1, 0)
-        self._light_ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
-
-    @property
-    def bbox(self):
-        return self.model.bounding_box
 
     @property
     def x(self):
@@ -114,12 +43,18 @@ class DrydockItem(DrydockElement):
     def yaw(self):
         return self.model.yaw
 
-    def light_on(self):
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, self._light_ambience)
-        glLightfv(GL_LIGHT0, GL_POSITION, self._light_direction)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, self._light_color)
+    def draw(self):
+        self._view.draw()
+
+
+class DrydockItem(DrydockElement):
+    def __init__(self, model: ShipPartModel, view: BaseView):
+        super().__init__(view)
+        self.model = model
+
+    @property
+    def bbox(self):
+        return self.model.bounding_box
 
     def connect(self, other_part: "DrydockItem"):
         self.model.connect(other_part.model)
@@ -127,31 +62,14 @@ class DrydockItem(DrydockElement):
     def disconnect(self, other_part: "DrydockItem"):
         self.model.disconnect(other_part.model)
 
-    def draw_global_2d(self):
-        glPushMatrix()
-        glRotatef(90, 1, 0, 0)
-        bb_v2f = list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self.bbox.lines]))
-        n_points = len(self.bbox.lines) * 2
-        draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', self._bb_color * n_points))
-
-        lines = [(self.x, self.y, item.x, item.z) for item in self.connected_items]
-        bb_v2f = list(chain(*lines))
-        n_points = len(lines) * 2
-        draw(n_points, GL_LINES, ('v2f', bb_v2f), ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
-
-        glPopMatrix()
-
     @property
     def connected_items(self):
         return self.model.connected_parts
 
-    def set_bb_color(self, *bb_color):
-        self._bb_color = bb_color
-
 
 class DockableItem(DrydockItem):
-    def __init__(self, model: ShipPartModel, mesh: OpenGLMesh):
-        super().__init__(model, mesh)
+    def __init__(self, model: ShipPartModel, view: BaseView):
+        super().__init__(model, view)
         step = 36
         r_step = radians(step)
         ten_radians = [radians(d) for d in range(0, 360, step)]
@@ -169,19 +87,6 @@ class DockableItem(DrydockItem):
     def set_highlight(self, part=False, circle=False):
         self._highlight_part = part
         self._highlight_circle = circle
-
-    def draw_local_2d(self):
-        super(DockableItem, self).draw_local_2d()
-        glRotatef(90, 1, 0, 0)
-        if self._highlight_circle:
-            scale = 4 * 0.4
-        else:
-            scale = 1
-        glScalef(scale, scale, scale)
-        if self._highlight_circle:
-            draw(self.n_points, GL_LINES, self.v2f, self.c4B_highlight)
-        else:
-            draw(self.n_points, GL_LINES, self.v2f, self.c4B)
 
     def connect(self, other_part: "DrydockItem"):
         super(DockableItem, self).connect(other_part)
@@ -208,16 +113,15 @@ class DockableItem(DrydockItem):
         self._light_color = self.to_cfloat_array(13., 13. * effect_value, 13. * effect_value, 13.0)
         inverse_effect_value = 1 - effect_value
         self._light_ambience = self.to_cfloat_array(.1 + inverse_effect_value, .1, .1, 1.0)
-        if self.model.material_affected:
-            self.mesh.update_material(self.model.material_affected, self.model.material_mode,
-                                      self.model.material_channel, effect_value)
+        #if self.model.material_affected:
+        #    self.view.update_material(self.model.material_affected, self.model.material_mode,
+        #                              self.model.material_channel, effect_value)
 
 
 class ItemSpawn(DrydockElement):
-    def __init__(self, spawn_func, x, y, mesh):
-        super().__init__(mesh, x, y)
+    def __init__(self, spawn_func, x, y, view: BaseView):
+        super().__init__(view, x, y)
         self.spawn_func = spawn_func
-        self.mesh = mesh
 
     def get_item(self):
         return self.spawn_func()
@@ -225,9 +129,9 @@ class ItemSpawn(DrydockElement):
 
 class Drydock(object):
 
-    def __init__(self, ship: ShipModel, mesh_factory: OpenGLWaveFrontFactory):
+    def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
-        self.mesh_factory = mesh_factory
+        self.view_factory = view_factory
         self.part_factory = ShipPartModelFactory()
         self.x_offset = 720
         self.y_offset = 360
@@ -235,8 +139,8 @@ class Drydock(object):
         self.gl_scale_f = [self.scale] * 3
         self._items = []
         for part in ship.parts:
-            mesh = mesh_factory.manufacture(part.mesh_name)
-            item = DockableItem(part, mesh)
+            view = self.view_factory.manufacture(part)
+            item = DockableItem(part, view)
             self._items.append(item)
         self._update_connections()
         self.highlighted_item = self._items[0]
@@ -249,18 +153,19 @@ class Drydock(object):
             spawn_func = partial(self.new_item, part_name)
             x = -self.x_offset / self.scale + i + 0.5
             y = self.y_offset / self.scale - 0.5
+            model = PositionalModel(x=x, z=y, mesh_name=part_name)
             try:
-                mesh = self.mesh_factory.manufacture(part_name)
+                view = self.view_factory.manufacture(model, view_class=ShipPartView)
             except KeyError:
                 print("No mesh for {}, ignoring".format(part_name))
             else:
-                item = ItemSpawn(spawn_func, x, y, mesh)
+                item = ItemSpawn(spawn_func, x, y, view)
                 self._new_items.append(item)
 
     def new_item(self, name) -> DockableItem:
         model = self.part_factory.manufacture(name)
-        mesh = self.mesh_factory.manufacture(name)
-        item = DockableItem(model, mesh)
+        view = self.view_factory.manufacture(model)
+        item = DockableItem(model, view)
         self._held_item = item
         return item
 
@@ -271,7 +176,8 @@ class Drydock(object):
         self._items = [self.manufacture_item("cockpit")]
 
     def manufacture_item(self, name):
-        return DockableItem(self.part_factory.manufacture(name), self.mesh_factory.manufacture(name))
+        model = self.part_factory.manufacture(name)
+        return DockableItem(model, self.view_factory.manufacture(model))
 
     @property
     def held_item(self) -> DockableItem:

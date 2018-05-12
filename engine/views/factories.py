@@ -4,7 +4,7 @@ from engine.views.dynamic_mesh_view import DynamicMeshView
 from engine.models.asteroid import AsteroidModel
 from engine.models.ship_part import ShipPartModel
 from engine.models.ship import ShipModel
-from engine.models.base_model import BaseModel
+from engine.models.base_model import BaseModel, PositionalModel
 from engine.models.projectiles import PlasmaModel
 from engine.models.composite_model import CompositeModel
 from engine.views.base_view import BaseView
@@ -60,8 +60,8 @@ class DynamicViewFactory(ViewFactory):
         AsteroidModel: DynamicMeshView
     }
 
-    def manufacture(self, model: BaseModel):
-        view_class = self.model_view_map[model.__class__]
+    def manufacture(self, model: PositionalModel, view_class=None):
+        view_class = view_class or self.model_view_map[model.__class__]
         if model.mesh_name is not None:
             mesh = self.mesh_factory.manufacture(model.mesh_name)
         else:

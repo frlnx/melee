@@ -23,7 +23,6 @@ class ShipPartModel(BaseModel):
         self.input_value = 0
         self._spawn = None
         self._time_in_state = 0
-        self._material_observers = set()
         self._connected_parts = set()
         self._working = False
         self.update_working_status()
@@ -80,17 +79,6 @@ class ShipPartModel(BaseModel):
             self.set_material_value(self._time_in_state / self.state_spec['timeout'])
         if 'material_value' in self.state_spec:
             self.set_material_value(self.state_spec['material_value'])
-
-    def set_material_value(self, value):
-        self.material_value = value
-        self._material_callback()
-
-    def _material_callback(self):
-        for callback in self._material_observers:
-            callback()
-
-    def observe_material(self, callback):
-        self._material_observers.add(callback)
 
     def set_spawn(self, projectile):
         self._spawn = projectile
