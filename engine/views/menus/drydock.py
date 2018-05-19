@@ -360,7 +360,6 @@ class ControlConfiguration(ShipConfiguration):
             self.highlighted_item.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
 
     def on_mouse_release(self, x, y, button, modifiers):
-        print("RELEASE THE KRAKEN")
         super(ControlConfiguration, self).on_mouse_release(x, y, button, modifiers)
         if self.highlighted_item:
             self.highlighted_item.on_mouse_release(x, y, button, modifiers)
