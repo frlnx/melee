@@ -1,14 +1,19 @@
+from math import sin, radians, cos
+
 from engine.models.base_model import BaseModel
-from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
 
 
 class ShipPartModel(BaseModel):
 
     def __init__(self, name, position: MutableOffsets, rotation: MutableDegrees,
-                 movement: MutableOffsets, spin: MutableDegrees, bounding_box, **part_spec):
-        super().__init__(position, rotation, movement, spin, bounding_box)
+                 movement: MutableOffsets, spin: MutableDegrees,
+                 acceleration: MutableOffsets, torque: MutableDegrees, bounding_box, **part_spec):
+        super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._name = name
         self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
+        r_yaw = radians(self.yaw)
+        self._force_vector = MutableForce(self.position, MutableOffsets(-sin(r_yaw), 0, -cos(r_yaw)))
         self.button = part_spec.get('button')
         self.keyboard = part_spec.get('keyboard')
         self.mouse = part_spec.get('mouse', [])

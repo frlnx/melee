@@ -1,17 +1,19 @@
-from typing import Set
 from itertools import chain
+from typing import Set
 
 from shapely.geometry import MultiPoint
-from engine.physics.polygon import Polygon
-from engine.physics.force import MutableOffsets, MutableDegrees
+
 from engine.models.base_model import BaseModel
+from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.polygon import Polygon
 
 
 class CompositeModel(BaseModel):
     def __init__(self, parts: Set[BaseModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
+                 acceleration: MutableOffsets, torque: MutableDegrees,
                  bounding_box: Polygon):
-        super().__init__(position, rotation, movement, spin, bounding_box)
+        super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._parts = {(part.x, part.z): part for part in parts}
         self._mass = sum([part.mass for part in self.parts])
         bb_width = (self._bounding_box.right - self._bounding_box.left)

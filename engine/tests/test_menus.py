@@ -1,5 +1,5 @@
-from engine.views import menus
 from engine.models.factories import ShipModelFactory
+from engine.views import menus
 
 
 class TestBaseMenu(object):
@@ -35,9 +35,12 @@ class TestInputMenu(object):
 
 
 class FakeFactory(object):
-    def manufacture(self, name):
+    def manufacture(self, name, view_class=None):
         class Drawable(object):
             def draw(self):
+                pass
+
+            def set_mesh_scale(self, scale):
                 pass
         return Drawable()
 
@@ -54,4 +57,4 @@ class TestConfigControlsMenu(object):
                                                                         fake_mesh_factory)
 
     def test_menu_has_two_button(self):
-        assert len(self.target.buttons) == 2
+        assert len(self.target.buttons) >= 2

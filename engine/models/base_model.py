@@ -82,6 +82,8 @@ class BaseModel(PositionalModel):
                  rotation: MutableDegrees,
                  movement: MutableOffsets,
                  spin: MutableDegrees,
+                 acceleration: MutableOffsets,
+                 torque: MutableDegrees,
                  bounding_box: Polygon):
         super(BaseModel, self).__init__()
         self.uuid = uuid4()
@@ -90,6 +92,8 @@ class BaseModel(PositionalModel):
         self._rotation = rotation
         self._movement = movement
         self._spin = spin
+        self._acceleration = acceleration
+        self._torque = torque
         self.animation = None
         self.animation_value = 0
         self._bounding_box = bounding_box
@@ -120,7 +124,8 @@ class BaseModel(PositionalModel):
     @property
     def data_dict(self):
         return {"uuid": self.uuid, "position": list(self.position.xyz), "rotation": self.rotation.yaw,
-                "movement": list(self.movement.xyz), "spin": self.spin.yaw}
+                "movement": list(self.movement.xyz), "spin": self.spin.yaw,
+                "acceleration": list(self.acceleration.xyz), "torque": self.torque.yaw}
 
     def set_data(self, data_dict: dict):
         assert data_dict['uuid'] == self.uuid
@@ -128,6 +133,8 @@ class BaseModel(PositionalModel):
         self._rotation.set(0, data_dict['rotation'], 0)
         self._movement.set(*data_dict['movement'])
         self._spin.set(0, data_dict['spin'], 0)
+        self._acceleration.set(*data_dict['acceleration'])
+        self._torque.set(0, data_dict['torque'], 0)
         self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
 
     def timers(self, dt):
@@ -233,6 +240,14 @@ class BaseModel(PositionalModel):
         self._spin += pitch_yaw_roll
         if pitch_yaw_roll != (0, 0, 0):
             self.update()
+
+    @property
+    def torque(self):
+        return self._torque
+
+    @property
+    def acceleration(self):
+        return self._acceleration
 
     @property
     def spin(self):

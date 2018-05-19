@@ -23,9 +23,12 @@ class ViewFactory(object):
             above_camera = MutableOffsets(0, -100, 0)
             zero = MutableOffsets(0, 0, 0)
             no_angle = MutableDegrees(0, 0, 0)
+            no_acceleration = MutableOffsets(0, 0, 0)
+            no_torque = MutableDegrees(0, 0, 0)
             bb = Polygon.manufacture([(0, 0)])
             self.dummy_model = BaseModel(position=above_camera, rotation=no_angle,
-                                         movement=zero, spin=no_angle, bounding_box=bb)
+                                         movement=zero, spin=no_angle, acceleration=no_acceleration,
+                                         torque=no_torque, bounding_box=bb)
             self.pre_factorized_views = [self._prefactorize() for i in range(200)]
 
     def _prefactorize(self):

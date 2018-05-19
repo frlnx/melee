@@ -6,8 +6,8 @@ from engine.physics.polygon import Polygon
 class PlasmaModel(BaseModel):
 
     def __init__(self, position: MutableOffsets, rotation: MutableDegrees, movement: MutableOffsets,
-                 spin: MutableDegrees, bounding_box: Polygon):
-        super(PlasmaModel, self).__init__(position, rotation, movement, spin, bounding_box)
+                 spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees, bounding_box: Polygon):
+        super(PlasmaModel, self).__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._ttl = 4
 
     @property

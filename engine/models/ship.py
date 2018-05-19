@@ -1,7 +1,7 @@
 from typing import Set
 
-from engine.models.ship_part import ShipPartModel
 from engine.models.composite_model import CompositeModel
+from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 
@@ -9,8 +9,9 @@ from engine.physics.polygon import Polygon
 class ShipModel(CompositeModel):
     def __init__(self, ship_id, parts: Set[ShipPartModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
+                 acceleration: MutableOffsets, torque: MutableDegrees,
                  bounding_box: Polygon):
-        super().__init__(parts, position, rotation, movement, spin, bounding_box)
+        super().__init__(parts, position, rotation, movement, spin, acceleration, torque, bounding_box)
         self.ship_id = ship_id
         self._target_position = self.position
         self._target_rotation = self.rotation

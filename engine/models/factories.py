@@ -25,7 +25,8 @@ class ShipModelFactory(object):
         self.ship_part_model_factory = ShipPartModelFactory()
         self.ship_id_counter = 0
 
-    def manufacture(self, name, position=None, rotation=None, movement=None, spin=None) -> ShipModel:
+    def manufacture(self, name, position=None, rotation=None, movement=None, spin=None,
+                    acceleration=None, torque=None) -> ShipModel:
         config = deepcopy(self.ships[name])
         parts = self.ship_part_model_factory.manufacture_all(config['parts'])
         points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in part.bounding_box.lines] for part in parts])))
@@ -35,22 +36,23 @@ class ShipModelFactory(object):
         #    bounding_box += part.bounding_box
         ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
-        if position is None:
-            position = (0, 0, 0)
+        position = position or (0, 0, 0)
+        rotation = rotation or (0, 0, 0)
+        movement = movement or (0, 0, 0)
+        spin = spin or (0, 0, 0)
+        acceleration = acceleration or (0, 0, 0)
+        torque = torque or (0, 0, 0)
         position = MutableOffsets(*position)
-        if rotation is None:
-            rotation = (0, 0, 0)
         rotation = MutableDegrees(*rotation)
-        if movement is None:
-            movement = (0, 0, 0)
         movement = MutableOffsets(*movement)
-        if spin is None:
-            spin = (0, 0, 0)
         spin = MutableDegrees(*spin)
+        acceleration = MutableOffsets(*acceleration)
+        torque = MutableDegrees(*torque)
         bounding_box.freeze()
         bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
-                         movement=movement, spin=spin, bounding_box=bounding_box)
+                         movement=movement, spin=spin, acceleration=acceleration, torque=torque,
+                         bounding_box=bounding_box)
         return ship
 
 
@@ -78,17 +80,26 @@ class ShipPartModelFactory(object):
 
     def manufacture(self, name, model_class=None, **placement_config) -> ShipPartModel:
         config = deepcopy(self.ship_parts[name])
-        config['button'] = placement_config.get('button')
-        config['keyboard'] = placement_config.get('keyboard')
-        config['axis'] = placement_config.get('axis')
-        position = MutableOffsets(*placement_config.get('position', (0, 0, 0)))
-        rotation = MutableDegrees(*placement_config.get('rotation', (0, 0, 0)))
-        config['position'] = position
-        config['rotation'] = rotation
-        config['movement'] = MutableOffsets(*placement_config.get('movement', (0, 0, 0)))
-        config['spin'] = MutableDegrees(*placement_config.get('spin', (0, 0, 0)))
+        build_configs = [
+            {"key": "button"}, {"key": "keyboard"}, {"key": "axis"}, {"key": "mouse", "default": []},
+            {"key": "position", "default": (0, 0, 0), "class": MutableOffsets},
+            {"key": "rotation", "default": (0, 0, 0), "class": MutableDegrees},
+            {"key": "movement", "default": (0, 0, 0), "class": MutableOffsets},
+            {"key": "spin", "default": (0, 0, 0), "class": MutableDegrees},
+            {"key": "acceleration", "default": (0, 0, 0), "class": MutableOffsets},
+            {"key": "torque", "default": (0, 0, 0), "class": MutableDegrees}
+        ]
+        for build_config in build_configs:
+            key = build_config['key']
+            config[key] = placement_config.get(key, build_config.get('default'))
+            if 'class' in build_config:
+                config[key] = build_config['class'](*config[key])
+
+        x = config['position'].x
+        y = config['position'].y
+        yaw = config['rotation'].yaw
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                           x=position.x, y=position.z, rotation=rotation.yaw)
+                                           x=x, y=y, rotation=yaw)
         config['bounding_box'] = bounding_box
         model_class = model_class or self.model_map.get(name, ShipPartModel)
         part = model_class(**config)
@@ -109,11 +120,13 @@ class ProjectileModelFactory(object):
 
     def _pre_manufacture(self, name):
         return self.manufacture(name, MutableOffsets(0, 0, 0), MutableDegrees(0, 0, 0),
+                                MutableOffsets(0, 0, 0), MutableDegrees(0, 0, 0),
                                 MutableOffsets(0, 0, 0), MutableDegrees(0, 0, 0))
 
     def repurpose(self, name,
                   position: MutableOffsets, rotation: MutableDegrees,
-                  movement: MutableOffsets, spin: MutableDegrees):
+                  movement: MutableOffsets, spin: MutableDegrees,
+                  acceleration: MutableOffsets, torque: MutableDegrees):
         projectile = self.projectiles[name].pop()
         print(len(self.projectiles[name]), "left")
         projectile.set_movement(*movement)
@@ -123,14 +136,17 @@ class ProjectileModelFactory(object):
 
     def manufacture(self, name,
                     position: MutableOffsets, rotation: MutableDegrees,
-                    movement: MutableOffsets, spin: MutableDegrees) -> PlasmaModel:
+                    movement: MutableOffsets, spin: MutableDegrees,
+                    acceleration: MutableOffsets, torque: MutableDegrees) -> PlasmaModel:
         if self.projectiles[name]:
             return self.repurpose(name, position, rotation, movement, spin)
         #  config = deepcopy(self.projectiles[name])
         bounding_box = Polygon.manufacture([(0, 0), (0, 1)],
                                            x=position.x, y=position.z, rotation=rotation.yaw)
+        no_acc = MutableOffsets(0, 0, 0)
+        no_torque = MutableDegrees(0, 0, 0)
         projectile = PlasmaModel(position.__copy__(), rotation.__copy__(),
-                                 movement.__copy__(), spin.__copy__(), bounding_box)
+                                 movement.__copy__(), spin.__copy__(), no_acc, no_torque, bounding_box)
         return projectile
 
 
@@ -152,7 +168,9 @@ class ProjectileModelSpawnFunctionFactory(object):
         movement = MutableOffsets(-sin(yaw_radian) * 25, 0, -cos(yaw_radian) * 25)
         movement += ship_model.global_momentum_at(ship_part_model.position).forces
         spin = -ship_model.spin
-        return self.factory.manufacture(name, position, rotation, movement, spin)
+        acceleration = MutableOffsets(0, 0, 0)
+        torque = MutableDegrees(0, 0, 0)
+        return self.factory.manufacture(name, position, rotation, movement, spin, acceleration, torque)
 
 
 class AsteroidModelFactory(object):
@@ -166,8 +184,10 @@ class AsteroidModelFactory(object):
         rotation = MutableDegrees(0, 0, 0)
         movement = MutableOffsets(0, 0, 0)
         spin = MutableDegrees(0, 0, 0)
+        acceleration = MutableOffsets(0, 0, 0)
+        torque = MutableDegrees(0, 0, 0)
         coords = [(sin(radians(d)), cos(radians(d))) for d in range(0, 360, 18)]
         distances = [abs(normalvariate(25, 5)) for _ in coords]
         coords = [(x * d, y * d) for (x, y), d in zip(coords, distances)]
         bounding_box = Polygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
-        return AsteroidModel(position, rotation, movement, spin, bounding_box)
+        return AsteroidModel(position, rotation, movement, spin, acceleration, torque, bounding_box)
