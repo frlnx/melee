@@ -1,11 +1,10 @@
+from math import sin, cos, radians
 from typing import Callable
 
 from engine.controllers.base_controller import BaseController
+from engine.input_handlers import InputHandler
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableForce, Degrees
-from engine.input_handlers import InputHandler
-
-from math import sin, cos, radians
 
 
 class ShipPartController(BaseController):
@@ -32,6 +31,9 @@ class ShipPartController(BaseController):
         input_value = (self._model.button in self._gamepad.buttons) + \
                       (self._model.keyboard in self._gamepad.buttons) + \
                       self._gamepad.axis.get(self._model.axis, 0.0)
+        for axis in self._model.mouse:
+            input_value += self._gamepad.axis.get(axis, 0.0)
+        input_value = min(1.0, max(0., input_value))
         if 'next_state' in self._model.state_spec:
             new_state = self._model.state_spec.get('next state', self._model.state)
         elif input_value > 0:

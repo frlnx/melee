@@ -1,6 +1,7 @@
 from typing import List, Callable
-from engine.views.menus.base import BaseMenu, BaseButton
+
 from engine.models.factories import ShipPartModelFactory
+from engine.views.menus.base import BaseMenu, BaseButton
 from .drydock import Drydock
 
 
@@ -16,8 +17,7 @@ class ShipBuildMenu(BaseMenu):
     def manufacture_for_ship_model(cls, ship_model, close_menu_function: Callable, x, y, view_factory, font_size=36):
         drydock = Drydock(ship_model, view_factory)
         heading = "Shipyard"
-        callables = [("<- Back", close_menu_function), ("Save", drydock.save_all),
-                     ("Debug", drydock.debug), ("Reset", drydock.reset)]
+        callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset)]
         height = int(font_size * 1.6)
         width = int(height * 6)
         height_spacing = int(height * 1.1)

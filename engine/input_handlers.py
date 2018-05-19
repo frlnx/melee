@@ -14,6 +14,7 @@ class Keyboard(InputHandler):
     def __init__(self, window):
         super(Keyboard, self).__init__()
         window.push_handlers(self)
+        self.sensitivity = 10
 
     def on_key_press(self, symbol, modifiers):
         key_name = key._key_names[symbol]
@@ -23,6 +24,36 @@ class Keyboard(InputHandler):
         key_name = key._key_names[symbol]
         try:
             self.buttons.remove(key_name)
+        except KeyError:
+            pass
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        if dx > 0:
+            self.axis["x"] = max(0, min(1.0, dx / self.sensitivity))
+            self.axis["-x"] = 0
+        elif dx < 0:
+            self.axis["-x"] = max(0, min(1.0, -dx / self.sensitivity))
+            self.axis["x"] = 0
+        else:
+            self.axis["x"] = 0
+            self.axis["-x"] = 0
+
+        if dy > 0:
+            self.axis["y"] = max(0, min(1.0, dy / self.sensitivity))
+            self.axis["-y"] = 0
+        elif dy < 0:
+            self.axis["-y"] = max(0, min(1.0, -dy / self.sensitivity))
+            self.axis["y"] = 0
+        else:
+            self.axis["y"] = 0
+            self.axis["-y"] = 0
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.buttons.add(button)
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        try:
+            self.buttons.remove(button)
         except KeyError:
             pass
 

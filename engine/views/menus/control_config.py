@@ -1,22 +1,28 @@
-from .base import BaseMenu, BaseButton
+from functools import partial
 from typing import Callable
+
 from engine.models.ship import ShipModel
-from .grid import GridItemValueSetter, ValueKeepingGridItem
+from .base import BaseMenu, BaseButton
+from .drydock import ControlConfiguration
 
 
 class ControlConfigMenu(BaseMenu):
 
-    def __init__(self, heading: str, buttons, x, y, grid_item_presenter):
+    def __init__(self, heading: str, buttons, x, y, control_config: ControlConfiguration):
         super().__init__(heading, buttons, x, y)
-        self.grid_item_presenter = grid_item_presenter
+        self.control_config = control_config
 
     @classmethod
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable, x, y,
-                                   mesh_factory, font_size=36):
-        grid_item_presenter = GridItemValueSetter.from_model(640, 300, ship_model, mesh_factory)
+                                   view_factory, font_size=36):
+        control_config = ControlConfiguration(ship=ship_model, view_factory=view_factory)
 
         heading = "Configure controls"
-        callables = [("<- Back", close_menu_function), ("Save", grid_item_presenter.save_all)]
+        callables = [("<- Back", close_menu_function),
+                     ("Keyboard", partial(control_config.set_mode, "keyboard")),
+                     ("Gamepad", partial(control_config.set_mode, "gamepad")),
+                     ("Reset", control_config.reset),
+                     ("Save", control_config.save_all)]
         height = int(font_size * 1.6)
         width = int(height * 6)
         height_spacing = int(height * 1.1)
@@ -28,22 +34,32 @@ class ControlConfigMenu(BaseMenu):
                                                func=func)
             buttons.append(button)
 
-        return cls(heading, buttons, x, y, grid_item_presenter)
+        return cls(heading, buttons, x, y, control_config)
 
     def draw(self):
         super(ControlConfigMenu, self).draw()
-        self.grid_item_presenter.draw()
+        self.control_config.draw()
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        super(ControlConfigMenu, self).on_mouse_motion(x, y, dx, dy)
+        self.control_config.on_mouse_motion(x, y, dx, dy)
 
     def on_mouse_press(self, x, y, button, modifiers):
         super(ControlConfigMenu, self).on_mouse_press(x, y, button, modifiers)
-        self.grid_item_presenter.on_mouse_press(x, y, button, modifiers)
+        self.control_config.on_mouse_press(x, y, button, modifiers)
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.control_config.on_mouse_release(x, y, button, modifiers)
+
+    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
+        self.control_config.on_mouse_drag(x, y, dx, dy, button, modifiers)
 
     def on_key_press(self, symbol, modifiers):
-        self.grid_item_presenter.on_key_press(symbol, modifiers)
+        self.control_config.on_key_press(symbol, modifiers)
 
     def on_joybutton_press(self, joystick, button):
-        self.grid_item_presenter.on_joybutton_press(joystick, button)
+        self.control_config.on_joybutton_press(joystick, button)
 
     def on_joyaxis_motion(self, joystick, axis, value):
         if abs(value) > 0.9:
-            self.grid_item_presenter.on_joyaxis_motion(joystick, axis, value)
+            self.control_config.on_joyaxis_motion(joystick, axis, value)

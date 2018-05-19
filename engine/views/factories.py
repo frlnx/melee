@@ -1,15 +1,15 @@
-from engine.views.ship_part import ShipPartView
-from engine.views.ship import ShipView
-from engine.views.dynamic_mesh_view import DynamicMeshView
 from engine.models.asteroid import AsteroidModel
-from engine.models.ship_part import ShipPartModel
-from engine.models.ship import ShipModel
 from engine.models.base_model import BaseModel, PositionalModel
-from engine.models.projectiles import PlasmaModel
 from engine.models.composite_model import CompositeModel
-from engine.views.base_view import BaseView
+from engine.models.projectiles import PlasmaModel
+from engine.models.ship import ShipModel
+from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
+from engine.views.base_view import BaseView
+from engine.views.dynamic_mesh_view import DynamicMeshView
+from engine.views.ship import ShipView
+from engine.views.ship_part import ShipPartView
 
 
 class ViewFactory(object):
@@ -53,6 +53,7 @@ class ViewFactory(object):
 class DynamicViewFactory(ViewFactory):
 
     model_view_map = {
+        PositionalModel: BaseView,
         BaseModel: BaseView,
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,

@@ -1,7 +1,7 @@
 from typing import List, Callable
 
-from pyglet.graphics import draw
 from pyglet.gl import GL_LINES
+from pyglet.graphics import draw
 from pyglet.text import Label
 from pyglet.window import key
 
@@ -89,11 +89,11 @@ class BaseMenu(object):
 
     def on_mouse_motion(self, x, y, dx, dy):
         for element in self.highlightables:
-            if element.inside(x, y) != element.inside(x - dx, y - dy):
-                if element.inside(x, y):
-                    element.mouse_enter()
-                else:
-                    element.mouse_leave()
+            # if element.inside(x, y) != element.inside(x - dx, y - dy):
+            if element.inside(x, y):
+                element.mouse_enter()
+            else:
+                element.mouse_leave()
 
     def draw(self):
         self.heading_label.draw()

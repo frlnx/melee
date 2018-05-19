@@ -1,20 +1,22 @@
 #!/usr/bin/env python
 
-from engine.network.client import NetworkClient
 from engine import ClientEngine
-from engine.window import Window
 from engine.input_handlers import Keyboard, GamePad
+from engine.network.client import NetworkClient
+from engine.window import Window
 
 
 def main():
-    gamepad = GamePad(0)
+    try:
+        gamepad = GamePad(0)
+        print("Gamepad found!")
+    except:
+        gamepad = None
+        print("No gamepad found!")
     window = Window(input_handler=gamepad)
-    #keyboard = Keyboard(window)
+    gamepad = gamepad or Keyboard(window)
     engine = ClientEngine(gamepad, window=window)
-    host = '192.168.2.2'
-    port = 8000
-    client = NetworkClient(engine)
-    #client.connect(host, port)
+    NetworkClient(engine)
 
 if __name__ == '__main__':
     main()

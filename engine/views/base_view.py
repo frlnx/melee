@@ -1,10 +1,11 @@
-from engine.models.base_model import BaseModel
 import ctypes
 
 from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
-    GL_POSITION, GL_DIFFUSE, GL_MODELVIEW_MATRIX
+    GL_DIFFUSE, GL_MODELVIEW_MATRIX
 from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScalef, \
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
+
+from engine.models.base_model import BaseModel
 
 
 class BaseView(object):
@@ -15,9 +16,11 @@ class BaseView(object):
         self._model = model
         self._sub_views = set()
         self._mesh_scale = self.to_cfloat_array(1., 1., 1.)
-        self._light_color = self.to_cfloat_array(3., 3., 3., 1.)
+        self._diffuse = self.to_cfloat_array(3., 3., 3., 1.)
+        self._base_diffuse = (3., 3., 3., 1.)
         self._light_direction = self.to_cfloat_array(0, 0.3, 1, 0)
-        self._light_ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
+        self._ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
+        self._base_ambience = (0.1, 0.1, 0.1, 0.1)
         self._model_view_matrix = (GLfloat * 16)()
         self._model.observe(self.update)
         self.update()
@@ -32,6 +35,12 @@ class BaseView(object):
         if len(floats) == 3:
             return self._to_cfloat_three_array(*floats)
         return self._to_cfloat_array(*floats)
+
+    def set_diffuse_multipliers(self, *rgba):
+        self._diffuse = self.to_cfloat_array(*(x * y for x, y in zip(rgba, self._base_diffuse)))
+
+    def set_ambience_multipliers(self, *rgba):
+        self._ambience = self.to_cfloat_array(*(x * y for x, y in zip(rgba, self._base_ambience)))
 
     @property
     def is_alive(self):
@@ -100,9 +109,9 @@ class BaseView(object):
     def _light_on(self):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, self._light_ambience)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self._ambience)
         #lLightfv(GL_LIGHT0, GL_POSITION, self._light_direction)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, self._light_color)
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self._diffuse)
 
     @staticmethod
     def _light_off():

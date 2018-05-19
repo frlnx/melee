@@ -1,10 +1,10 @@
-from engine.models.base_model import BaseModel
-from engine.input_handlers import Keyboard
-from engine.window import Window
-from engine.engine import Engine
-from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfigMenu
-
 import pyglet
+
+from engine.engine import Engine
+from engine.input_handlers import Keyboard
+from engine.models.base_model import BaseModel
+from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfigMenu
+from engine.window import Window
 
 
 class ClientEngine(Engine):
@@ -81,8 +81,8 @@ class ClientEngine(Engine):
 
     def _menu_controls(self):
         menu = ControlConfigMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
-                                                            self._menu_left, self._menu_bottom,
-                                                            self.window.mesh_factory)
+                                                            0, self._menu_bottom,
+                                                            self.window.view_factory)
         if self.input_handler:
             self.input_handler.push_handlers(menu)
         self.set_menu(menu)

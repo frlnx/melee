@@ -1,17 +1,17 @@
 import json
 from copy import deepcopy
 from functools import partial
-from itertools import combinations, chain
-from math import sin, cos, radians, hypot
+from itertools import chain
+from math import sin, cos, radians
 from random import normalvariate
 
 from shapely.geometry import MultiPoint
 
-from engine.models.projectiles import PlasmaModel
 from engine.models.asteroid import AsteroidModel
-from engine.models.ship_part import ShipPartModel
+from engine.models.projectiles import PlasmaModel
 from engine.models.shield import ShieldArcModel
 from engine.models.ship import ShipModel
+from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 
@@ -76,7 +76,7 @@ class ShipPartModelFactory(object):
                 parts.add(sub_part)
         return parts
 
-    def manufacture(self, name,  **placement_config) -> ShipPartModel:
+    def manufacture(self, name, model_class=None, **placement_config) -> ShipPartModel:
         config = deepcopy(self.ship_parts[name])
         config['button'] = placement_config.get('button')
         config['keyboard'] = placement_config.get('keyboard')
@@ -90,7 +90,7 @@ class ShipPartModelFactory(object):
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                                            x=position.x, y=position.z, rotation=rotation.yaw)
         config['bounding_box'] = bounding_box
-        model_class = self.model_map.get(name, ShipPartModel)
+        model_class = model_class or self.model_map.get(name, ShipPartModel)
         part = model_class(**config)
         return part
 

@@ -1,17 +1,22 @@
 from typing import Callable
-
-from engine.physics.polygon import Polygon
-from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
 from uuid import uuid4
+
+from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
+from engine.physics.polygon import Polygon
 
 
 class PositionalModel(object):
 
-    def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, mesh_name=None):
+    def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, name=None):
         self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
-        self._mesh_name = mesh_name
+        self._mesh_name = name
+        self._name = name
         self._observers = set()
         self._material_observers = set()
+
+    @property
+    def name(self):
+        return self._name
 
     def observe(self, func: Callable):
         self._observers.add(func)

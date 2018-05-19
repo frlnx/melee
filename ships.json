@@ -45,5 +45,233 @@
       {"position": [-1, 0, 1], "name": "engine", "rotation": [0, 0, 0], "axis": "-y", "nickname": "left forward"}
     ]
   },
-  {"name": "ship","parts": [{"keyboard": "F", "position": [-3.13, 0, 0.0], "axis": "z", "name": "engine", "button": null, "rotation": [0, -90, 0]}, {"keyboard": "D", "position": [-2.04, 0, -1.03], "axis": "y", "name": "engine", "button": null, "rotation": [0, 180, 0]}, {"keyboard": "W", "position": [-0.99, 0, -1.04], "axis": null, "name": "plasma gun", "button": 7, "rotation": [0, 0, 0]}, {"keyboard": null, "position": [0, 0, 0], "axis": null, "name": "cockpit", "button": null, "rotation": [0, 0, 0]}, {"keyboard": "Q", "position": [2.12, 0, 1.1], "axis": "-rz", "name": "engine", "button": null, "rotation": [0, 0, 0]}, {"keyboard": "A", "position": [3.15, 0, 0.02], "axis": "-x", "name": "engine", "button": null, "rotation": [0, 90, 0]}, {"keyboard": "S", "position": [2.05, 0, -1.03], "axis": "rz", "name": "engine", "button": null, "rotation": [0, 180, 0]}, {"keyboard": "E", "position": [1.01, 0, -1.03], "axis": null, "name": "plasma gun", "button": 6, "rotation": [0, 0, 0]}, {"keyboard": "R", "position": [-2.04, 0, 1.11], "axis": "-y", "name": "engine", "button": null, "rotation": [0, 0, 0]}, {"keyboard": null, "position": [-2.06, 0, 0.03], "axis": null, "name": "fuel tank", "button": null, "rotation": [0, 0, 0]}, {"keyboard": null, "position": [2.08, 0, 0.04], "axis": null, "name": "fuel tank", "button": null, "rotation": [0, 0, 0]}, {"keyboard": null, "position": [-1.03, 0, 0.01], "axis": null, "name": "generator", "button": null, "rotation": [0, 0, 0]}, {"keyboard": null, "position": [1.05, 0, 0.01], "axis": null, "name": "generator", "button": null, "rotation": [0, 0, 0]}]}
+  {
+    "parts": [
+      {
+        "position": [
+          0.03,
+          0,
+          2.29
+        ],
+        "keyboard": null,
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "fuel tank"
+      },
+      {
+        "position": [
+          -1.0,
+          0,
+          2.28
+        ],
+        "keyboard": "R",
+        "axis": "-y",
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "engine"
+      },
+      {
+        "position": [
+          1.03,
+          0,
+          -1.03
+        ],
+        "keyboard": "S",
+        "axis": "rz",
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "button": null,
+        "name": "engine"
+      },
+      {
+        "position": [
+          1.08,
+          0,
+          2.31
+        ],
+        "keyboard": "Q",
+        "axis": "-rz",
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "engine"
+      },
+      {
+        "position": [
+          -2.02,
+          0,
+          -1.01
+        ],
+        "keyboard": "W",
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": 7,
+        "name": "plasma gun"
+      },
+      {
+        "position": [
+          -0.46,
+          0,
+          1.15
+        ],
+        "keyboard": null,
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "generator"
+      },
+      {
+        "position": [
+          -1.01,
+          0,
+          0.01
+        ],
+        "keyboard": null,
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "fuel tank"
+      },
+      {
+        "position": [
+          -2.04,
+          0,
+          0.03
+        ],
+        "keyboard": "F",
+        "axis": "z",
+        "rotation": [
+          0,
+          -90,
+          0
+        ],
+        "button": null,
+        "name": "engine"
+      },
+      {
+        "position": [
+          2.05,
+          0,
+          -1.05
+        ],
+        "keyboard": "E",
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": 6,
+        "name": "plasma gun"
+      },
+      {
+        "position": [
+          2.06,
+          0,
+          -0.01
+        ],
+        "keyboard": "A",
+        "axis": "-x",
+        "rotation": [
+          0,
+          90,
+          0
+        ],
+        "button": null,
+        "name": "engine"
+      },
+      {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "keyboard": null,
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "cockpit"
+      },
+      {
+        "position": [
+          0.67,
+          0,
+          1.17
+        ],
+        "keyboard": null,
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "generator"
+      },
+      {
+        "position": [
+          -1.01,
+          0,
+          -1.01
+        ],
+        "keyboard": "D",
+        "axis": "y",
+        "rotation": [
+          0,
+          180,
+          0
+        ],
+        "button": null,
+        "name": "engine"
+      },
+      {
+        "position": [
+          1.03,
+          0,
+          0.0
+        ],
+        "keyboard": null,
+        "axis": null,
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "button": null,
+        "name": "fuel tank"
+      }
+    ],
+    "name": "ship"
+  }
 ]
