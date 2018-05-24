@@ -2,6 +2,6 @@
 pyglet
 pytest
 numpy
-imageio
+#imageio
 twisted
 shapely

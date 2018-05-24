@@ -145,7 +145,6 @@ class BaseModel(PositionalModel):
         return self._mass
 
     def apply_global_force(self, force: MutableForce):
-        #force = force.__copy__()
         self.mutate_force_to_local(force)
         self.add_movement(*(force.translation_forces() / self.mass))
         self.add_spin(0, force.delta_yaw / self.inertia, 0)

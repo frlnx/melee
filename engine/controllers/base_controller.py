@@ -24,12 +24,12 @@ class BaseController(object):
     def update(self, dt):
         half_of_acceleration = self._model.acceleration * dt / 2
         half_of_torque = self._model.torque * dt / 2
-        self._model.movement.translate(*half_of_acceleration)
-        self._model.spin.rotate(*half_of_torque)
+        self._model.movement.translate(half_of_acceleration)
+        self._model.spin.translate(half_of_torque)
         self._model.translate(*(self._model.movement * dt))
         self._model.rotate(*(self._model.spin * dt))
-        self._model.movement.translate(*half_of_acceleration)
-        self._model.spin.rotate(*half_of_torque)
+        self._model.movement.translate(half_of_acceleration)
+        self._model.spin.translate(half_of_torque)
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
         self._model.timers(dt)
