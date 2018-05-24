@@ -7,7 +7,7 @@ from typing import Set
 
 from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING
 from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, glScalef
-from pyglet.window.key import symbol_string
+from pyglet.window.key import symbol_string, MOD_CTRL
 
 from engine.models.base_model import PositionalModel
 from engine.models.factories import ShipPartModelFactory
@@ -237,7 +237,7 @@ class ItemSpawn(DrydockElement):
 
 class ShipConfiguration(object):
     default_part_view_class = ShipPartView
-    default_item_class = DrydockElement
+    default_item_class = DrydockItem
 
     def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
@@ -435,6 +435,9 @@ class Drydock(ShipConfiguration):
         return self._items
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if modifiers & MOD_CTRL:
+            x = round(x / 10) * 10
+            y = round(y / 10) * 10
         self.highlighted_item.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         if self.held_item:
             self._held_item.drag(*self._screen_to_model(x, y))
@@ -475,6 +478,7 @@ class Drydock(ShipConfiguration):
             self.highlighted_item = self.find_closest_item_to(x, y)
             self.highlighted_item.on_mouse_motion(x, y, dx, dy)
             distance = self.distance_to_item(self.highlighted_item, x, y)
+            print(distance)
             model_highlight = 0. <= distance < 25
             circle_highlight = 25. <= distance < 50
             self.highlighted_item.set_highlight(model_highlight, circle_highlight)

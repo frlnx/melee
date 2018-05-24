@@ -1,5 +1,5 @@
-from engine.models.base_model import BaseModel
 from engine.input_handlers import InputHandler
+from engine.models.base_model import BaseModel
 from engine.physics.force import MutableOffsets
 
 
@@ -22,8 +22,14 @@ class BaseController(object):
         self._sub_controllers.add(sub_controller)
 
     def update(self, dt):
+        half_of_acceleration = self._model.acceleration * dt / 2
+        half_of_torque = self._model.torque * dt / 2
+        self._model.movement.translate(*half_of_acceleration)
+        self._model.spin.rotate(*half_of_torque)
         self._model.translate(*(self._model.movement * dt))
         self._model.rotate(*(self._model.spin * dt))
+        self._model.movement.translate(*half_of_acceleration)
+        self._model.spin.rotate(*half_of_torque)
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
         self._model.timers(dt)
@@ -32,7 +38,7 @@ class BaseController(object):
         collides, x, z = self._model.intersection_point(other_model)
         if collides:
             position = MutableOffsets(x, 0, z)
-            my_force = self._model.global_momentum_at(position)
-            other_force = other_model.global_momentum_at(position)
+            my_force = self._model.global_momentum_at(position) * self._model.mass
+            other_force = other_model.global_momentum_at(position) * other_model.mass
             other_model.apply_global_force(my_force)
             self._model.apply_global_force(other_force)

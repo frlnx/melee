@@ -96,7 +96,7 @@ class ShipPartModelFactory(object):
                 config[key] = build_config['class'](*config[key])
 
         x = config['position'].x
-        y = config['position'].y
+        y = config['position'].z
         yaw = config['rotation'].yaw
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                                            x=x, y=y, rotation=yaw)
@@ -139,14 +139,13 @@ class ProjectileModelFactory(object):
                     movement: MutableOffsets, spin: MutableDegrees,
                     acceleration: MutableOffsets, torque: MutableDegrees) -> PlasmaModel:
         if self.projectiles[name]:
-            return self.repurpose(name, position, rotation, movement, spin)
+            return self.repurpose(name, position, rotation, movement, spin, acceleration, torque)
         #  config = deepcopy(self.projectiles[name])
         bounding_box = Polygon.manufacture([(0, 0), (0, 1)],
                                            x=position.x, y=position.z, rotation=rotation.yaw)
-        no_acc = MutableOffsets(0, 0, 0)
-        no_torque = MutableDegrees(0, 0, 0)
         projectile = PlasmaModel(position.__copy__(), rotation.__copy__(),
-                                 movement.__copy__(), spin.__copy__(), no_acc, no_torque, bounding_box)
+                                 movement.__copy__(), spin.__copy__(),
+                                 acceleration.__copy__(), torque.__copy__(), bounding_box)
         return projectile
 
 
