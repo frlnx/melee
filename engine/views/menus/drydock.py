@@ -141,6 +141,7 @@ class ConfigurableItem(DrydockItem):
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, view: ShipPartDrydockView, legal_move_func=None):
         super().__init__(model, view)
+        self._view = view
         self.legal_move_func = legal_move_func or (lambda: True)
         self._observers = set()
         self._highlight_circle = False
@@ -164,6 +165,10 @@ class DockableItem(DrydockItem):
     def set_highlight(self, part=False, circle=False):
         super(DockableItem, self).set_highlight(part)
         self._highlight_circle = circle
+        if circle:
+            self._view.highlight_circle()
+        else:
+            self._view.lowlight_circle()
 
     def connect(self, other_part: "DrydockItem"):
         super(DockableItem, self).connect(other_part)
@@ -193,7 +198,6 @@ class DockableItem(DrydockItem):
 
     def grab(self):
         self.held = True
-        self.set_highlight(part=True, circle=False)
         return self
 
     def drag(self, x, y):
@@ -478,7 +482,6 @@ class Drydock(ShipConfiguration):
             self.highlighted_item = self.find_closest_item_to(x, y)
             self.highlighted_item.on_mouse_motion(x, y, dx, dy)
             distance = self.distance_to_item(self.highlighted_item, x, y)
-            print(distance)
             model_highlight = 0. <= distance < 25
             circle_highlight = 25. <= distance < 50
             self.highlighted_item.set_highlight(model_highlight, circle_highlight)

@@ -96,10 +96,18 @@ class ShipPartDrydockView(PartDrydockView):
         circle = [x for x in chain(*circle)]
         self.circle_v2f = ('v2f', circle)
         self.circle_n_points = int(len(circle) / 2)
-        self.circle_c4B = ('c4B', [150, 200, 255, 128] * self.circle_n_points)
+        self.circle_c4B = ('c4B', [100, 150, 200, 128] * self.circle_n_points)
+        self.circle_c4B_lowlight = ('c4B', [100, 150, 200, 128] * self.circle_n_points)
+        self.circle_c4B_highlight = ('c4B', [200, 220, 255, 128] * self.circle_n_points)
         self.bbox_v2f = ('v2f', list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self._model.bounding_box.lines])))
         self.bbox_n_points = len(self._model.bounding_box.lines) * 2
         self.bbox_c4f = ('c4f', [1., 1., 1., 1.] * self.bbox_n_points)
+
+    def highlight_circle(self):
+        self.circle_c4B = self.circle_c4B_highlight
+
+    def lowlight_circle(self):
+        self.circle_c4B = self.circle_c4B_lowlight
 
     def _draw_local(self):
         super(PartDrydockView, self)._draw_local()
