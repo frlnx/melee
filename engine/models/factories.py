@@ -96,7 +96,7 @@ class ShipPartModelFactory(object):
                 config[key] = build_config['class'](*config[key])
 
         x = config['position'].x
-        y = config['position'].y
+        y = config['position'].z
         yaw = config['rotation'].yaw
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                                            x=x, y=y, rotation=yaw)
