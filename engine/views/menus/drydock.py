@@ -7,7 +7,7 @@ from typing import Set
 
 from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING
 from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, glScalef
-from pyglet.window.key import symbol_string
+from pyglet.window.key import symbol_string, MOD_CTRL
 
 from engine.models.base_model import PositionalModel
 from engine.models.factories import ShipPartModelFactory
@@ -141,6 +141,7 @@ class ConfigurableItem(DrydockItem):
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, view: ShipPartDrydockView, legal_move_func=None):
         super().__init__(model, view)
+        self._view = view
         self.legal_move_func = legal_move_func or (lambda: True)
         self._observers = set()
         self._highlight_circle = False
@@ -164,6 +165,10 @@ class DockableItem(DrydockItem):
     def set_highlight(self, part=False, circle=False):
         super(DockableItem, self).set_highlight(part)
         self._highlight_circle = circle
+        if circle:
+            self._view.highlight_circle()
+        else:
+            self._view.lowlight_circle()
 
     def connect(self, other_part: "DrydockItem"):
         super(DockableItem, self).connect(other_part)
@@ -193,7 +198,6 @@ class DockableItem(DrydockItem):
 
     def grab(self):
         self.held = True
-        self.set_highlight(part=True, circle=False)
         return self
 
     def drag(self, x, y):
@@ -237,7 +241,7 @@ class ItemSpawn(DrydockElement):
 
 class ShipConfiguration(object):
     default_part_view_class = ShipPartView
-    default_item_class = DrydockElement
+    default_item_class = DrydockItem
 
     def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
@@ -435,6 +439,9 @@ class Drydock(ShipConfiguration):
         return self._items
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if modifiers & MOD_CTRL:
+            x = round(x / 10) * 10
+            y = round(y / 10) * 10
         self.highlighted_item.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         if self.held_item:
             self._held_item.drag(*self._screen_to_model(x, y))

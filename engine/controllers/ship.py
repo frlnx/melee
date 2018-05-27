@@ -1,12 +1,11 @@
 from typing import Set
 
-from engine.models.ship import ShipModel
-from engine.models.base_model import BaseModel
-from engine.models.projectiles import PlasmaModel
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
-from engine.physics.force import MutableOffsets
+from engine.models.base_model import BaseModel
+from engine.models.projectiles import PlasmaModel
+from engine.models.ship import ShipModel
 
 
 class ShipController(BaseController):
@@ -63,7 +62,6 @@ class ShipController(BaseController):
     def next_target(self) -> BaseModel:
         index = self._possible_targets.index(self._target_model)
         target_model = self._possible_targets[(index + 1) % len(self._possible_targets)]
-        print(index, self._possible_targets)
         return target_model
 
     def select_target(self, target: BaseModel):

@@ -125,6 +125,9 @@ class Degrees(Vector):
     def __sub__(self, other: Vector):
         return self.__class__(*[(((s % 360) - (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
 
+    def __add__(self, other: Vector):
+        return self.__class__(*[(((s % 360) + (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
+
     @property
     def pitch(self):
         return self.x
@@ -156,6 +159,13 @@ class MutableDegrees(MutableVector, Degrees):
         self.set(*[(((s % 360) - (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
         return self
 
+    def __iadd__(self, other: tuple):
+        self.set(*[(((s % 360) + (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
+        return self
+
+    def translate(self, *xyz):
+        self.__iadd__(*xyz)
+
 
 class Offsets(Vector):
 
@@ -177,11 +187,12 @@ class MutableOffsets(MutableVector, Offsets):
         self.direction = MutableDegrees(0, degrees(atan2(-self.x, -self.z)), 0)
 
     def rotate(self, theta):
+        if theta == 0:
+            return
         theta = radians(theta)
         x = self.x * cos(theta) - self.z * sin(theta)
         z = self.x * sin(theta) + self.z * cos(theta)
         self.set(x, self._y, z)
-        self.update()
 
     def translate(self, *xyz):
         self.__iadd__(*xyz)

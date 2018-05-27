@@ -116,7 +116,7 @@ class ClientEngine(Engine):
     def start_local(self):
         self.spawn_self()
 
-        m2 = self.smf.manufacture("wolf", position=self.random_position())
+        m2 = self.smf.manufacture("ship", position=self.random_position())
         self._new_model_callback(m2)
         self.spawn(m2)
 
