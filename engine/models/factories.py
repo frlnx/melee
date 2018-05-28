@@ -9,7 +9,7 @@ from shapely.geometry import MultiPoint
 
 from engine.models.asteroid import AsteroidModel
 from engine.models.projectiles import PlasmaModel
-from engine.models.shield import ShieldArcModel
+from engine.models.shield import ShieldModel
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -59,7 +59,7 @@ class ShipModelFactory(object):
 class ShipPartModelFactory(object):
 
     ship_parts = {}
-    model_map = {"shield arc": ShieldArcModel}
+    model_map = {"shield arc": ShieldModel}
 
     def __init__(self):
         if len(self.ship_parts) == 0:

@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Iterable
 from math import radians
-from itertools import product
+from itertools import product, compress
 from functools import reduce
 
 from shapely.geometry import LinearRing, LineString
@@ -10,9 +10,14 @@ from engine.physics.line import Line
 
 class BasePolygon(object):
 
+    closed_shape_class_map = {
+        True: LinearRing,
+        False: LineString
+    }
 
-    def __init__(self, lines: List[Line]):
+    def __init__(self, lines: List[Line], closed=True):
         self._lines = lines
+        self._shape_class = self.closed_shape_class_map[closed]
         self.rotation = 0
         self.x = 0
         self.y = 0
@@ -38,13 +43,9 @@ class BasePolygon(object):
         return self._lines
 
     def make_shape(self):
-        if len(self.lines) > 1:
-            coords = [(l.x1, l.y1) for l in self.lines]
-            coords.append((self.lines[-1].x2, self.lines[-1].y2))
-            return LinearRing(coords)
-        else:
-            line = self.lines[0]
-            return LineString([(line.x1, line.y1), (line.x2, line.y2)])
+        coords = [(l.x1, l.y1) for l in self.lines]
+        coords.append((self.lines[-1].x2, self.lines[-1].y2))
+        return self._shape_class(coords)
 
     def set_position_rotation(self, x, y, yaw_degrees):
         for line in self.lines:
@@ -101,29 +102,35 @@ class Polygon(BasePolygon):
         else:
             point_x, point_y = 0, 0
         return not intersection.is_empty, point_x, point_y
-        #
-        # x_es = []
-        # y_es = []
-        # for line1, line2 in product(self.lines, other.lines):
-        #     if not line1.bounding_box_intersects(line2):
-        #         continue
-        #     intersects, x, y = line1.intersection_point(line2)
-        #     if intersects:
-        #         x_es.append(x)
-        #         y_es.append(y)
-        # if x_es:
-        #     x = reduce(lambda a, b: a + b, x_es) / len(x_es)
-        #     y = reduce(lambda a, b: a + b, y_es) / len(y_es)
-        #     return True, x, y
-        # return False, None, None
 
     def __iadd__(self, other: "Polygon"):
         p1 = self.make_shape()
         p2 = other.make_shape()
         new_shape = p1.union(p2)
         return self.manufacture(new_shape.coords)
-        #self._lines += [Line([(line.x1, line.y1), (line.x2, line.y2)]) for line in other.lines]
-        #return self
 
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines],self.x, self.y, self.rotation)
+
+
+class TemporalPolygon(Polygon):
+
+    def __init__(self, lines: List[Line], closed=True, line_mask=None):
+        super().__init__(lines, closed=closed)
+        self._line_mask = line_mask or [False] * len(lines)
+
+    def enable_percent_lines(self, p: float):
+        n = int(round(len(self._lines) * p))
+        self._line_mask = [True] * n + [False] * (len(self._lines) - n)
+
+    def set_line_mask(self, line_mask):
+        self._line_mask = line_mask
+
+    @property
+    def lines(self) -> List[Line]:
+        return list(compress(self.lines, self._line_mask))
+
+    def intersection_point(self, other: "Polygon"):
+        if sum(self._line_mask) == 0:
+            return False, None, None
+        return super(TemporalPolygon, self).intersection_point(other)

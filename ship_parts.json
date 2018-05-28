@@ -73,7 +73,6 @@
   {
     "name": "shield",
     "mesh_name": "shield",
-    "sub_parts": ["shield arc"],
     "states": [
       {
         "name": "idle"
@@ -81,10 +80,7 @@
       {
         "name": "active",
         "power required": 100,
-        "shield arc": [
-          10,
-          160
-        ]
+        "shield": [[0, 0], [1, -1], [2, -1.5], [3, -1.75]]
       }
     ],
     "material_affected": "Shield_Arc",

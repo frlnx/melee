@@ -50,10 +50,15 @@ class BaseLine(object):
         self.y2 = y + self.original_x2 * sin_val + self.original_y2 * cos_val
         self.rotation = radii
         self.x, self.y = x, y
+        self.length = hypot(self.dx, self.dy)
         self.right = max(self.x1, self.x2)
         self.left = min(self.x1, self.x2)
         self.top = max(self.y1, self.y2)
         self.bottom = min(self.y1, self.y2)
+
+    @property
+    def centroid(self):
+        return self.x1 - self.dx / 2, self.y1 - self.dy / 2
 
     @property
     def radii(self):
@@ -108,27 +113,6 @@ class Line(BaseLine):
         return True
 
     def intersection_point(self, other: 'Line'):
-        # original_other_radii = other.radii
-        # other.rotate(-original_other_radii)
-        # self.rotate(-original_other_radii)
-        # dx = self.x1 - other.x1
-        # if round(self.x1, 8) == round(self.x2, 8):
-        #     intersects = other.x1 == self.x1
-        #     point_x = self.x1
-        #     point_y = (min(self.top, other.top) + max(self.bottom, other.bottom)) / 2
-        # else:
-        #     k = (self.y1 - self.y2) / (self.x1 - self.x2)
-        #     rotated_y = k * dx + self.y1
-        #     rotated_x = other.x1
-        #     intersects = (other.bottom < rotated_y < other.top and
-        #                   self.left < rotated_x < self.right)
-        #     cos_val = cos(original_other_radii)
-        #     sin_val = sin(original_other_radii)
-        #     point_x = rotated_x * cos_val - rotated_y * sin_val
-        #     point_y = rotated_x * sin_val + rotated_y * cos_val
-        # other.rotate(original_other_radii)
-        # self.rotate(original_other_radii)
-
         sg_line1 = LineString([(self.x1, self.y1), (self.x2, self.y2)])
         sg_line2 = LineString([(other.x1, other.y1), (other.x2, other.y2)])
         intersection = sg_line1.intersection(sg_line2)

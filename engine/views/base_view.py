@@ -58,7 +58,10 @@ class BaseView(object):
 
     def set_mesh(self, mesh):
         self._mesh = mesh
-        self._draw = self._draw_mesh
+        if mesh:
+            self._draw = self._draw_mesh
+        else:
+            self._draw = self._draw_nothing
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
