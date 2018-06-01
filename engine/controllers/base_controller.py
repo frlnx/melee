@@ -34,7 +34,14 @@ class BaseController(object):
             sub_controller.update(dt)
         self._model.timers(dt)
 
+    def time_to_collision(self, other_model: BaseModel, dt):
+        momentum_delta = self._model.movement - other_model.movement
+        time = self._model.bounding_box.intersection_time(other_model.bounding_box, momentum_delta, dt)
+        return time
+
     def solve_collision(self, other_model: BaseModel):
+        if self._model.movement.distance == 0 and other_model.movement.distance == 0:
+            return
         collides, x, z = self._model.intersection_point(other_model)
         if collides:
             position = MutableOffsets(x, 0, z)
@@ -42,3 +49,6 @@ class BaseController(object):
             other_force = other_model.global_momentum_at(position) * other_model.mass
             other_model.apply_global_force(my_force)
             self._model.apply_global_force(other_force)
+
+    def collide_with(self, other_model: BaseModel):
+        pass

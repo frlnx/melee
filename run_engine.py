@@ -91,7 +91,7 @@ class Engine(pyglet.app.EventLoop):
         pyglet.clock.set_fps_limit(60)
 
     def on_enter(self):
-        self.spawn_ship("wolf", [0, 0, 0], GamePad(1))
+        self.spawn_ship("ship", [0, 0, 0], GamePad(1))
         self.spawn_ship("dolph", [10, 0, 2], GamePad(0))
         self.spawn_ship("dolph", [0, 0, 20], GamePad(0))
         self.spawn_ship("dolph", [-10, 0, -2], GamePad(0))

@@ -98,8 +98,16 @@ class ShipController(BaseController):
         self._model.set_position(*location)
 
     def solve_collision(self, other_model: BaseModel):
+        if self._model.movement.distance == 0 and other_model.movement.distance == 0:
+            return
         if isinstance(other_model, PlasmaModel):
             parts = self._model.parts_intersected_by(other_model)
             for part in parts:
                 self.destroy_part(part)
         super(ShipController, self).solve_collision(other_model)
+
+    def collide_with(self, other_model: BaseModel):
+        if isinstance(other_model, PlasmaModel):
+            parts = self._model.parts_intersected_by(other_model)
+            for part in parts:
+                self.destroy_part(part)

@@ -19,6 +19,7 @@ class PlasmaModel(BaseModel):
             self._ttl -= dt
 
     def timers(self, dt):
+        super(PlasmaModel, self).timers(dt)
         self.count_down(dt)
 
     @property

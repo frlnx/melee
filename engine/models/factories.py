@@ -50,6 +50,7 @@ class ShipModelFactory(object):
         torque = MutableDegrees(*torque)
         bounding_box.freeze()
         bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
+        bounding_box.clear_movement()
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
                          movement=movement, spin=spin, acceleration=acceleration, torque=torque,
                          bounding_box=bounding_box)
@@ -161,11 +162,12 @@ class ProjectileModelSpawnFunctionFactory(object):
     def _manufacture(self, name, ship_model: ShipModel, ship_part_model: ShipPartModel) -> PlasmaModel:
         yaw_radian = ship_model.rotation.yaw_radian + ship_part_model.rotation.yaw_radian
         position = ship_part_model.position.__copy__()
-        position.set(position.x, position.y, position.z - 3)
+        position.set(position.x, position.y, position.z - 5)
         ship_model.mutate_offsets_to_global(position)
         rotation = ship_model.rotation.__copy__()
-        movement = MutableOffsets(-sin(yaw_radian) * 25, 0, -cos(yaw_radian) * 25)
-        movement += ship_model.global_momentum_at(ship_part_model.position).forces
+        movement = MutableOffsets(-sin(yaw_radian) * 125, 0, -cos(yaw_radian) * 125)
+        #movement += ship_model.global_momentum_at(ship_part_model.position).forces
+        movement += ship_model.movement
         spin = -ship_model.spin
         acceleration = MutableOffsets(0, 0, 0)
         torque = MutableDegrees(0, 0, 0)

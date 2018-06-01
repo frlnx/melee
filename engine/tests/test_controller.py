@@ -8,7 +8,7 @@ dummy_input = InputHandler()
 class _TestShipController(object):
 
     def setup(self):
-        self.target = factory.manufacture("wolf", dummy_input)
+        self.target = factory.manufacture("ship", dummy_input)
 
     def test_move_to(self):
         self.target.move_to([100, 0, 0])

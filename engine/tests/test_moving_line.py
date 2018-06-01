@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.parametrize("y,expected", [(-10, None), (-5, 10), (0, 10), (5, 10), (10, None)])
-def test_collision_while_moving_right(y, expected):
+def _test_collision_while_moving_right(y, expected):
     right_movement = MutableOffsets(1, 0, 0)
     no_movement = MutableOffsets(0, 0, 0)
     no_spin = MutableDegrees(0, 0, 0)
@@ -14,7 +14,7 @@ def test_collision_while_moving_right(y, expected):
 
 
 @pytest.mark.parametrize("y,expected", [(-10, None), (-5, -10), (0, -10), (5, -10), (10, None)])
-def test_collision_in_the_past_while_moving_left(y, expected):
+def _test_collision_in_the_past_while_moving_left(y, expected):
     left_movement = MutableOffsets(-1, 0, 0)
     no_movement = MutableOffsets(0, 0, 0)
     no_spin = MutableDegrees(0, 0, 0)
@@ -24,7 +24,7 @@ def test_collision_in_the_past_while_moving_left(y, expected):
 
 
 @pytest.mark.parametrize("x,expected", [(-10, None), (0, 5), (10, None)])
-def test_coming_right_down_on_target(x, expected):
+def _test_coming_right_down_on_target(x, expected):
     down_movement = MutableOffsets(0, 0, 1)
     no_movement = MutableOffsets(0, 0, 0)
     no_spin = MutableDegrees(0, 0, 0)
@@ -33,7 +33,7 @@ def test_coming_right_down_on_target(x, expected):
     assert moving_line.time_to_impact(target_line) == expected
 
 @pytest.mark.parametrize("x,expected", [(-10, None), (0, 5), (10, None)])
-def test_coming_right_down_on_target_inversed(x, expected):
+def _test_coming_right_down_on_target_inversed(x, expected):
     down_movement = MutableOffsets(0, 0, 1)
     no_movement = MutableOffsets(0, 0, 0)
     no_spin = MutableDegrees(0, 0, 0)
@@ -42,7 +42,7 @@ def test_coming_right_down_on_target_inversed(x, expected):
     assert target_line.time_to_impact(moving_line) == expected
 
 
-class TestMovingLineIntersection(object):
+class _TestMovingLineIntersection(object):
 
     def setup(self):
         movement = MutableOffsets(-1, 0, 0)

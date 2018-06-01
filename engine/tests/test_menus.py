@@ -48,7 +48,7 @@ class FakeFactory(object):
 class TestConfigControlsMenu(object):
     smf = ShipModelFactory()
     def setup(self):
-        self.ship_model = self.smf.manufacture("wolf")
+        self.ship_model = self.smf.manufacture("ship")
         def cancel_func():
             pass
 

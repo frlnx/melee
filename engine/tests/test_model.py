@@ -11,12 +11,12 @@ dummy_input = InputHandler()
 class TestBoundingBox(object):
 
     def setup(self):
-        ship = model_factory.manufacture("wolf")
+        ship = model_factory.manufacture("ship")
         self.target = ship.bounding_box
         ship.set_position_and_rotation(10, 0, 10, 0, 0, 0)
 
     def test_bounding_box_width_is_5(self):
-        assert self.target.right - self.target.left == 5
+        assert 5.4 == round(self.target.right - self.target.left, 1)
 
     def _test_bounding_box_height_is_3(self):
         assert self.target.top - self.target.bottom == 2
@@ -30,7 +30,7 @@ class TestBoundingBox(object):
         assert all([y == 10 for y in yes])
 
     def test_bounding_box_lines_coords_have_moved_10_right_and_10_down(self):
-        reference_bb = model_factory.manufacture("wolf").bounding_box
+        reference_bb = model_factory.manufacture("ship").bounding_box
         for actual, original in zip(self.target.lines, reference_bb.lines):
             assert actual.x1 == original.x1 + 10
             assert actual.y1 == original.y1 + 10
@@ -42,8 +42,8 @@ class TestBoundingBox(object):
 class TestCollisions(object):
 
     def setup(self):
-        self.target1 = model_factory.manufacture("wolf")
-        self.target2 = model_factory.manufacture("wolf")
+        self.target1 = model_factory.manufacture("ship")
+        self.target2 = model_factory.manufacture("ship")
 
     def test_collision_on_same_location(self):
         assert self.target1.intersection_point(self.target2)[0]
@@ -51,22 +51,26 @@ class TestCollisions(object):
 
     def test_collision_on_translation(self):
         self.target2.set_position(1, 0, 0)
+        self.target2.bounding_box.clear_movement()
         assert self.target1.intersection_point(self.target2)[0]
         assert self.target2.intersection_point(self.target1)[0]
 
     def test_collision_on_rotation(self):
         self.target2.set_rotation(0, 90, 0)
+        self.target2.bounding_box.clear_movement()
         assert self.target1.intersection_point(self.target2)[0]
         assert self.target2.intersection_point(self.target1)[0]
 
     def test_collision_on_rotation_and_translation(self):
         self.target2.set_position(1, 0, 0)
         self.target2.set_rotation(0, 90, 0)
+        self.target2.bounding_box.clear_movement()
         assert self.target1.intersection_point(self.target2)[0]
         assert self.target2.intersection_point(self.target1)[0]
 
     def test_non_collision_on_big_translation(self):
         self.target2.set_position(100, 0, 0)
+        self.target2.bounding_box.clear_movement()
         assert not self.target1.intersection_point(self.target2)[0]
         assert not self.target2.intersection_point(self.target1)[0]
 
@@ -74,7 +78,7 @@ class TestCollisions(object):
 class TestGlobalMomentumAt(object):
 
     def setup(self):
-        self.target = model_factory.manufacture("wolf")
+        self.target = model_factory.manufacture("ship")
         self.target.set_position(-2, 0, 0)
 
     def test_force_on_right_side_is_the_movement_of_target_times_mass(self):
@@ -106,7 +110,7 @@ class TestGlobalMomentumAt(object):
 class TestApplyForce(object):
 
     def setup(self):
-        self.target = model_factory.manufacture("wolf")
+        self.target = model_factory.manufacture("ship")
 
     def test_force_applied_to_center_of_mass_does_not_rotate(self):
         force = MutableForce(MutableOffsets(2, 0, 0), MutableOffsets(-1, 0, 0))
@@ -139,7 +143,7 @@ class TestApplyForce(object):
 class TestForceTranslationGlobalLocal(object):
 
     def setup(self):
-        self.ship_model = model_factory.manufacture("wolf", position=(10, 0, 10))
+        self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10))
         self.target = MutableForce(MutableOffsets(9, 0, 9), MutableOffsets(0, 0, -1))
         self.target.set_force(1.0)
         self.ship_model.mutate_force_to_local(self.target)
@@ -156,7 +160,7 @@ class TestForceTranslationGlobalLocal(object):
 class TestForceTranslationGlobalLocalWithRotation(object):
 
     def setup(self):
-        self.ship_model = model_factory.manufacture("wolf", position=(10, 0, 10), rotation=(0, 45, 0))
+        self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10), rotation=(0, 45, 0))
         self.target = MutableForce(MutableOffsets(9, 0, 9), MutableOffsets(0, 0, -1))
         self.target.set_force(1.0)
         self.ship_model.mutate_force_to_local(self.target)
@@ -173,7 +177,7 @@ class TestForceTranslationGlobalLocalWithRotation(object):
 class TestForceTranslationLocalGlobal(object):
 
     def setup(self):
-        self.ship_model = model_factory.manufacture("wolf", position=(10, 0, 10))
+        self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10))
         self.target = MutableForce(MutableOffsets(-1, 0, -1), MutableOffsets(0, 0, -1))
         self.target.set_force(1.0)
         self.ship_model.mutate_force_to_global(self.target)
@@ -190,7 +194,7 @@ class TestForceTranslationLocalGlobal(object):
 class TestForceTranslationLocalGlobalWithRotation(object):
 
     def setup(self):
-        self.ship_model = model_factory.manufacture("wolf", position=(10, 0, 10), rotation=(0, 45, 0))
+        self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10), rotation=(0, 45, 0))
         self.target = MutableForce(MutableOffsets(-1, 0, -1), MutableOffsets(0, 0, -1))
         self.target.set_force(1.0)
         self.ship_model.mutate_force_to_global(self.target)

@@ -97,6 +97,7 @@ class BaseModel(PositionalModel):
         self.animation = None
         self.animation_value = 0
         self._bounding_box = bounding_box
+        self._time_consumed = 0
         try:
             bb_width = (self._bounding_box.right - self._bounding_box.left)
             bb_height = (self._bounding_box.top - self._bounding_box.bottom)
@@ -138,7 +139,11 @@ class BaseModel(PositionalModel):
         self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
 
     def timers(self, dt):
-        pass
+        self._time_consumed += dt
+
+    @property
+    def time_consumed(self):
+        return self._time_consumed
 
     @property
     def mass(self):

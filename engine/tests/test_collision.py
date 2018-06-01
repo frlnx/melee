@@ -39,8 +39,8 @@ class TestLine(object):
 class TestBoundingBox(object):
 
     def setup(self):
-        self.ship1 = factory.manufacture("wolf", position=[10, 0, 0])
-        self.ship2 = factory.manufacture("wolf", position=[-10, 0, 0])
+        self.ship1 = factory.manufacture("ship", position=[10, 0, 0])
+        self.ship2 = factory.manufacture("ship", position=[-10, 0, 0])
 
     def test_ships_do_not_overlap(self):
         collides, x, y = self.ship1.intersection_point(self.ship2)
@@ -50,6 +50,7 @@ class TestBoundingBox(object):
         bb_xes = list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         bb_yes = list(chain(*[[line.y1, line.y2] for line in self.ship1.bounding_box.lines]))
         self.ship1.set_position_and_rotation(0, 0, 0, 0, 0, 0)
+        moved_coords = list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         assert bb_xes != list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
-        assert [x - 10 for x in bb_xes] == list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
+        assert [round(x - 10, 1) for x in bb_xes] == [round(x, 1) for x in moved_coords]
         assert bb_yes == list(chain(*[[line.y1, line.y2] for line in self.ship1.bounding_box.lines]))

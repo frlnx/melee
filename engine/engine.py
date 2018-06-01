@@ -5,8 +5,9 @@ from engine.controllers.factories import ControllerFactory
 from engine.pigtwisted import TwistedEventLoop
 from engine.input_handlers import InputHandler
 
+from collections import defaultdict
 import random
-from typing import Callable, Iterable
+from typing import Callable, ValuesView
 from itertools import combinations
 
 
@@ -29,9 +30,10 @@ class Engine(TwistedEventLoop):
         self._controllers = dict()
         self.ships = set()
         self.models = {}
+        self._time_spent = 0
 
     @property
-    def controllers(self) -> Iterable["engine.controllers.BaseController"]:
+    def controllers(self) -> ValuesView["engine.controllers.BaseController"]:
         return self._controllers.values()
 
     def controller_by_uuid(self, uuid) -> "engine.controllers.BaseController":
@@ -125,6 +127,17 @@ class Engine(TwistedEventLoop):
         self._dead_model_callback(controller._model)
         print("Informing network of decay", controller._model.uuid)
 
+    def _update(self, dt):
+        goal_time = self._time_spent + dt
+        while self._time_spent < goal_time:
+            first_collision_time, colliding_pairs = self._find_first_collision(dt)
+            self._update(first_collision_time)
+            for m1, m2 in colliding_pairs:
+                self._controllers[m1.uuid].solve_collision(m2)
+            self._time_spent += first_collision_time
+            dt -= first_collision_time
+            dt = max(dt, 0.001)
+
     def update(self, dt):
         spawns = []
         decays = []
@@ -138,6 +151,25 @@ class Engine(TwistedEventLoop):
         self.solve_collisions()
         for model in spawns:
             self.spawn_with_callback(model)
+
+    def _find_first_collision(self, dt):
+        collision_timings = defaultdict(list)
+        for m1, m2 in combinations(self.models.values(), 2):
+            momentum_delta = m1.movement - m2.movement
+            time = m1.bounding_box.intersection_time(m2.bounding_box, momentum_delta, dt)
+            if time < dt:
+                dt = time
+                collision_timings[time].append((m1, m2))
+        return dt, collision_timings[dt]
+
+    def collision_timings(self, dt):
+        collision_timings = defaultdict(list)
+        for m1, m2 in combinations(self.models.values(), 2):
+            momentum_delta = m1.movement - m2.movement
+            time = m1.bounding_box.intersection_time(m2.bounding_box, momentum_delta, dt)
+            if time < dt:
+                collision_timings[time].append((m1, m2))
+        return collision_timings
 
     def solve_collisions(self):
         for c1, c2 in combinations(self.controllers, 2):
