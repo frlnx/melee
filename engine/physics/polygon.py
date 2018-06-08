@@ -40,6 +40,7 @@ class BasePolygon(object):
         lines = cls.coords_to_lines(coords)
         polygon = Polygon(lines)
         polygon.set_position_rotation(x, y, rotation)
+        polygon.clear_movement()
         return polygon
 
     @property

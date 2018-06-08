@@ -80,9 +80,21 @@ class Engine(TwistedEventLoop):
         self.models = {}
 
     def spawn_asteroids(self, n):
-        for i in range(n):
+        i = 0
+        failed_attempts = 0
+        while i <= n and failed_attempts <= n * 2:
             model = self.amf.manufacture(self.random_position(area=200))
-            self.spawn(model)
+            retry = False
+            for other_model in self.models.values():
+                if model.bounding_box.bounding_box_intersects(other_model.bounding_box):
+                    retry = True
+                    break
+            if retry:
+                failed_attempts += 1
+                continue
+            else:
+                i += 1
+                self.spawn(model)
 
     @staticmethod
     def random_position(area=20):

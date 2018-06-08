@@ -104,6 +104,8 @@ class ShipController(BaseController):
             parts = self._model.parts_intersected_by(other_model)
             for part in parts:
                 self.destroy_part(part)
+            if parts:
+                other_model.set_alive(False)
         super(ShipController, self).solve_collision(other_model)
 
     def collide_with(self, other_model: BaseModel):

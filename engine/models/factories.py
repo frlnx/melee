@@ -191,4 +191,5 @@ class AsteroidModelFactory(object):
         distances = [abs(normalvariate(25, 5)) for _ in coords]
         coords = [(x * d, y * d) for (x, y), d in zip(coords, distances)]
         bounding_box = Polygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
+        bounding_box.clear_movement()
         return AsteroidModel(position, rotation, movement, spin, acceleration, torque, bounding_box)
