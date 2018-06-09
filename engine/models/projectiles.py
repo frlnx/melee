@@ -9,6 +9,14 @@ class PlasmaModel(BaseModel):
                  spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees, bounding_box: Polygon):
         super(PlasmaModel, self).__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._ttl = 4
+        self._explosive_energy = 400
+
+    def energy_on_impact_relative_to(self, interception_speed):
+        return self.mass * interception_speed + self.explosive_energy
+
+    @property
+    def explosive_energy(self):
+        return self._explosive_energy
 
     @property
     def is_alive(self):

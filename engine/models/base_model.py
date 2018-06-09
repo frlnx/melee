@@ -1,5 +1,6 @@
 from typing import Callable
 from uuid import uuid4
+from math import hypot
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
 from engine.physics.polygon import Polygon
@@ -107,6 +108,18 @@ class BaseModel(PositionalModel):
         self.update_needed = False
         self._alive = True
         self._collisions_to_solve = set()
+
+    def interception_speed(self, other_position: MutableOffsets, other_movement: MutableOffsets):
+        delta_position = self.position - other_position
+        delta_movement = self.movement - other_movement
+        interception_speed = 0
+        for pd, md in zip(delta_position, delta_movement):
+            if pd > 0 == md > 0:
+                interception_speed = hypot(interception_speed, md)
+        return interception_speed
+
+    def energy_on_impact_relative_to(self, interception_speed):
+        return self.mass * interception_speed
 
     def __repr__(self):
         return "{} {}".format(self.__class__.__name__, self.uuid)
