@@ -106,6 +106,7 @@ class BaseModel(PositionalModel):
             self.inertia = 1
         self.update_needed = False
         self._alive = True
+        self._collisions_to_solve = set()
 
     def __repr__(self):
         return "{} {}".format(self.__class__.__name__, self.uuid)
@@ -113,6 +114,7 @@ class BaseModel(PositionalModel):
     def __getstate__(self):
         d = {k: val for k, val in self.__dict__.items()}
         d['_observers'] = set()
+        d['_collisions_to_solve'] = set()
         return d
 
     @property

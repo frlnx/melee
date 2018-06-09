@@ -31,8 +31,7 @@ class CompositeModel(BaseModel):
         return set(self._parts.values())
 
     def __getstate__(self):
-        d = {k: val for k, val in self.__dict__.items()}
-        d['_observers'] = set()
+        d = super(CompositeModel, self).__getstate__()
         d['_rebuild_observers'] = set()
         return d
 
