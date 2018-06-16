@@ -97,6 +97,7 @@ class CompositeModel(BaseModel):
         self._acceleration.set(0, 0, 0)
         for part in self.parts:
             self._acceleration += part.acceleration
+        self._acceleration.rotate(-self.yaw)
         return self._acceleration
 
     @property

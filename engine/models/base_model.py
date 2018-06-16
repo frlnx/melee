@@ -273,7 +273,7 @@ class BaseModel(PositionalModel):
         return self._acceleration
 
     def set_local_acceleration(self, x: float, y: float, z: float):
-        theta = radians(self.yaw)
+        theta = radians(-self.yaw)
         sin_val = sin(theta)
         cos_val = cos(theta)
         self._acceleration.set(x * cos_val - z * sin_val, y, x * sin_val + z * cos_val)

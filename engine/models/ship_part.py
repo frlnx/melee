@@ -12,7 +12,6 @@ class ShipPartModel(BaseModel):
         super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._name = name
         self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
-        r_yaw = radians(self.yaw)
         self.button = part_spec.get('button')
         self.keyboard = part_spec.get('keyboard')
         self.mouse = part_spec.get('mouse', [])
@@ -30,7 +29,7 @@ class ShipPartModel(BaseModel):
         self._connected_parts = set()
         self._working = False
         self.update_working_status()
-        self.degrees_spin_at_full_thrust = self._degrees_spin_at_full_thrust()
+        self.full_torque = self._full_torque()
 
     @property
     def working(self):
@@ -74,12 +73,12 @@ class ShipPartModel(BaseModel):
         self.axis = axis
 
     def set_input_value(self, value):
-        self.set_material_value(value)
         self.input_value = value
         thrust = self.input_value * self.state_spec.get('thrust generated', 0)
-        torque_yaw = self.degrees_spin_at_full_thrust * thrust
+        torque_yaw = self.full_torque * thrust
         self.set_local_acceleration(0, 0, -thrust)
         self.set_torque(0, torque_yaw, 0)
+        self.set_material_value(value)
 
     def timers(self, dt):
         super().timers(dt)
@@ -132,6 +131,7 @@ class ShipPartModel(BaseModel):
 
     def update(self):
         super(ShipPartModel, self).update()
+        self.full_torque = self._full_torque()
 
     @property
     def diff_yaw_of_force_to_pos(self):
@@ -141,7 +141,7 @@ class ShipPartModel(BaseModel):
     def radians_force_is_lateral_to_position(self):
         return radians(self.diff_yaw_of_force_to_pos - 90)
 
-    def _degrees_spin_at_full_thrust(self):
+    def _full_torque(self):
         amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position)
-        delta_yaw_radians = atan2(amount_of_force_that_rotates, self.position.distance)
-        return degrees(delta_yaw_radians)
+        full_torque_radians = atan2(amount_of_force_that_rotates, self.position.distance)
+        return degrees(full_torque_radians)
