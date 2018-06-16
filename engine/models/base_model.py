@@ -1,6 +1,6 @@
 from typing import Callable
 from uuid import uuid4
-from math import hypot
+from math import cos, sin, radians
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
 from engine.physics.polygon import Polygon
@@ -109,17 +109,15 @@ class BaseModel(PositionalModel):
         self._alive = True
         self._collisions_to_solve = set()
 
-    def interception_speed(self, other_position: MutableOffsets, other_movement: MutableOffsets):
-        delta_position = self.position - other_position
-        delta_movement = self.movement - other_movement
-        interception_speed = 0
-        for pd, md in zip(delta_position, delta_movement):
-            if pd > 0 == md > 0:
-                interception_speed = hypot(interception_speed, md)
-        return interception_speed
+    def interception_vector(self, other_position: MutableOffsets, other_movement: MutableOffsets):
+        delta_position = self._position - other_position
+        delta_movement = self._movement - other_movement
+        interception_xyz = [md if pd > 0 == md > 0 else 0 for pd, md in zip(delta_position, delta_movement)]
+        interception_vector = MutableOffsets(*interception_xyz)
+        return interception_vector
 
-    def energy_on_impact_relative_to(self, interception_speed):
-        return self.mass * interception_speed
+    def energy_on_impact_relative_to(self, interception_vector):
+        return self.mass * interception_vector.distance
 
     def __repr__(self):
         return "{} {}".format(self.__class__.__name__, self.uuid)
@@ -246,10 +244,16 @@ class BaseModel(PositionalModel):
         if self._movement.set(dx, dy, dz):
             self.update()
 
-    def add_movement(self, *xyz: list):
+    def add_movement(self, *xyz):
         self._movement += xyz
         if xyz != (0, 0, 0):
             self.update()
+
+    def add_local_movement(self, x: float, y: float, z: float):
+        theta = radians(self.yaw)
+        sin_val = sin(theta)
+        cos_val = cos(theta)
+        self.add_movement(x * cos_val - z * sin_val, y, x * sin_val + z * cos_val)
 
     def set_spin(self, *pitch_yaw_roll):
         if self._spin.set(*pitch_yaw_roll):
@@ -267,6 +271,18 @@ class BaseModel(PositionalModel):
     @property
     def acceleration(self):
         return self._acceleration
+
+    def set_local_acceleration(self, x: float, y: float, z: float):
+        theta = radians(self.yaw)
+        sin_val = sin(theta)
+        cos_val = cos(theta)
+        self._acceleration.set(x * cos_val - z * sin_val, y, x * sin_val + z * cos_val)
+
+    def set_torque(self, *xyz):
+        self._torque.set(*xyz)
+
+    def add_torque(self, *xyz):
+        self._torque += xyz
 
     @property
     def spin(self):

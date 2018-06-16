@@ -1,5 +1,7 @@
 from typing import Set
 
+from functools import reduce
+
 from engine.models.composite_model import CompositeModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees

@@ -13,21 +13,9 @@ class ShipPartController(BaseController):
         super().__init__(model, gamepad)
         self._model = model
         self._spawn_func = spawn_func
-        yaw = self._model.rotation[1]
-        self._force_vector = MutableForce(self._model.position,
-                                          MutableOffsets(-sin(radians(yaw)), 0, -cos(radians(yaw))))
-        self._model.observe(self.model_changed)
-
-    def model_changed(self):
-        yaw = self._model.rotation[1]
-        self._force_vector.set_forces(-sin(radians(yaw)), 0, -cos(radians(yaw)))
-
-    @property
-    def moment_force(self):
-        return self._force_vector
 
     def update(self, dt):
-        super().update(dt)
+        self._model.timers(dt)
         input_value = (self._model.button in self._gamepad.buttons) + \
                       (self._model.keyboard in self._gamepad.buttons) + \
                       self._gamepad.axis.get(self._model.axis, 0.0)
@@ -46,11 +34,9 @@ class ShipPartController(BaseController):
             pass
         elif self._model.state_transition_possible_to(new_state):
             self._model.set_state(new_state)
-            self._force_vector.set_force(input_value * self._model.state_spec.get('thrust generated', 0))
             self._model.set_input_value(input_value)
             if self._model.state_spec.get('spawn', False):
                 self.spawn()
-
 
     def spawn(self):
         if not self._model.spawn:
@@ -58,7 +44,7 @@ class ShipPartController(BaseController):
 
     @property
     def spin(self):
-        return Degrees(0, self._force_vector.delta_yaw, 0)
+        return Degrees(0, self._model.delta_yaw, 0)
 
     @property
     def yaw(self):

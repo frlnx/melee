@@ -1,7 +1,7 @@
-from math import sin, radians, cos
+from math import radians, cos, atan2, degrees
 
 from engine.models.base_model import BaseModel
-from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
+from engine.physics.force import MutableOffsets, MutableDegrees
 
 
 class ShipPartModel(BaseModel):
@@ -13,7 +13,6 @@ class ShipPartModel(BaseModel):
         self._name = name
         self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
         r_yaw = radians(self.yaw)
-        self._force_vector = MutableForce(self.position, MutableOffsets(-sin(r_yaw), 0, -cos(r_yaw)))
         self.button = part_spec.get('button')
         self.keyboard = part_spec.get('keyboard')
         self.mouse = part_spec.get('mouse', [])
@@ -31,6 +30,7 @@ class ShipPartModel(BaseModel):
         self._connected_parts = set()
         self._working = False
         self.update_working_status()
+        self.degrees_spin_at_full_thrust = self._degrees_spin_at_full_thrust()
 
     @property
     def working(self):
@@ -76,6 +76,10 @@ class ShipPartModel(BaseModel):
     def set_input_value(self, value):
         self.set_material_value(value)
         self.input_value = value
+        thrust = self.input_value * self.state_spec.get('thrust generated', 0)
+        torque_yaw = self.degrees_spin_at_full_thrust * thrust
+        self.set_local_acceleration(0, 0, -thrust)
+        self.set_torque(0, torque_yaw, 0)
 
     def timers(self, dt):
         super().timers(dt)
@@ -125,3 +129,19 @@ class ShipPartModel(BaseModel):
 
     def __repr__(self):
         return "{} @{}".format(self.name, self.position.xyz)
+
+    def update(self):
+        super(ShipPartModel, self).update()
+
+    @property
+    def diff_yaw_of_force_to_pos(self):
+        return (((self.rotation.yaw % 360) - (self.position.direction.yaw % 360) + 180) % 360) - 180
+
+    @property
+    def radians_force_is_lateral_to_position(self):
+        return radians(self.diff_yaw_of_force_to_pos - 90)
+
+    def _degrees_spin_at_full_thrust(self):
+        amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position)
+        delta_yaw_radians = atan2(amount_of_force_that_rotates, self.position.distance)
+        return degrees(delta_yaw_radians)

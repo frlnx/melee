@@ -81,12 +81,6 @@ class ShipController(BaseController):
 
     def update(self, dt):
         super().update(dt)
-        for sub_controller in self.sub_controllers:
-            self._model.add_spin(*sub_controller.spin / self._model.inertia)
-            forces = sub_controller.moment_force.rotated(-self._model.rotation.yaw)
-            forces = forces.translation_forces() / self._model.mass
-            self._model.add_movement(*forces)
-
         buttons_done = set()
         for button in self._gamepad.buttons:
             if button in self._button_config:
@@ -101,6 +95,8 @@ class ShipController(BaseController):
         if self._model.movement.distance == 0 and other_model.movement.distance == 0:
             return
         if isinstance(other_model, PlasmaModel):
+            interception_vector = self._model.interception_vector(other_model.position, other_model.movement)
+
             parts = self._model.parts_intersected_by(other_model)
             for part in parts:
                 self.destroy_part(part)
@@ -109,6 +105,7 @@ class ShipController(BaseController):
         super(ShipController, self).solve_collision(other_model)
 
     def collide_with(self, other_model: BaseModel):
+        interception_vector = self._model.interception_vector(other_model.position, other_model.movement)
         if isinstance(other_model, PlasmaModel):
             parts = self._model.parts_intersected_by(other_model)
             for part in parts:

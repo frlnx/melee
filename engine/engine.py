@@ -4,6 +4,7 @@ from engine.models.factories import ShipModelFactory, AsteroidModelFactory
 from engine.controllers.factories import ControllerFactory
 from engine.pigtwisted import TwistedEventLoop
 from engine.input_handlers import InputHandler
+from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
 
 from collections import defaultdict
 import random
@@ -187,3 +188,17 @@ class Engine(TwistedEventLoop):
         for c1, c2 in combinations(self.controllers, 2):
             c1.solve_collision(c2._model)
             c2.solve_collision(c1._model)
+
+    def register_collisions(self):
+        for m1, m2 in combinations(self.models.values(), 2):
+            assert isinstance(m1, BaseModel)
+            assert isinstance(m2, BaseModel)
+            intersects, x, y = m1.intersection_point(m2)
+            if intersects:
+                m1_vector = m1.interception_vector(m2.position, m2.movement)
+                m2_vector = -m1_vector
+                m1_mass_quota = m2.mass / m1.mass
+                m2_mass_quota = m1.mass / m2.mass
+                m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
+                m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
+                m1.add_collision()

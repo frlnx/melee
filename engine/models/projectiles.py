@@ -11,8 +11,8 @@ class PlasmaModel(BaseModel):
         self._ttl = 4
         self._explosive_energy = 400
 
-    def energy_on_impact_relative_to(self, interception_speed):
-        return self.mass * interception_speed + self.explosive_energy
+    def energy_on_impact_relative_to(self, interception_vector):
+        return self.mass * interception_vector.distance + self._explosive_energy
 
     @property
     def explosive_energy(self):

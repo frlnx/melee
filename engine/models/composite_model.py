@@ -4,6 +4,7 @@ from typing import Set
 from shapely.geometry import MultiPoint
 
 from engine.models.base_model import BaseModel
+from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 
@@ -27,7 +28,7 @@ class CompositeModel(BaseModel):
         return self._parts.get((int(round(x)), int(round(z))), None)
 
     @property
-    def parts(self) -> Set[BaseModel]:
+    def parts(self) -> Set[ShipPartModel]:
         return set(self._parts.values())
 
     def __getstate__(self):
@@ -90,3 +91,17 @@ class CompositeModel(BaseModel):
             if part:
                 return [part]
         return []
+
+    @property
+    def acceleration(self):
+        self._acceleration.set(0, 0, 0)
+        for part in self.parts:
+            self._acceleration += part.acceleration
+        return self._acceleration
+
+    @property
+    def torque(self):
+        self._torque.set(0, 0, 0)
+        for part in self.parts:
+            self._torque += part.torque
+        return self._torque
