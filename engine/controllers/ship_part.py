@@ -1,10 +1,8 @@
-from math import sin, cos, radians
 from typing import Callable
 
 from engine.controllers.base_controller import BaseController
 from engine.input_handlers import InputHandler
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import MutableOffsets, MutableForce, Degrees
 
 
 class ShipPartController(BaseController):
@@ -41,10 +39,6 @@ class ShipPartController(BaseController):
     def spawn(self):
         if not self._model.spawn:
             self._model.set_spawn(self._spawn_func())
-
-    @property
-    def spin(self):
-        return Degrees(0, self._model.delta_yaw, 0)
 
     @property
     def yaw(self):

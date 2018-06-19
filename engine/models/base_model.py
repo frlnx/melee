@@ -1,6 +1,6 @@
-from typing import Callable
-from uuid import uuid4
 from math import cos, sin, radians
+from typing import Callable, Set
+from uuid import uuid4
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
 from engine.physics.polygon import Polygon
@@ -109,12 +109,9 @@ class BaseModel(PositionalModel):
         self._alive = True
         self._collisions_to_solve = set()
 
-    def interception_vector(self, other_position: MutableOffsets, other_movement: MutableOffsets):
-        delta_position = self._position - other_position
-        delta_movement = self._movement - other_movement
-        interception_xyz = [md if pd > 0 == md > 0 else 0 for pd, md in zip(delta_position, delta_movement)]
-        interception_vector = MutableOffsets(*interception_xyz)
-        return interception_vector
+    @property
+    def collisions_to_solve(self) -> Set[MutableForce]:
+        return self._collisions_to_solve
 
     def energy_on_impact_relative_to(self, interception_vector):
         return self.mass * interception_vector.distance
@@ -182,10 +179,9 @@ class BaseModel(PositionalModel):
 
     def momentum_at(self, local_coordinates: MutableOffsets) -> MutableForce:
         local_coordinates = MutableOffsets(*local_coordinates)
-        momentum = self._movement# * self.mass
+        momentum = self._movement  # * self.mass
         momentum += self.tangent_momentum_at(local_coordinates)
         momentum_at = MutableForce(local_coordinates, momentum)
-        momentum_at.set_force(1)
         return momentum_at
 
     def mutate_force_to_global(self, mf: MutableForce):
@@ -278,11 +274,22 @@ class BaseModel(PositionalModel):
         cos_val = cos(theta)
         self._acceleration.set(x * cos_val - z * sin_val, y, x * sin_val + z * cos_val)
 
+    def add_acceleration(self, *xyz):
+        self._acceleration += xyz
+
     def set_torque(self, *xyz):
         self._torque.set(*xyz)
 
     def add_torque(self, *xyz):
         self._torque += xyz
+
+    def add_collision(self, force: MutableForce):
+        self.mutate_force_to_local(force)
+        self._movement += force.forces
+        self._spin += (0, force.delta_yaw, 0)
+
+    def reset_collisions(self):
+        self._collisions_to_solve.clear()
 
     @property
     def spin(self):

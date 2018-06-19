@@ -1,10 +1,8 @@
 from typing import Set
 
-from functools import reduce
-
 from engine.models.composite_model import CompositeModel
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
 from engine.physics.polygon import Polygon
 
 
@@ -45,3 +43,4 @@ class ShipModel(CompositeModel):
     @property
     def fuel_percentage(self):
         return 1.00
+

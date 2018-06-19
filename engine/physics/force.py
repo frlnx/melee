@@ -1,5 +1,6 @@
 from __future__ import division
 from math import sqrt, atan2, cos, sin, degrees, radians
+from collections import namedtuple
 
 from numpy import cross, dot
 
@@ -210,13 +211,13 @@ class Force(object):
         self.yaw_momentum = cos(self.radians_force_is_lateral_to_position())
         self._force_multiplier = 1.0
 
-    def __add__(self, other):
+    def __add__(self, other) -> "Force":
         return self.__class__(self.position + other.position, self.forces + other.forces)
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> "Force":
         return self.__class__(self.position * 1, self.forces * other)
 
-    def __neg__(self):
+    def __neg__(self) -> "Force":
         return self.__class__(self.position.__copy__(), -self.forces)
 
     def diff_yaw_of_force_to_pos(self):
@@ -254,29 +255,21 @@ class MutableForce(Force):
     def __init__(self, position: MutableOffsets, forces: MutableOffsets):
         super().__init__(position, forces)
         self.position = position
-        self._original_forces = MutableOffsets(*forces)
         self.forces = forces
-        self.set_force(0)
 
     def set_forces(self, *xyz):
-        self._original_forces.set(*xyz)
         x, y, z = xyz
-        self.forces.set(x * self._force_multiplier, y * self._force_multiplier, z * self._force_multiplier)
+        self.forces.set(x, y, z)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other) -> "MutableForce":
         self.position += other.position
         self.forces += other.forces
         return self
 
-    def __imul__(self, other):
+    def __imul__(self, other) -> "MutableForce":
         self.position *= other
         self.forces *= other
         return self
-
-    def set_force(self, force):
-        x, y, z = self._original_forces
-        self._force_multiplier = force
-        self.forces.set(x * force, y * force, z * force)
 
     def translation_forces(self) -> MutableOffsets:
         return self.forces

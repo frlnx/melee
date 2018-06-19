@@ -14,7 +14,6 @@ class TestHorizontalEngineAt135DegreesOff(object):
         model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 90, 0])
         self.gamepad = InputHandler()
         self.target = controller_factory.manufacture(model, self.gamepad)
-        self.target._force_vector.set_force(1.0)
 
     def etst_engine_force_offsets_is_left(self):
         x, y, z = self.target.moment_force.forces
@@ -39,7 +38,6 @@ class TestHorizontalEngineAt45DegreesOff(object):
         model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 0, 0])
         self.gamepad = InputHandler()
         self.target = controller_factory.manufacture(model, self.gamepad)
-        self.target._force_vector.set_force(1.0)
 
     def test_engine_force_offsets_is_up(self):
         x, y, z = self.target.moment_force.forces

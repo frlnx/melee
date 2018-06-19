@@ -5,7 +5,7 @@ from shapely.geometry import MultiPoint
 
 from engine.models.base_model import BaseModel
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
 from engine.physics.polygon import Polygon
 
 
@@ -106,3 +106,7 @@ class CompositeModel(BaseModel):
         for part in self.parts:
             self._torque += part.torque
         return self._torque
+
+    def add_collision(self, force: MutableForce):
+        self.mutate_force_to_local(force)
+        self._collisions_to_solve.add(force)

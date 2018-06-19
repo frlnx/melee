@@ -114,14 +114,12 @@ class TestApplyForce(object):
 
     def test_force_applied_to_center_of_mass_does_not_rotate(self):
         force = MutableForce(MutableOffsets(2, 0, 0), MutableOffsets(-1, 0, 0))
-        force.set_force(1.0)
         self.target.apply_global_force(force)
         x, y, z = self.target.spin
         assert (round(x, 2), round(y, 2), round(z, 2)) == (0, 0, 0)
 
     def test_force_applied_to_center_of_mass_translates(self):
         force = MutableForce(MutableOffsets(2, 0, 0), MutableOffsets(-1, 0, 0))
-        force.set_force(1.0)
         self.target.apply_global_force(force)
         x, y, z = self.target.movement
         assert (round(x, 1), round(y, 1), round(z, 1)) == (-0.1, 0, 0)
@@ -131,7 +129,6 @@ class TestApplyForce(object):
         z_offset = -1
         degrees_at_offset = round(degrees(atan2(z_offset, x_offset)), 2)
         force = MutableForce(MutableOffsets(x_offset, 0, 0), MutableOffsets(0, 0, z_offset))
-        force.set_force(1.0)
         assert force.diff_yaw_of_force_to_pos() == 90
         assert round(force.delta_yaw, 2) == degrees_at_offset
         self.target.apply_global_force(force)
@@ -145,7 +142,6 @@ class TestForceTranslationGlobalLocal(object):
     def setup(self):
         self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10))
         self.target = MutableForce(MutableOffsets(9, 0, 9), MutableOffsets(0, 0, -1))
-        self.target.set_force(1.0)
         self.ship_model.mutate_force_to_local(self.target)
 
     def test_force_position_is_minus_one_in_x_and_z(self):
@@ -162,7 +158,6 @@ class TestForceTranslationGlobalLocalWithRotation(object):
     def setup(self):
         self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10), rotation=(0, 45, 0))
         self.target = MutableForce(MutableOffsets(9, 0, 9), MutableOffsets(0, 0, -1))
-        self.target.set_force(1.0)
         self.ship_model.mutate_force_to_local(self.target)
 
     def test_force_position_is_minus_one_in_x_and_z(self):
@@ -179,7 +174,6 @@ class TestForceTranslationLocalGlobal(object):
     def setup(self):
         self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10))
         self.target = MutableForce(MutableOffsets(-1, 0, -1), MutableOffsets(0, 0, -1))
-        self.target.set_force(1.0)
         self.ship_model.mutate_force_to_global(self.target)
 
     def test_force_position_is_nine_in_x_and_z(self):
@@ -196,7 +190,6 @@ class TestForceTranslationLocalGlobalWithRotation(object):
     def setup(self):
         self.ship_model = model_factory.manufacture("ship", position=(10, 0, 10), rotation=(0, 45, 0))
         self.target = MutableForce(MutableOffsets(-1, 0, -1), MutableOffsets(0, 0, -1))
-        self.target.set_force(1.0)
         self.ship_model.mutate_force_to_global(self.target)
 
     def test_force_position_is_minus_one_in_x_and_z(self):

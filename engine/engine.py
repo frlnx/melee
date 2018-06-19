@@ -161,7 +161,7 @@ class Engine(TwistedEventLoop):
                 decays.append(controller)
         for decaying_controller in decays:
             self.decay_with_callback(decaying_controller)
-        self.solve_collisions()
+        self.register_collisions()
         for model in spawns:
             self.spawn_with_callback(model)
 
@@ -195,10 +195,11 @@ class Engine(TwistedEventLoop):
             assert isinstance(m2, BaseModel)
             intersects, x, y = m1.intersection_point(m2)
             if intersects:
-                m1_vector = m1.interception_vector(m2.position, m2.movement)
+                m1_vector = m1.movement - m2.movement
                 m2_vector = -m1_vector
                 m1_mass_quota = m2.mass / m1.mass
                 m2_mass_quota = m1.mass / m2.mass
                 m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
                 m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
-                m1.add_collision()
+                m1.add_collision(m1_force)
+                m2.add_collision(m2_force)
