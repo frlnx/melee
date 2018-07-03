@@ -9,8 +9,8 @@ from pyglet.graphics import draw, GL_LINES, GL_QUADS
 
 
 class ShipView(BaseView):
-    def __init__(self, model: ShipModel, mesh=None):
-        super().__init__(model, mesh=mesh)
+    def __init__(self, model: ShipModel, mesh=None, explosion_draw_function_factory=None):
+        super().__init__(model, mesh=mesh, explosion_draw_function_factory=explosion_draw_function_factory)
         self._model = model
         coords = []
         _box_coords = [(-0.1, -10., -0.1), (0.1, -10., -0.1), (0.1, -10., 0.1), (-0.1, -10., 0.1)]

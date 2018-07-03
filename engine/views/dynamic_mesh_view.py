@@ -15,9 +15,9 @@ class DynamicMeshView(BaseView):
         faces = []
         point_seven = (0.7, 0.7, 0.7)
         zeroes = (0, 0, 0)
-        material = OpenGLTexturedMaterial(diffuse=point_seven, emissive=zeroes, ambient=point_seven, shininess=0.0,
-                                          specular=zeroes, alpha=1.0, name="Rock Surface",
-                                          texture_file_name="ROCKS001.TGA")
+        material = OpenGLTexturedMaterial(texture_file_name="ROCKS001.TGA", diffuse=point_seven, ambient=point_seven,
+                                          specular=zeroes, emissive=zeroes, shininess=0.0, name="Rock Surface",
+                                          alpha=1.0)
         bb = model.bounding_box
         for line_nr, line in enumerate(bb.lines):
             middle_factor = sin(radians(45))

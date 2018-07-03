@@ -12,8 +12,9 @@ class BaseView(object):
     _to_cfloat_array = ctypes.c_float * 4
     _to_cfloat_three_array = ctypes.c_float * 3
 
-    def __init__(self, model: BaseModel, mesh=None):
+    def __init__(self, model: BaseModel, mesh=None, explosion_draw_function_factory=None):
         self._model = model
+        self._explosion_draw_function_factory = explosion_draw_function_factory
         self._sub_views = set()
         self._mesh_scale = self.to_cfloat_array(1., 1., 1.)
         self._diffuse = self.to_cfloat_array(3., 3., 3., 1.)
@@ -62,6 +63,9 @@ class BaseView(object):
             self._draw = self._draw_mesh
         else:
             self._draw = self._draw_nothing
+
+    def replace_mesh_with_explosion(self):
+        self._draw = self._explosion_draw_function_factory()
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)

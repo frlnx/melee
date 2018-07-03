@@ -1,9 +1,11 @@
 from pyglet.gl import *
 import pyglet
 from ctypes import c_float
+from itertools import chain
 from collections import defaultdict
 from typing import List, Tuple, Callable
 import os
+from math import cos, sin, radians
 
 from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
 from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
@@ -11,11 +13,14 @@ from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
 
 class OpenGLMesh(WaveFrontObject):
     point_flag_map = {3: GL_TRIANGLES, 4: GL_QUADS}
+    draw_mode_data_points = {GL_T2F_N3F_V3F: 8, GL_N3F_V3F: 6}
+    cull_face = GL_BACK
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name, group)
         self.n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
         self.t2f_n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
+        self.faces_by_material_n_points = defaultdict(list)
         self.materials = {face.material.name: face.material for face in faces}
         self.materials.update({face.material.name: face.material for face in textured_faces})
         self._sort_faces()
@@ -38,7 +43,7 @@ class OpenGLMesh(WaveFrontObject):
     def __getstate__(self):
         self._convert_types(self._revert_from_c_float_arr)
         d = {k: val for k, val in self.__dict__.items()}
-        #self._convert_types(self._convert_c_float_arr)
+        # self._convert_types(self._convert_c_float_arr)
         return d
 
     def __setstate__(self, state):
@@ -50,10 +55,12 @@ class OpenGLMesh(WaveFrontObject):
             n_points = min(face.n_vertices, 5)
             material = self.materials[face.material.name]
             self.n3f_v3f_by_material_n_points[material][n_points] += face.n3f_v3f
+            self.faces_by_material_n_points[(face.material.name, n_points, face.draw_mode)].append(face)
         for face in self._textured_faces:
             n_points = min(face.n_vertices, 5)
             material = self.materials[face.material.name]
             self.t2f_n3f_v3f_by_material_n_points[material][n_points] += face.t2f_n3f_v3f
+            self.faces_by_material_n_points[(face.material.name, n_points, face.draw_mode)].append(face)
 
     def _convert_types(self, converter: Callable):
         n3f_v3f_by_material_n_points = defaultdict(dict)
@@ -80,28 +87,46 @@ class OpenGLMesh(WaveFrontObject):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT)
         glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
+        glCullFace(self.cull_face)
         glDisable(GL_TEXTURE_2D)
-        for material, n_points_dict in self.n3f_v3f_by_material_n_points.items():
-            material.set_material()
-            for n_points, n3f_v3f in n_points_dict.items():
-                glInterleavedArrays(GL_N3F_V3F, 0, n3f_v3f)
-                glDrawArrays(self.point_flag_map[n_points], 0, int(len(n3f_v3f) / 6))
 
-        #glEnable(GL_TEXTURE_2D)
-        for material, n_points_dict in self.t2f_n3f_v3f_by_material_n_points.items():
+        for (material_name, n_points, draw_mode), faces in self.faces_by_material_n_points.items():
+            material = self.materials[material_name]
             material.set_material()
-            for n_points, t2f_n3f_v3f in n_points_dict.items():
-                glInterleavedArrays(GL_T2F_N3F_V3F, 0, t2f_n3f_v3f)
-                glDrawArrays(self.point_flag_map[n_points], 0, int(len(t2f_n3f_v3f) / 8))
+            draw_data = list(chain(*[face.draw_data for face in faces]))
+            data_points = int(len(faces) * n_points)
+            c_arr = c_float * len(draw_data)
+            c_draw_data = c_arr(*draw_data)
+            glInterleavedArrays(draw_mode, 0, c_draw_data)
+            glDrawArrays(self.point_flag_map[n_points], 0, data_points)
+
+        #for material, n_points_dict in self.n3f_v3f_by_material_n_points.items():
+        #    material.set_material()
+        #    for n_points, n3f_v3f in n_points_dict.items():
+        #        glInterleavedArrays(GL_N3F_V3F, 0, n3f_v3f)
+        #        glDrawArrays(self.point_flag_map[n_points], 0, int(len(n3f_v3f) / 6))
+
+        ## glEnable(GL_TEXTURE_2D)
+        #for material, n_points_dict in self.t2f_n3f_v3f_by_material_n_points.items():
+        #    material.set_material()
+        #    for n_points, t2f_n3f_v3f in n_points_dict.items():
+        #        glInterleavedArrays(GL_T2F_N3F_V3F, 0, t2f_n3f_v3f)
+        #        glDrawArrays(self.point_flag_map[n_points], 0, int(len(t2f_n3f_v3f) / 8))
         glPopAttrib()
         glPopClientAttrib()
 
+
 class OpenGLFace(Face):
+    draw_mode = GL_N3F_V3F
+
     def __init__(self, vertices: list, normals: list, material: 'OpenGLMaterial'):
         super().__init__(vertices, normals, material)
         self.n3f_v3f = self._n3f_v3f()
         self.n_vertices = len(self._vertices)
+
+    @property
+    def draw_data(self):
+        return self.n3f_v3f
 
     def _n3f_v3f(self):
         n3f_v3f = []
@@ -112,10 +137,16 @@ class OpenGLFace(Face):
 
 
 class OpenGLTexturedFace(TexturedFace):
+    draw_mode = GL_T2F_N3F_V3F
+
     def __init__(self, vertices: list, texture_coords: list, normals: list, material: 'OpenGLTexturedMaterial'):
         super().__init__(vertices, texture_coords, normals, material)
         self.t2f_n3f_v3f = self._t2f_n3f_v3f()
         self.t2f_v3f = self._t2f_v3f()
+
+    @property
+    def draw_data(self):
+        return self.t2f_n3f_v3f
 
     def _t2f_n3f_v3f(self):
         t2f_n3f_v3f = []
@@ -134,9 +165,14 @@ class OpenGLTexturedFace(TexturedFace):
 
 
 class OpenGLMaterial(Material):
-    def __init__(self, diffuse: Tuple[float, float, float], ambient: Tuple[float, float, float],
-                 specular: Tuple[float, float, float], emissive: Tuple[float, float, float], shininess: float,
-                 name: str, alpha: float=1.0):
+    def __init__(self, diffuse: Tuple[float, float, float] = None, ambient: Tuple[float, float, float] = None,
+                 specular: Tuple[float, float, float] = None, emissive: Tuple[float, float, float] = None,
+                 shininess: float = 0.0, name: str = None, alpha: float = 1.0):
+        diffuse = diffuse or (0, 0, 0)
+        ambient = ambient or (0, 0, 0)
+        specular = specular or (0, 0, 0)
+        emissive = emissive or (0, 0, 0)
+        name = name or "Unnamed Material"
         super().__init__(diffuse, ambient, specular, emissive, shininess, name, alpha)
         emissive = [e * d for e, d in zip(emissive, diffuse)]
         ambient = [a * d for a, d in zip(ambient, diffuse)]
@@ -152,7 +188,7 @@ class OpenGLMaterial(Material):
         self.original_opengl_shininess = self.opengl_shininess
 
     def update(self, **kwargs):
-        ones = (1, 1, 1, 1)
+        ones = (1, 1, 1, kwargs.get('alpha', 1))
         opengl_diffuse = [a * b for a, b in zip(kwargs.get('diffuse', ones), self.original_opengl_diffuse)]
         self.opengl_diffuse = self.to_c_arr(opengl_diffuse)
         self.opengl_ambient = self.to_c_arr((a * b for a, b in zip(kwargs.get('ambient', ones), self.original_opengl_ambient)))
@@ -166,7 +202,7 @@ class OpenGLMaterial(Material):
 
     def __getstate__(self):
         d = {}
-        for k, val in  self.__dict__.items():
+        for k, val in self.__dict__.items():
             if 'opengl' in k and 'opengl_shininess' not in k:
                 d[k] = list(val)
             else:
@@ -193,7 +229,7 @@ class OpenGLMaterial(Material):
 
     @staticmethod
     def _convert_zero_to_one_values_into_minus_one_to_one_values(value: float) -> float:
-        return value #* 2 - 1
+        return value  # * 2 - 1
 
     def set_material(self):
         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, self.opengl_diffuse)
@@ -207,9 +243,11 @@ class OpenGLMaterial(Material):
 
 class OpenGLTexturedMaterial(OpenGLMaterial):
     textures = {}
-    def __init__(self, diffuse: Tuple[float, float, float], ambient: Tuple[float, float, float],
-                 specular: Tuple[float, float, float], emissive: Tuple[float, float, float], shininess: float,
-                 texture_file_name: str, name: str, alpha: float):
+
+    def __init__(self, texture_file_name: str, diffuse: Tuple[float, float, float] = None,
+                 ambient: Tuple[float, float, float] = None, specular: Tuple[float, float, float] = None,
+                 emissive: Tuple[float, float, float] = None, shininess: float = 0.0, name: str = None,
+                 alpha: float = 1.0):
         super().__init__(diffuse, ambient, specular, emissive, shininess, name, alpha)
         self.texture_file_name = texture_file_name
         self.texture = self.load_texture()
@@ -237,7 +275,7 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
 
     def __getstate__(self):
         d = super(OpenGLTexturedMaterial, self).__getstate__()
-        #del d['textures']
+        # del d['textures']
         d['texture'] = None
         return d
 
@@ -258,9 +296,10 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
 
 
 class OpenGLWaveFrontParser(ObjectParser):
-    def __init__(self):
-        super().__init__(object_class=OpenGLMesh, face_class=OpenGLFace, textured_face_class=OpenGLTexturedFace,
+    def __init__(self, object_class=OpenGLMesh):
+        super().__init__(object_class=object_class, face_class=OpenGLFace, textured_face_class=OpenGLTexturedFace,
                          material_class=OpenGLMaterial, textured_material_class=OpenGLTexturedMaterial)
+
 
 class OpenGLWaveFrontFactory(WavefrontObjectFactory):
 

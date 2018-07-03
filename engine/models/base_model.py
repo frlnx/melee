@@ -1,5 +1,6 @@
 from math import cos, sin, radians
 from typing import Callable, Set
+from collections import defaultdict
 from uuid import uuid4
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
@@ -12,36 +13,29 @@ class PositionalModel(object):
         self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
         self._mesh_name = name
         self._name = name
-        self._observers = set()
+        self._action_observers = defaultdict(set)
         self._material_observers = set()
 
     @property
     def name(self):
         return self._name
 
-    def observe(self, func: Callable):
-        self._observers.add(func)
+    def observe(self, func: Callable, action=None):
+        self._action_observers[action].add(func)
 
-    def _callback(self):
-        for observer in self._observers:
+    def _callback(self, action=None):
+        for observer in self._action_observers[action]:
             observer()
 
-    def unobserve(self, func: Callable):
+    def unobserve(self, func: Callable, action=None):
         try:
-            self._observers.remove(func)
+            self._action_observers[action].remove(func)
         except KeyError:
             pass
 
     def set_material_value(self, value):
         self.material_value = value
-        self._material_callback()
-
-    def _material_callback(self):
-        for callback in self._material_observers:
-            callback()
-
-    def observe_material(self, callback):
-        self._material_observers.add(callback)
+        self._callback("material")
 
     @property
     def mesh_name(self):
@@ -49,7 +43,7 @@ class PositionalModel(object):
 
     @property
     def position(self):
-        return (self.x, self.y, self.z)
+        return self.x, self.y, self.z
 
     @property
     def x(self):
@@ -95,8 +89,6 @@ class BaseModel(PositionalModel):
         self._spin = spin
         self._acceleration = acceleration
         self._torque = torque
-        self.animation = None
-        self.animation_value = 0
         self._bounding_box = bounding_box
         self._time_consumed = 0
         try:
@@ -107,7 +99,13 @@ class BaseModel(PositionalModel):
             self.inertia = 1
         self.update_needed = False
         self._alive = True
+        self._exploding = False
+        self._explosion_time = 0.0
         self._collisions_to_solve = set()
+
+    @property
+    def destructive_energy(self):
+        return 0
 
     @property
     def collisions_to_solve(self) -> Set[MutableForce]:
@@ -125,12 +123,25 @@ class BaseModel(PositionalModel):
         d['_collisions_to_solve'] = set()
         return d
 
+    def explode(self):
+        self._exploding = True
+        self._callback("explode")
+
+    @property
+    def explosion_timer(self):
+        return self.explosion_timer
+
+    @property
+    def is_exploding(self):
+        return self._exploding
+
     @property
     def is_alive(self):
         return self._alive
 
     def set_alive(self, state):
         self._alive = state
+        self._callback("alive")
 
     @property
     def data_dict(self):
@@ -150,6 +161,10 @@ class BaseModel(PositionalModel):
 
     def timers(self, dt):
         self._time_consumed += dt
+        if self.is_exploding:
+            self._explosion_time += dt
+            if self.explosion_timer > 1.0:
+                self.set_alive(False)
 
     @property
     def time_consumed(self):

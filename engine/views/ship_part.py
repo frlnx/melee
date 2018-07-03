@@ -11,10 +11,10 @@ from engine.views.base_view import BaseView
 
 class ShipPartView(BaseView):
 
-    def __init__(self, model: ShipPartModel, mesh=None):
-        super().__init__(model, mesh=mesh)
+    def __init__(self, model: ShipPartModel, mesh=None, explosion_draw_function_factory=None):
+        super().__init__(model, mesh=mesh, explosion_draw_function_factory=explosion_draw_function_factory)
         self._model = model
-        self._model.observe_material(self.update_material)
+        self._model.observe(self.update_material, "material")
 
     def update_material(self):
         if self._model.material_affected:

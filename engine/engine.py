@@ -165,30 +165,6 @@ class Engine(TwistedEventLoop):
         for model in spawns:
             self.spawn_with_callback(model)
 
-    def _find_first_collision(self, dt):
-        collision_timings = defaultdict(list)
-        for m1, m2 in combinations(self.models.values(), 2):
-            momentum_delta = m1.movement - m2.movement
-            time = m1.bounding_box.intersection_time(m2.bounding_box, momentum_delta, dt)
-            if time < dt:
-                dt = time
-                collision_timings[time].append((m1, m2))
-        return dt, collision_timings[dt]
-
-    def collision_timings(self, dt):
-        collision_timings = defaultdict(list)
-        for m1, m2 in combinations(self.models.values(), 2):
-            momentum_delta = m1.movement - m2.movement
-            time = m1.bounding_box.intersection_time(m2.bounding_box, momentum_delta, dt)
-            if time < dt:
-                collision_timings[time].append((m1, m2))
-        return collision_timings
-
-    def solve_collisions(self):
-        for c1, c2 in combinations(self.controllers, 2):
-            c1.solve_collision(c2._model)
-            c2.solve_collision(c1._model)
-
     def register_collisions(self):
         for m1, m2 in combinations(self.models.values(), 2):
             assert isinstance(m1, BaseModel)

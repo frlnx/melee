@@ -30,6 +30,11 @@ class ShipPartModel(BaseModel):
         self._working = False
         self.update_working_status()
         self.full_torque = self._full_torque()
+        self._integrity = 100
+
+    @property
+    def integrity(self):
+        return self._integrity
 
     @property
     def working(self):

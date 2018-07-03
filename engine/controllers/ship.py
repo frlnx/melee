@@ -4,7 +4,6 @@ from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
 from engine.models.base_model import BaseModel
-from engine.models.projectiles import PlasmaModel
 from engine.models.ship import ShipModel
 
 
@@ -90,23 +89,3 @@ class ShipController(BaseController):
 
     def move_to(self, location):
         self._model.set_position(*location)
-
-    def solve_collision(self, other_model: BaseModel):
-        if self._model.movement.distance == 0 and other_model.movement.distance == 0:
-            return
-        if isinstance(other_model, PlasmaModel):
-            interception_vector = self._model.interception_vector(other_model.position, other_model.movement)
-
-            parts = self._model.parts_intersected_by(other_model)
-            for part in parts:
-                self.destroy_part(part)
-            if parts:
-                other_model.set_alive(False)
-        super(ShipController, self).solve_collision(other_model)
-
-    def collide_with(self, other_model: BaseModel):
-        interception_vector = self._model.interception_vector(other_model.position, other_model.movement)
-        if isinstance(other_model, PlasmaModel):
-            parts = self._model.parts_intersected_by(other_model)
-            for part in parts:
-                self.destroy_part(part)
