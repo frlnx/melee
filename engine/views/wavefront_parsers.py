@@ -10,12 +10,19 @@ class Face(object):
         self.material = material
         self.n_vertices = len(self._vertices)
 
+    def __copy__(self):
+        return self.__class__(vertices=self._vertices, normals=self._normals, material=self.material)
+
 
 class TexturedFace(Face):
 
     def __init__(self, vertices: list, texture_coords: list, normals: list, material: 'TexturedMaterial'):
         super().__init__(vertices, normals, material)
         self._texture_coords = texture_coords
+
+    def __copy__(self):
+        return self.__class__(vertices=self._vertices, normals=self._normals,
+                              material=self.material, texture_coords=self._texture_coords)
 
 
 class Material(object):

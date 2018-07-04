@@ -64,9 +64,45 @@ class ExplodingMesh(OpenGLMesh):
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name=name, group=group)
         self.explosion_time = 0
-        self._blast = self._render_polyhedra()
+        self._blast = self._render_polyhedron()
         self._blast_material_centre = OpenGLMaterial(diffuse=(.9, .65, .12), ambient=(.9, .65, .12), emissive=(.9, .65, .12), alpha=1.0)
         self._blast_material_edge = OpenGLMaterial(diffuse=(.9, .65, .12), ambient=(.9, .65, .12), emissive=(.9, .65, .12), alpha=0.0)
+
+    @staticmethod
+    def _render_polyhedron():
+        shape = []
+        top = [0, -1, 0, 0, -1, 0]
+        upper_circle = list(chain(*[(sin(radians(d)), -0.6, cos(radians(d)),
+                                     sin(radians(d)), -0.6, cos(radians(d))) for d in range(0, 360, int(360 / 5))]))
+        lower_circle = list(chain(*[(sin(radians(d)), 0.6, cos(radians(d)),
+                                     sin(radians(d)), 0.6, cos(radians(d))) for d in range(36, 396, int(360 / 5))]))
+        bottom = [0, 1, 0, 0, 1, 0]
+        for i in range(5):
+            i1 = i * 6
+            i2 = i1 + 6
+            i3 = ((i + 1) % 5) * 6
+            i4 = i3 + 6
+            up1 = upper_circle[i1:i2]
+            up2 = upper_circle[i3:i4]
+            lp1 = lower_circle[i1:i2]
+            lp2 = lower_circle[i3:i4]
+
+            shape += top
+            shape += up1
+            shape += up2
+
+            shape += up1
+            shape += lp1
+            shape += up2
+
+            shape += lp1
+            shape += lp2
+            shape += up2
+
+            shape += lp1
+            shape += bottom
+            shape += lp2
+        return shape
 
     @property
     def blast_interleaved_arrays(self):
@@ -83,20 +119,6 @@ class ExplodingMesh(OpenGLMesh):
 
     def timer(self, dt):
         self.explosion_time += dt
-        new_n3f_v3f = {}
-        for material, n_points_dict in self.n3f_v3f_by_material_n_points.items():
-            new_n_points_dict = {}
-            for n_points, n3f_v3f in n_points_dict.items():
-                t_n3f_v3f = []
-                for i in range(0, len(n3f_v3f), 6):
-                    nx, ny, nz, vx, vy, vz = n3f_v3f[i:i+6]
-                    t_n3f_v3f += [nx, ny, nz,
-                                  vx + nx * 0.01,
-                                  vy + ny * 0.01,
-                                  vz + nz * 0.01]
-                new_n_points_dict[n_points] = self._convert_c_float_arr(t_n3f_v3f)
-            new_n3f_v3f[material] = new_n_points_dict
-        self.n3f_v3f_by_material_n_points = new_n3f_v3f
         self._blast_material_centre.update(alpha=max(0, 1. - sqrt(self.explosion_time / 10)))
 
     def draw(self):

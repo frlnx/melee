@@ -3,28 +3,20 @@ import pyglet
 from ctypes import c_float
 from itertools import chain
 from collections import defaultdict
-from typing import List, Tuple, Callable
+from typing import List, Tuple
 import os
-from math import cos, sin, radians
 
 from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
 from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
 
 
 class OpenGLMesh(WaveFrontObject):
-    point_flag_map = {3: GL_TRIANGLES, 4: GL_QUADS}
-    draw_mode_data_points = {GL_T2F_N3F_V3F: 8, GL_N3F_V3F: 6}
     cull_face = GL_BACK
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name, group)
-        self.n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
-        self.t2f_n3f_v3f_by_material_n_points = defaultdict(lambda: defaultdict(list))
-        self.faces_by_material_n_points = defaultdict(list)
-        self.materials = {face.material.name: face.material for face in faces}
-        self.materials.update({face.material.name: face.material for face in textured_faces})
-        self._sort_faces()
-        self._convert_types(self._convert_c_float_arr)
+        self.materials = {face.material.name: face.material for face in faces + textured_faces}
+        self.draw_bundles = self._render_bundles()
 
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
@@ -32,56 +24,26 @@ class OpenGLMesh(WaveFrontObject):
         self.materials[material_name].update(**{material_mode: values})
 
     def __copy__(self):
-        copy = self.__class__(self._faces, self._textured_faces, name=self.name, group=self.group)
-        copy.materials = {material.name: material.__copy__() for material in self.materials.values()}
-        copy.n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj
-                                             for material, obj in copy.n3f_v3f_by_material_n_points.items()}
-        copy.t2f_n3f_v3f_by_material_n_points = {copy.materials[material.name]: obj
-                                                 for material, obj in copy.t2f_n3f_v3f_by_material_n_points.items()}
+        faces = [face.__copy__() for face in self._faces]
+        textured_faces = [face.__copy__() for face in self._textured_faces]
+        materials = {material.name: material.__copy__() for material in self.materials.values()}
+        for face in faces + textured_faces:
+            face.material = materials[face.material.name]
+        copy = self.__class__(faces, textured_faces, name=self.name, group=self.group)
         return copy
 
-    def __getstate__(self):
-        self._convert_types(self._revert_from_c_float_arr)
-        d = {k: val for k, val in self.__dict__.items()}
-        # self._convert_types(self._convert_c_float_arr)
-        return d
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._convert_types(self._convert_c_float_arr)
-
-    def _sort_faces(self):
-        for face in self._faces:
+    def _render_bundles(self):
+        faces_by_material_n_points_draw_mode = defaultdict(list)
+        for face in self._faces + self._textured_faces:
             n_points = min(face.n_vertices, 5)
-            material = self.materials[face.material.name]
-            self.n3f_v3f_by_material_n_points[material][n_points] += face.n3f_v3f
-            self.faces_by_material_n_points[(face.material.name, n_points, face.draw_mode)].append(face)
-        for face in self._textured_faces:
-            n_points = min(face.n_vertices, 5)
-            material = self.materials[face.material.name]
-            self.t2f_n3f_v3f_by_material_n_points[material][n_points] += face.t2f_n3f_v3f
-            self.faces_by_material_n_points[(face.material.name, n_points, face.draw_mode)].append(face)
-
-    def _convert_types(self, converter: Callable):
-        n3f_v3f_by_material_n_points = defaultdict(dict)
-        for material, n_points_dict in self.n3f_v3f_by_material_n_points.items():
-            for n_points, n3f_v3f_list in n_points_dict.items():
-                n3f_v3f_by_material_n_points[material][n_points] = converter(n3f_v3f_list)
-        self.n3f_v3f_by_material_n_points = n3f_v3f_by_material_n_points
-        t2f_n3f_v3f_by_material_n_points = defaultdict(dict)
-        for material, n_points_dict in self.t2f_n3f_v3f_by_material_n_points.items():
-            for n_points, t2f_n3f_v3f_list in n_points_dict.items():
-                t2f_n3f_v3f_by_material_n_points[material][n_points] = converter(t2f_n3f_v3f_list)
-        self.t2f_n3f_v3f_by_material_n_points = t2f_n3f_v3f_by_material_n_points
-
-    @staticmethod
-    def _convert_c_float_arr(values: List) -> List[c_float]:
-        c_arr = c_float * len(values)
-        return c_arr(*values)
-
-    @staticmethod
-    def _revert_from_c_float_arr(values):
-        return list(values)
+            material_n_points_draw_mode_key = (face.material.name, n_points, face.draw_mode)
+            faces_by_material_n_points_draw_mode[material_n_points_draw_mode_key].append(face)
+        bundles = set()
+        for (material_name, n_points, draw_mode), faces in faces_by_material_n_points_draw_mode.items():
+            material = self.materials[material_name]
+            bundle = OpenGLFaceBundle(faces, material, n_points, draw_mode)
+            bundles.add(bundle)
+        return bundles
 
     def draw(self):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
@@ -89,29 +51,8 @@ class OpenGLMesh(WaveFrontObject):
         glEnable(GL_CULL_FACE)
         glCullFace(self.cull_face)
         glDisable(GL_TEXTURE_2D)
-
-        for (material_name, n_points, draw_mode), faces in self.faces_by_material_n_points.items():
-            material = self.materials[material_name]
-            material.set_material()
-            draw_data = list(chain(*[face.draw_data for face in faces]))
-            data_points = int(len(faces) * n_points)
-            c_arr = c_float * len(draw_data)
-            c_draw_data = c_arr(*draw_data)
-            glInterleavedArrays(draw_mode, 0, c_draw_data)
-            glDrawArrays(self.point_flag_map[n_points], 0, data_points)
-
-        #for material, n_points_dict in self.n3f_v3f_by_material_n_points.items():
-        #    material.set_material()
-        #    for n_points, n3f_v3f in n_points_dict.items():
-        #        glInterleavedArrays(GL_N3F_V3F, 0, n3f_v3f)
-        #        glDrawArrays(self.point_flag_map[n_points], 0, int(len(n3f_v3f) / 6))
-
-        ## glEnable(GL_TEXTURE_2D)
-        #for material, n_points_dict in self.t2f_n3f_v3f_by_material_n_points.items():
-        #    material.set_material()
-        #    for n_points, t2f_n3f_v3f in n_points_dict.items():
-        #        glInterleavedArrays(GL_T2F_N3F_V3F, 0, t2f_n3f_v3f)
-        #        glDrawArrays(self.point_flag_map[n_points], 0, int(len(t2f_n3f_v3f) / 8))
+        for bundle in self.draw_bundles:
+            bundle.draw()
         glPopAttrib()
         glPopClientAttrib()
 
@@ -121,12 +62,8 @@ class OpenGLFace(Face):
 
     def __init__(self, vertices: list, normals: list, material: 'OpenGLMaterial'):
         super().__init__(vertices, normals, material)
-        self.n3f_v3f = self._n3f_v3f()
+        self.draw_data = self._n3f_v3f()
         self.n_vertices = len(self._vertices)
-
-    @property
-    def draw_data(self):
-        return self.n3f_v3f
 
     def _n3f_v3f(self):
         n3f_v3f = []
@@ -141,12 +78,7 @@ class OpenGLTexturedFace(TexturedFace):
 
     def __init__(self, vertices: list, texture_coords: list, normals: list, material: 'OpenGLTexturedMaterial'):
         super().__init__(vertices, texture_coords, normals, material)
-        self.t2f_n3f_v3f = self._t2f_n3f_v3f()
-        self.t2f_v3f = self._t2f_v3f()
-
-    @property
-    def draw_data(self):
-        return self.t2f_n3f_v3f
+        self.draw_data = self._t2f_n3f_v3f()
 
     def _t2f_n3f_v3f(self):
         t2f_n3f_v3f = []
@@ -155,13 +87,6 @@ class OpenGLTexturedFace(TexturedFace):
             t2f_n3f_v3f += n
             t2f_n3f_v3f += v
         return t2f_n3f_v3f
-
-    def _t2f_v3f(self):
-        t2f_v3f = []
-        for t, v in zip(self._texture_coords, self._vertices):
-            t2f_v3f += t
-            t2f_v3f += v
-        return t2f_v3f
 
 
 class OpenGLMaterial(Material):
@@ -293,6 +218,37 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
         gl.glTexParameterf(GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
         gl.glTexParameterf(GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
         super(OpenGLTexturedMaterial, self).set_material()
+
+
+class OpenGLFaceBundle(object):
+    shape_by_n_points = {3: GL_TRIANGLES, 4: GL_QUADS}
+
+    def __init__(self, faces: List[OpenGLFace], material=None, n_points=None, draw_mode=None):
+        self.faces = faces
+        self.material = material or faces[0].material
+        self.n_points = n_points or min(faces[0].n_vertices, 5)
+        self.draw_mode = draw_mode or faces[0].draw_mode
+        self.shape = self.shape_by_n_points[self.n_points]
+        self.draw_data = list(chain(*[face.draw_data for face in faces]))
+        self.data_length = len(self.draw_data)
+        self.c_arr = c_float * self.data_length
+        self.c_draw_data = self.c_arr(*self.draw_data)
+
+    def __getstate__(self):
+        d = {k: val for k, val in self.__dict__.items()}
+        del d['c_arr']
+        del d['c_draw_data']
+        return d
+
+    def __setstate__(self, state):
+        state["c_arr"] = c_float * self.data_length
+        state["c_draw_data"] = state['c_arr'](*self.draw_data)
+        self.__dict__.update(state)
+
+    def draw(self):
+        self.material.set_material()
+        glInterleavedArrays(self.draw_mode, 0, self.c_draw_data)
+        glDrawArrays(self.shape, 0, len(self.faces) * self.n_points)
 
 
 class OpenGLWaveFrontParser(ObjectParser):
