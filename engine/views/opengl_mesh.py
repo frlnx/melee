@@ -11,7 +11,6 @@ from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
 
 
 class OpenGLMesh(WaveFrontObject):
-    cull_face = GL_BACK
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name, group)
@@ -49,7 +48,7 @@ class OpenGLMesh(WaveFrontObject):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT)
         glEnable(GL_CULL_FACE)
-        glCullFace(self.cull_face)
+        glCullFace(GL_BACK)
         glDisable(GL_TEXTURE_2D)
         for bundle in self.draw_bundles:
             bundle.draw()
