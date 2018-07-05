@@ -128,10 +128,17 @@ class Engine(TwistedEventLoop):
         model = self.models[uuid]
         model.set_alive(False)
         self.remove_controller_by_uuid(uuid)
+        self.remove_model_by_uuid(uuid)
 
     def remove_controller_by_uuid(self, uuid):
         try:
             del self._controllers[uuid]
+        except KeyError:
+            pass
+
+    def remove_model_by_uuid(self, uuid):
+        try:
+            del self.models[uuid]
         except KeyError:
             pass
 
@@ -171,7 +178,7 @@ class Engine(TwistedEventLoop):
             assert isinstance(m2, BaseModel)
             intersects, x, y = m1.intersection_point(m2)
             if intersects:
-                m1_vector = m1.movement - m2.movement
+                m1_vector = m2.movement - m1.movement
                 m2_vector = -m1_vector
                 m1_mass_quota = m2.mass / m1.mass
                 m2_mass_quota = m1.mass / m2.mass

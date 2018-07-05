@@ -46,3 +46,6 @@ class OpenGLFactory(object):
             shape += bottom
             shape += lp2
         return shape
+
+
+shape_factory = OpenGLFactory()

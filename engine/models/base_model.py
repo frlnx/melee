@@ -124,12 +124,13 @@ class BaseModel(PositionalModel):
         return d
 
     def explode(self):
-        self._exploding = True
-        self._callback("explode")
+        if not self.is_exploding:
+            self._exploding = True
+            self._callback("explode")
 
     @property
     def explosion_timer(self):
-        return self.explosion_timer
+        return self._explosion_time
 
     @property
     def is_exploding(self):

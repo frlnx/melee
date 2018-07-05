@@ -1,5 +1,5 @@
 from engine.models.base_model import BaseModel
-from engine.physics.force import MutableDegrees, MutableOffsets
+from engine.physics.force import MutableDegrees, MutableOffsets, MutableForce
 from engine.physics.polygon import Polygon
 
 
@@ -30,3 +30,7 @@ class PlasmaModel(BaseModel):
     @property
     def mesh_name(self):
         return "plasma"
+
+    def add_collision(self, force: MutableForce):
+        self.set_movement(0, 0, 0)
+        self.explode()

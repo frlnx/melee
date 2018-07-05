@@ -11,8 +11,8 @@ from engine.views.base_view import BaseView
 
 class ShipPartView(BaseView):
 
-    def __init__(self, model: ShipPartModel, mesh=None, explosion_draw_function_factory=None):
-        super().__init__(model, mesh=mesh, explosion_draw_function_factory=explosion_draw_function_factory)
+    def __init__(self, model: ShipPartModel, mesh=None):
+        super().__init__(model, mesh=mesh)
         self._model = model
         self._model.observe(self.update_material, "material")
 

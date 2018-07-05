@@ -1,10 +1,12 @@
 import ctypes
 
+from pyglet.clock import schedule, schedule_once, unschedule
 from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
     GL_DIFFUSE, GL_MODELVIEW_MATRIX
 from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScalef, \
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
 
+from .opengl_drawables import ExplosionDrawable
 from engine.models.base_model import BaseModel
 
 
@@ -12,9 +14,8 @@ class BaseView(object):
     _to_cfloat_array = ctypes.c_float * 4
     _to_cfloat_three_array = ctypes.c_float * 3
 
-    def __init__(self, model: BaseModel, mesh=None, explosion_draw_function_factory=None):
+    def __init__(self, model: BaseModel, mesh=None):
         self._model = model
-        self._explosion_draw_function_factory = explosion_draw_function_factory
         self._sub_views = set()
         self._mesh_scale = self.to_cfloat_array(1., 1., 1.)
         self._diffuse = self.to_cfloat_array(3., 3., 3., 1.)
@@ -24,6 +25,8 @@ class BaseView(object):
         self._base_ambience = (0.1, 0.1, 0.1, 0.1)
         self._model_view_matrix = (GLfloat * 16)()
         self._model.observe(self.update)
+        self._model.observe(self.explode, "explode")
+        self._model.observe(self.alive_callback, "alive")
         self.update()
         if mesh:
             self._mesh = mesh
@@ -31,6 +34,20 @@ class BaseView(object):
         else:
             self._draw = self._draw_nothing
         self.yaw_catchup = 0
+
+    def explode(self):
+        explosion = ExplosionDrawable()
+        schedule(explosion.timer)
+        schedule_once(lambda x: unschedule(explosion.timer), 2.)
+        schedule_once(lambda x: self._mesh.remove_drawable(explosion), 2.)
+        self._mesh.add_drawable(explosion)
+
+    def alive_callback(self):
+        if self._model.is_alive:
+            if self._mesh:
+                self._draw = self._draw_mesh
+        else:
+            self._draw = self._draw_nothing
 
     def to_cfloat_array(self, *floats):
         if len(floats) == 3:
@@ -63,9 +80,6 @@ class BaseView(object):
             self._draw = self._draw_mesh
         else:
             self._draw = self._draw_nothing
-
-    def replace_mesh_with_explosion(self):
-        self._draw = self._explosion_draw_function_factory()
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)

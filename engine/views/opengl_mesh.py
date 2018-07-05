@@ -1,7 +1,7 @@
 from pyglet.gl import *
 import pyglet
 from ctypes import c_float
-from itertools import chain
+from functools import partial
 from collections import defaultdict
 from typing import List, Tuple
 import os
@@ -10,12 +10,19 @@ from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, 
 from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
 
 
+class Drawable(object):
+    __abstract__ = True
+
+    def draw(self):
+        pass
+
+
 class OpenGLMesh(WaveFrontObject):
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name, group)
         self.materials = {face.material.name: face.material for face in faces + textured_faces}
-        self.draw_bundles = self._render_bundles()
+        self.drawables = self._render_bundles()
 
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
@@ -44,13 +51,22 @@ class OpenGLMesh(WaveFrontObject):
             bundles.add(bundle)
         return bundles
 
+    def add_drawable(self, drawable):
+        self.drawables.add(drawable)
+
+    def remove_drawable(self, drawable):
+        try:
+            self.drawables.remove(drawable)
+        except KeyError:
+            pass
+
     def draw(self):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT)
         glEnable(GL_CULL_FACE)
         glCullFace(GL_BACK)
         glDisable(GL_TEXTURE_2D)
-        for bundle in self.draw_bundles:
+        for bundle in self.drawables:
             bundle.draw()
         glPopAttrib()
         glPopClientAttrib()
@@ -63,6 +79,9 @@ class OpenGLFace(Face):
         super().__init__(vertices, normals, material)
         self.draw_data = self._n3f_v3f()
         self.n_vertices = len(self._vertices)
+
+    def get_draw_data(self):
+        return self._n3f_v3f()
 
     def _n3f_v3f(self):
         n3f_v3f = []
@@ -78,6 +97,9 @@ class OpenGLTexturedFace(TexturedFace):
     def __init__(self, vertices: list, texture_coords: list, normals: list, material: 'OpenGLTexturedMaterial'):
         super().__init__(vertices, texture_coords, normals, material)
         self.draw_data = self._t2f_n3f_v3f()
+
+    def get_draw_data(self):
+        return self._t2f_n3f_v3f()
 
     def _t2f_n3f_v3f(self):
         t2f_n3f_v3f = []
@@ -219,7 +241,7 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
         super(OpenGLTexturedMaterial, self).set_material()
 
 
-class OpenGLFaceBundle(object):
+class OpenGLFaceBundle(Drawable):
     shape_by_n_points = {3: GL_TRIANGLES, 4: GL_QUADS}
 
     def __init__(self, faces: List[OpenGLFace], material=None, n_points=None, draw_mode=None):
@@ -228,10 +250,18 @@ class OpenGLFaceBundle(object):
         self.n_points = n_points or min(faces[0].n_vertices, 5)
         self.draw_mode = draw_mode or faces[0].draw_mode
         self.shape = self.shape_by_n_points[self.n_points]
-        self.draw_data = list(chain(*[face.draw_data for face in faces]))
+        self.draw_data = []
+        for i, face in enumerate(faces):
+            face.observe(partial(self._update_c_draw_data, face.get_draw_data, len(self.draw_data)))
+            self.draw_data += face.draw_data
         self.data_length = len(self.draw_data)
         self.c_arr = c_float * self.data_length
         self.c_draw_data = self.c_arr(*self.draw_data)
+
+    def _update_c_draw_data(self, data_func, start: int):
+        data = data_func()
+        end = start + len(data)
+        self.c_draw_data[start:end] = data
 
     def __getstate__(self):
         d = {k: val for k, val in self.__dict__.items()}

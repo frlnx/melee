@@ -9,9 +9,43 @@ class Face(object):
         self._normals = normals
         self.material = material
         self.n_vertices = len(self._vertices)
+        self._observers = set()
+        self.center_point = self._calculate_center_point()
+
+    def _calculate_center_point(self):
+        cx = 0
+        cy = 0
+        cz = 0
+        for x, y, z in self._vertices:
+            cx += x
+            cy += y
+            cz += z
+        cx /= self.n_vertices
+        cy /= self.n_vertices
+        cz /= self.n_vertices
+        return cx, cy, cz
 
     def __copy__(self):
         return self.__class__(vertices=self._vertices, normals=self._normals, material=self.material)
+
+    def translate(self, *xyz):
+        for i in range(self.n_vertices):
+            self._vertices[i] = tuple(a + b for a, b in zip(self._vertices[i], xyz))
+        self.callback()
+
+    def observe(self, callback):
+        self._observers.add(callback)
+
+    def unobserve(self, callback):
+        try:
+            self._observers.remove(callback)
+        except KeyError:
+            pass
+
+    def callback(self):
+        self.center_point = self._calculate_center_point()
+        for observer in self._observers:
+            observer()
 
 
 class TexturedFace(Face):
