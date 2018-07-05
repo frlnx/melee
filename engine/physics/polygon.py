@@ -2,7 +2,7 @@ from typing import List
 from math import radians
 from itertools import compress
 
-from shapely.geometry import LinearRing, LineString, MultiPoint
+from shapely.geometry import LinearRing, LineString, MultiPoint, Point
 
 from engine.physics.line import Line
 
@@ -167,6 +167,9 @@ class Polygon(BasePolygon):
         else:
             point_x, point_y = None, None
         return not intersection.is_empty, point_x, point_y
+
+    def point_inside(self, x, y):
+        return self.moving_shape.contains(Point(x, y))
 
     def __iadd__(self, other: "Polygon"):
         p1 = self.make_shape()

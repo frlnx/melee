@@ -219,7 +219,7 @@ class BaseModel(PositionalModel):
         return self._bounding_box
 
     def intersection_point(self, other_model):
-        return self._bounding_box.intersection_point(other_model.bounding_box)
+        return self.bounding_box.intersection_point(other_model.bounding_box)
 
     def update(self):
         self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)

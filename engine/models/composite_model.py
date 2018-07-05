@@ -23,9 +23,10 @@ class CompositeModel(BaseModel):
         self._rebuild_observers = set()
         self._own_spawns = []
 
-    def part_at(self, xyz):
-        x, y, z = xyz
-        return self._parts.get((int(round(x)), int(round(z))), None)
+    def part_at(self, x, z):
+        for part in self._parts.values():
+            if part.bounding_box.point_inside(x, z):
+                return part
 
     @property
     def parts(self) -> Set[ShipPartModel]:
@@ -82,15 +83,14 @@ class CompositeModel(BaseModel):
         bounding_box.set_position_rotation(self.position.x, self.position.z, self.rotation.yaw)
         self.rebuild_callback()
 
-    def parts_intersected_by(self, other_model):
-        intersects, x, z = self.intersection_point(other_model)
+    def intersection_point(self, other_model):
+        intersects, x, z = super(CompositeModel, self).intersection_point(other_model)
         if intersects:
             intersection_point = MutableOffsets(x, 0, z)
             self.mutate_offsets_to_local(intersection_point)
-            part = self.part_at(intersection_point)
-            if part:
-                return [part]
-        return []
+            part = self.part_at(intersection_point.x, intersection_point.z)
+            intersects = part is not None
+        return intersects, x, z
 
     @property
     def acceleration(self):

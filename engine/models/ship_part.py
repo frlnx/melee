@@ -1,7 +1,7 @@
 from math import radians, cos, atan2, degrees
 
 from engine.models.base_model import BaseModel
-from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
 
 
 class ShipPartModel(BaseModel):

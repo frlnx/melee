@@ -44,3 +44,10 @@ class ShipModel(CompositeModel):
     def fuel_percentage(self):
         return 1.00
 
+    def add_collision(self, force: MutableForce):
+        super(ShipModel, self).add_collision(force)
+        part = self.part_at(force.position.x, force.position.z)
+        if part:
+            part.explode()
+        else:
+            print(force.position, "Missed the whole thing")
