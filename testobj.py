@@ -3,6 +3,7 @@ import pyglet
 from pyglet.gl import *
 from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
 from engine.views.opengl_drawables import ExplosionDrawable
+from engine.views.opengl_animations import explode
 import ctypes
 from os import path
 
@@ -29,6 +30,7 @@ class TestWindow(Window):
 
     def update(self, dt):
         self.rotation += dt * 25
+        self.obj.timer(dt)
 
     def on_draw(self):
         self.clear()
@@ -53,6 +55,7 @@ class TestWindow(Window):
             explosion = ExplosionDrawable()
             pyglet.clock.schedule(explosion.timer)
             self.obj.add_drawable(explosion)
+            self.obj.add_animation(explode)
 
 
 if __name__ == "__main__":

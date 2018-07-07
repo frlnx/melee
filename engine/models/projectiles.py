@@ -33,4 +33,5 @@ class PlasmaModel(BaseModel):
 
     def add_collision(self, force: MutableForce):
         self.set_movement(0, 0, 0)
-        self.explode()
+        #self.explode()
+        self.set_alive(False)

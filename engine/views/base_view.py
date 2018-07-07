@@ -7,6 +7,7 @@ from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScal
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
 
 from .opengl_drawables import ExplosionDrawable
+from .opengl_animations import explode
 from engine.models.base_model import BaseModel
 
 
@@ -28,8 +29,8 @@ class BaseView(object):
         self._model.observe(self.explode, "explode")
         self._model.observe(self.alive_callback, "alive")
         self.update()
+        self._mesh = mesh
         if mesh:
-            self._mesh = mesh
             self._draw = self._draw_mesh
         else:
             self._draw = self._draw_nothing
@@ -40,6 +41,7 @@ class BaseView(object):
         schedule(explosion.timer)
         schedule_once(lambda x: unschedule(explosion.timer), 2.)
         schedule_once(lambda x: self._mesh.remove_drawable(explosion), 2.)
+        self._mesh.add_animation(explode)
         self._mesh.add_drawable(explosion)
 
     def alive_callback(self):
@@ -173,4 +175,6 @@ class BaseView(object):
         self._sub_views.clear()
 
     def update_view_timer(self, dt):
+        if self._mesh:
+            self._mesh.timer(dt)
         self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt * 2

@@ -4,9 +4,8 @@ from engine.models.factories import ShipModelFactory, AsteroidModelFactory
 from engine.controllers.factories import ControllerFactory
 from engine.pigtwisted import TwistedEventLoop
 from engine.input_handlers import InputHandler
-from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
+from engine.physics.force import MutableOffsets, MutableForce
 
-from collections import defaultdict
 import random
 from typing import Callable, ValuesView
 from itertools import combinations
@@ -113,7 +112,7 @@ class Engine(TwistedEventLoop):
             self.spawn_ship(controller)
 
     def spawn(self, model: BaseModel):
-        print("Spawning from network", model.uuid)
+        #print("Spawning from network", model.uuid)
         controller = self.controller_factory.manufacture(model)
         self.models[model.uuid] = model
         self._controllers[model.uuid] = controller
@@ -124,7 +123,7 @@ class Engine(TwistedEventLoop):
         self.ships.add(controller)
 
     def decay(self, uuid):
-        print("Decay from network", uuid)
+        #print("Decay from network", uuid)
         model = self.models[uuid]
         model.set_alive(False)
         self.remove_controller_by_uuid(uuid)
@@ -145,7 +144,7 @@ class Engine(TwistedEventLoop):
     def decay_with_callback(self, controller):
         self.decay(controller._model.uuid)
         self._dead_model_callback(controller._model)
-        print("Informing network of decay", controller._model.uuid)
+        #print("Informing network of decay", controller._model.uuid)
 
     def _update(self, dt):
         goal_time = self._time_spent + dt

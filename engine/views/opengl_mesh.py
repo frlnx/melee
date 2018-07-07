@@ -2,6 +2,7 @@ from pyglet.gl import *
 import pyglet
 from ctypes import c_float
 from functools import partial
+from itertools import chain
 from collections import defaultdict
 from typing import List, Tuple
 import os
@@ -21,8 +22,9 @@ class OpenGLMesh(WaveFrontObject):
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name, group)
-        self.materials = {face.material.name: face.material for face in faces + textured_faces}
+        self.materials = {face.material.name: face.material for face in chain(faces, textured_faces)}
         self.drawables = self._render_bundles()
+        self.animations = set()
 
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
@@ -33,7 +35,7 @@ class OpenGLMesh(WaveFrontObject):
         faces = [face.__copy__() for face in self._faces]
         textured_faces = [face.__copy__() for face in self._textured_faces]
         materials = {material.name: material.__copy__() for material in self.materials.values()}
-        for face in faces + textured_faces:
+        for face in chain(faces, textured_faces):
             face.material = materials[face.material.name]
         copy = self.__class__(faces, textured_faces, name=self.name, group=self.group)
         return copy
@@ -50,6 +52,21 @@ class OpenGLMesh(WaveFrontObject):
             bundle = OpenGLFaceBundle(faces, material, n_points, draw_mode)
             bundles.add(bundle)
         return bundles
+
+    def add_animation(self, animation):
+        self.animations.add(animation)
+        print("Animation added!")
+
+    def remove_animation(self, animation):
+        try:
+            self.animations.remove(animation)
+        except KeyError:
+            pass
+
+    def timer(self, dt):
+        for animation in self.animations:
+            for face in self._faces + self._textured_faces:
+                animation(face, dt)
 
     def add_drawable(self, drawable):
         self.drawables.add(drawable)
@@ -70,6 +87,9 @@ class OpenGLMesh(WaveFrontObject):
             bundle.draw()
         glPopAttrib()
         glPopClientAttrib()
+
+    def __repr__(self):
+        return f'Mesh {self.name}'
 
 
 class OpenGLFace(Face):
@@ -162,7 +182,7 @@ class OpenGLMaterial(Material):
                 d[k] = self.to_c_arr(val)
             else:
                 d[k] = val
-        self.__dict__.update(state)
+        self.__dict__.update(d)
 
     @staticmethod
     def to_c_arr(values) -> List[c_float]:
@@ -251,7 +271,7 @@ class OpenGLFaceBundle(Drawable):
         self.draw_mode = draw_mode or faces[0].draw_mode
         self.shape = self.shape_by_n_points[self.n_points]
         self.draw_data = []
-        for i, face in enumerate(faces):
+        for face in faces:
             face.observe(partial(self._update_c_draw_data, face.get_draw_data, len(self.draw_data)))
             self.draw_data += face.draw_data
         self.data_length = len(self.draw_data)
@@ -270,14 +290,17 @@ class OpenGLFaceBundle(Drawable):
         return d
 
     def __setstate__(self, state):
-        state["c_arr"] = c_float * self.data_length
-        state["c_draw_data"] = state['c_arr'](*self.draw_data)
+        state["c_arr"] = c_float * state['data_length']
+        state["c_draw_data"] = state['c_arr'](*state['draw_data'])
         self.__dict__.update(state)
 
     def draw(self):
         self.material.set_material()
         glInterleavedArrays(self.draw_mode, 0, self.c_draw_data)
         glDrawArrays(self.shape, 0, len(self.faces) * self.n_points)
+
+    def __repr__(self):
+        return "{} {}-gons of {}".format(len(self.faces), self.n_points, self.material.name)
 
 
 class OpenGLWaveFrontParser(ObjectParser):

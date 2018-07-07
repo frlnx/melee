@@ -109,4 +109,5 @@ class CompositeModel(BaseModel):
 
     def add_collision(self, force: MutableForce):
         self.mutate_force_to_local(force)
-        self._collisions_to_solve.add(force)
+        part = self.part_at(force.position.x, force.position.z)
+        part.explode()

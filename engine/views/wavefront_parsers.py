@@ -1,22 +1,25 @@
 from typing import List, Tuple
 from os import path
+from math import cos, sin, radians
 
 
 class Face(object):
 
     def __init__(self, vertices: list, normals: list, material: 'Material'):
         self._vertices = vertices
+        self._original_vertices = vertices.copy()
         self._normals = normals
         self.material = material
         self.n_vertices = len(self._vertices)
         self._observers = set()
         self.center_point = self._calculate_center_point()
+        self._original_position = self.center_point
 
-    def _calculate_center_point(self):
+    def _calculate_center_point(self) -> tuple:
         cx = 0
         cy = 0
         cz = 0
-        for x, y, z in self._vertices:
+        for (x, y, z) in self._vertices:
             cx += x
             cy += y
             cz += z
@@ -31,6 +34,20 @@ class Face(object):
     def translate(self, *xyz):
         for i in range(self.n_vertices):
             self._vertices[i] = tuple(a + b for a, b in zip(self._vertices[i], xyz))
+        self.center_point = tuple(a + b for a, b in zip(self.center_point, xyz))
+        self.callback()
+
+    def rotate(self, *pyr):
+        (pc, ps), (yc, ys), (rc, rs) = [(cos(radians(v)), sin(radians(v))) for v in pyr]
+        for i in range(self.n_vertices):
+            x, y, z = (a - b for a, b in zip(self._vertices[i], self.center_point))
+            y = pc * y + ps * z
+            z = -ps * y + pc * z
+            x = yc * x - ys * z
+            z = ys * x + ys * z
+            x = rc * x + rs * y
+            y = -rs * x + rc * y
+            self._vertices[i] = tuple(a + b for a, b in zip((x, y, z), self.center_point))
         self.callback()
 
     def observe(self, callback):
@@ -44,6 +61,7 @@ class Face(object):
 
     def callback(self):
         self.center_point = self._calculate_center_point()
+        print(f'calling {len(self._observers)} observers')
         for observer in self._observers:
             observer()
 
