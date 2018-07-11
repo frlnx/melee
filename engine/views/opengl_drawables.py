@@ -42,6 +42,7 @@ class ExplosionDrawable(Drawable):
         n_points = len(draw_data)
         c_arr = ctypes.c_float * n_points
         c_draw_data = c_arr(*draw_data)
+        self._configure_cull_face()
         self._blast_material_centre.set_material()
         glInterleavedArrays(GL_N3F_V3F, 0, c_draw_data)
         glDrawArrays(GL_TRIANGLES, 0, (20 * 3))

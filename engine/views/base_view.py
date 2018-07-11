@@ -43,6 +43,7 @@ class BaseView(object):
         schedule_once(lambda x: self._mesh.remove_drawable(explosion), 2.)
         self._mesh.add_animation(explode)
         self._mesh.add_drawable(explosion)
+        self._mesh.set_double_sided(True)
 
     def alive_callback(self):
         if self._model.is_alive:
@@ -177,4 +178,7 @@ class BaseView(object):
     def update_view_timer(self, dt):
         if self._mesh:
             self._mesh.timer(dt)
+        if self._sub_views:
+            for sub_view in self._sub_views:
+                sub_view.update_view_timer(dt)
         self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt * 2

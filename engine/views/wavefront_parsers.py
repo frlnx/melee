@@ -29,7 +29,8 @@ class Face(object):
         return cx, cy, cz
 
     def __copy__(self):
-        return self.__class__(vertices=self._vertices, normals=self._normals, material=self.material)
+        return self.__class__(vertices=list(self._vertices), normals=list(self._normals),
+                              material=self.material.__copy__())
 
     def translate(self, *xyz):
         for i in range(self.n_vertices):
@@ -61,7 +62,6 @@ class Face(object):
 
     def callback(self):
         self.center_point = self._calculate_center_point()
-        print(f'calling {len(self._observers)} observers')
         for observer in self._observers:
             observer()
 
@@ -73,8 +73,8 @@ class TexturedFace(Face):
         self._texture_coords = texture_coords
 
     def __copy__(self):
-        return self.__class__(vertices=self._vertices, normals=self._normals,
-                              material=self.material, texture_coords=self._texture_coords)
+        return self.__class__(vertices=list(self._vertices), normals=list(self._normals),
+                              material=self.material.__copy__(), texture_coords=list(self._texture_coords))
 
 
 class Material(object):

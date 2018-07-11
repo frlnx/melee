@@ -17,6 +17,22 @@ class Drawable(object):
     def draw(self):
         pass
 
+    def set_double_sided(self, state):
+        if state:
+            self._configure_cull_face = self._disable_cull_face
+        else:
+            self._configure_cull_face = self._enable_cull_face
+
+    def _configure_cull_face(self):
+        pass
+
+    def _enable_cull_face(self):
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
+
+    def _disable_cull_face(self):
+        glDisable(GL_CULL_FACE)
+
 
 class OpenGLMesh(WaveFrontObject):
 
@@ -25,6 +41,7 @@ class OpenGLMesh(WaveFrontObject):
         self.materials = {face.material.name: face.material for face in chain(faces, textured_faces)}
         self.drawables = self._render_bundles()
         self.animations = set()
+        self.transmutations = set()
 
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
@@ -53,9 +70,21 @@ class OpenGLMesh(WaveFrontObject):
             bundles.add(bundle)
         return bundles
 
+    def set_double_sided(self, state):
+        for drawable in self.drawables:
+            drawable.set_double_sided(state)
+
+    def add_transmutation(self, transmutation):
+        self.transmutations.add(transmutation)
+
+    def remove_transmutation(self, transmutation):
+        try:
+            self.transmutations.remove(transmutation)
+        except KeyError:
+            pass
+
     def add_animation(self, animation):
         self.animations.add(animation)
-        print("Animation added!")
 
     def remove_animation(self, animation):
         try:
@@ -67,6 +96,9 @@ class OpenGLMesh(WaveFrontObject):
         for animation in self.animations:
             for face in self._faces + self._textured_faces:
                 animation(face, dt)
+        for transmutation in self.transmutations:
+            for material in self.materials.values():
+                transmutation(material, dt)
 
     def add_drawable(self, drawable):
         self.drawables.add(drawable)
@@ -80,8 +112,6 @@ class OpenGLMesh(WaveFrontObject):
     def draw(self):
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
         glDisable(GL_TEXTURE_2D)
         for bundle in self.drawables:
             bundle.draw()
@@ -264,7 +294,7 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
 class OpenGLFaceBundle(Drawable):
     shape_by_n_points = {3: GL_TRIANGLES, 4: GL_QUADS}
 
-    def __init__(self, faces: List[OpenGLFace], material=None, n_points=None, draw_mode=None):
+    def __init__(self, faces: List[OpenGLFace], material=None, n_points=None, draw_mode=None, **config):
         self.faces = faces
         self.material = material or faces[0].material
         self.n_points = n_points or min(faces[0].n_vertices, 5)
@@ -277,6 +307,10 @@ class OpenGLFaceBundle(Drawable):
         self.data_length = len(self.draw_data)
         self.c_arr = c_float * self.data_length
         self.c_draw_data = self.c_arr(*self.draw_data)
+        if config.get('double_sided', False):
+            self._configure_cull_face = self._disable_cull_face
+        else:
+            self._configure_cull_face = self._enable_cull_face
 
     def _update_c_draw_data(self, data_func, start: int):
         data = data_func()
@@ -295,6 +329,7 @@ class OpenGLFaceBundle(Drawable):
         self.__dict__.update(state)
 
     def draw(self):
+        self._configure_cull_face()
         self.material.set_material()
         glInterleavedArrays(self.draw_mode, 0, self.c_draw_data)
         glDrawArrays(self.shape, 0, len(self.faces) * self.n_points)
