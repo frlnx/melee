@@ -1,13 +1,17 @@
-from pyglet.window import Window, key
-import pyglet
-from pyglet.gl import *
-from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
-from engine.views.opengl_drawables import ExplosionDrawable
-from engine.views.opengl_animations import explode
 import ctypes
 from os import path
 
+import pyglet
+from pyglet.gl import *
+from pyglet.window import Window, key
 
+from engine.views.opengl_animations import explode
+from engine.views.opengl_drawables import ExplosionDrawable
+from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
+from engine.views.opengl_transmutation import extinguish
+
+
+# noinspection PyTypeChecker
 class TestWindow(Window):
 
     def __init__(self, obj):
@@ -56,6 +60,10 @@ class TestWindow(Window):
             pyglet.clock.schedule(explosion.timer)
             self.obj.add_drawable(explosion)
             self.obj.add_animation(explode)
+            self.obj.set_double_sided(True)
+            for material in self.obj.materials.values():
+                material.ambient = (10., 10., 10.)
+            self.obj.add_transmutation(extinguish)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 from itertools import compress, product, chain
 from math import radians
 from typing import List, Iterator
+from uuid import uuid4
 
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point
 
@@ -14,17 +15,25 @@ class BasePolygon(object):
         False: LineString
     }
 
-    def __init__(self, lines: List[Line], closed=True):
+    def __init__(self, lines: List[Line], closed=True, part_id=None):
+        self.part_id = part_id or uuid4().hex
         self._lines = lines
         self._shape_class = self.closed_shape_class_map[closed]
+        self._shape = None
+        self.shape = self.make_shape
         self.rotation = 0
         self.x = 0
         self.y = 0
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
-        self.shape = self.make_shape
         self._moving_points = [(l.x1, l.y1) for l in self.lines]
         self._moving_shape = None
+
+    def __hash__(self):
+        return self.part_id.__hash__()
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.part_id == other.part_id
 
     @classmethod
     def coords_to_lines(cls, coords, **kwargs):
@@ -131,7 +140,7 @@ class BasePolygon(object):
         return self._moving_bottom
 
     def __repr__(self):
-        return f"{len(self.lines)}-sided at {self.x}, {self.y}"
+        return f"{self.part_id} {len(self.lines)}-sided at {self.x}, {self.y}"
 
 
 class Polygon(BasePolygon):
@@ -194,13 +203,13 @@ class Polygon(BasePolygon):
         return self.manufacture(new_shape.coords)
 
     def __copy__(self):
-        return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines],self.x, self.y, self.rotation)
+        return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines], self.x, self.y, self.rotation)
 
 
 class PolygonPart(Polygon):
 
-    def __init__(self, lines: List[Line]):
-        super().__init__(lines)
+    def __init__(self, lines: List[Line], part_id=None):
+        super().__init__(lines, part_id=part_id)
         self._original_x = self.x
         self._original_y = self.y
         self._original_rotation = self.rotation

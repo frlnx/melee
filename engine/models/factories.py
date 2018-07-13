@@ -44,6 +44,7 @@ class ShipModelFactory(object):
         bboxes = []
         for part in parts:
             bbox = part.bounding_box.__copy__()
+            bbox.part_id = part.uuid
             bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
             bbox.freeze()
             bbox.clear_movement()

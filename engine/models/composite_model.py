@@ -13,6 +13,7 @@ class CompositeModel(BaseModel):
                  bounding_box: Polygon):
         super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._parts = {(part.x, part.z): part for part in parts}
+        self._part_by_uuid = {part.uuid: part for part in parts}
         self._mass = sum([part.mass for part in self.parts])
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
@@ -24,9 +25,8 @@ class CompositeModel(BaseModel):
 
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         parts = set()
-        for part in self.parts:
-            if part.bounding_box in bounding_boxes:
-                parts.add(part)
+        for bbox in bounding_boxes:
+            parts.add(self._part_by_uuid[bbox.part_id])
         return parts
 
     def part_at(self, x, z) -> ShipPartModel:
@@ -90,6 +90,7 @@ class CompositeModel(BaseModel):
             bboxes = []
             for part in self.parts:
                 bbox = part.bounding_box.__copy__()
+                bbox.part_id = part.uuid
                 bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
                 bbox.freeze()
                 bbox.clear_movement()
