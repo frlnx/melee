@@ -1,8 +1,7 @@
 from itertools import chain
 from math import atan2, degrees, hypot, ceil
-from typing import Tuple
 
-from pyglet.graphics import draw, GL_LINES, GL_QUADS
+from pyglet.graphics import draw, GL_QUADS
 from pyglet.graphics import glRotatef, glTranslated
 
 from engine.models.ship import ShipModel
@@ -57,18 +56,6 @@ class ShipView(BaseView):
         self._draw_bbox(self._model.bounding_box)
         for bbox in self._model.bounding_box._polygons:
             self._draw_bbox(bbox, color=(255, 55, 25, 255))
-
-
-    @staticmethod
-    def _draw_bbox(bbox, color: Tuple[int, int, int, int]=None):
-        color = color or (255, 255, 255, 255)
-        lines  = bbox.lines
-        v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
-        v3f = list(chain(*v3f))
-        n_points = int(len(v3f) / 3)
-        v3f = ('v3f', v3f)
-        c4B = ('c4B', color * n_points)
-        draw(n_points, GL_LINES, v3f, c4B)
 
     def center_camera(self):
         glTranslated(*-self._model.position)

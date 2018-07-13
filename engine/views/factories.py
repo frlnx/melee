@@ -141,11 +141,13 @@ class DynamicViewFactory(ViewFactory):
         view = view_class(model, mesh=mesh)
         if hasattr(model, 'parts') and isinstance(model, CompositeModel):
             self.rebuild_subviews(view, model)
-            model.observe_rebuild(lambda model: self.rebuild_subviews(view, model))
+            #model.observe(lambda: self.rebuild_subviews(view, model), "rebuild")
         return view
 
     def rebuild_subviews(self, ship_view: BaseView, model: CompositeModel):
         ship_view.clear_sub_views()
         for part in model.parts:
-            sub_view = self.manufacture(part)
-            ship_view.add_sub_view(sub_view)
+            if part.is_alive:
+                sub_view = self.manufacture(part)
+                ship_view.add_sub_view(sub_view)
+                part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")

@@ -9,6 +9,7 @@ class PlasmaModel(BaseModel):
                  spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees, bounding_box: Polygon):
         super(PlasmaModel, self).__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._ttl = 4
+        self._mass = 0.001
         self._destructive_energy = 400
 
     @property
@@ -33,5 +34,5 @@ class PlasmaModel(BaseModel):
 
     def add_collision(self, force: MutableForce):
         self.set_movement(0, 0, 0)
-        #self.explode()
-        self.set_alive(False)
+        self.explode()
+        #self.set_alive(False)

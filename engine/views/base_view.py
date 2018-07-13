@@ -1,10 +1,13 @@
 import ctypes
+from itertools import chain
+from typing import Tuple
 
 from pyglet.clock import schedule, schedule_once, unschedule
 from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
     GL_DIFFUSE, GL_MODELVIEW_MATRIX
 from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScalef, \
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
+from pyglet.graphics import draw, GL_LINES
 
 from engine.models.base_model import BaseModel
 from .opengl_animations import explode
@@ -88,6 +91,12 @@ class BaseView(object):
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
 
+    def remove_sub_view(self, sub_view):
+        try:
+            self._sub_views.remove(sub_view)
+        except KeyError:
+            pass
+
     def update(self):
         glPushMatrix()
         glLoadIdentity()
@@ -125,11 +134,22 @@ class BaseView(object):
         self.tear_down_matrix()
         self._draw_global()
 
+    @staticmethod
+    def _draw_bbox(bbox, color: Tuple[int, int, int, int]=None):
+        color = color or (255, 255, 255, 255)
+        lines  = bbox.lines
+        v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
+        v3f = list(chain(*v3f))
+        n_points = int(len(v3f) / 3)
+        v3f = ('v3f', v3f)
+        c4B = ('c4B', color * n_points)
+        draw(n_points, GL_LINES, v3f, c4B)
+
     def _draw_local(self):
         pass
 
     def _draw_global(self):
-        pass
+        self._draw_bbox(self._model.bounding_box)
 
     def _light_on(self):
         glEnable(GL_LIGHTING)

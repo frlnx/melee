@@ -18,7 +18,6 @@ class CompositeModel(BaseModel):
         bb_width = (self._bounding_box.right - self._bounding_box.left)
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
-        self._rebuild_observers = set()
         self._own_spawns = []
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
@@ -38,18 +37,6 @@ class CompositeModel(BaseModel):
     def parts(self) -> Set[ShipPartModel]:
         return set(self._parts.values())
 
-    def __getstate__(self):
-        d = super(CompositeModel, self).__getstate__()
-        d['_rebuild_observers'] = set()
-        return d
-
-    def observe_rebuild(self, func):
-        self._rebuild_observers.add(func)
-
-    def rebuild_callback(self):
-        for callback in self._rebuild_observers:
-            callback(self)
-
     def add_own_spawn(self, model: BaseModel):
         self._own_spawns.append(model)
 
@@ -65,13 +52,16 @@ class CompositeModel(BaseModel):
     def set_parts(self, parts):
         self.parts.clear()
         self.parts.update(parts)
+        self._part_by_uuid.clear()
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
+            self._part_by_uuid[part.uuid] = part
         self.rebuild()
 
     def add_part(self, part):
         x, z = part.x, part.z
         self._parts[(x, z)] = part
+        self._part_by_uuid[part.uuid] = part
         part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
         self.rebuild()
 
@@ -84,7 +74,7 @@ class CompositeModel(BaseModel):
         self.rebuild()
 
     def rebuild(self):
-        if len(self.parts) > 0:
+        if sum(part.is_alive for part in self.parts) > 0:
             self._mass = sum([part.mass for part in self.parts])
             bb_width = (self._bounding_box.right - self._bounding_box.left)
             bb_height = (self._bounding_box.top - self._bounding_box.bottom)
@@ -104,7 +94,7 @@ class CompositeModel(BaseModel):
             bounding_box.set_position_rotation(self.position.x, self.position.z, self.rotation.yaw)
             bounding_box.clear_movement()
             self._bounding_box = bounding_box
-            self.rebuild_callback()
+            self._callback("rebuild")
         else:
             self.set_alive(False)
 

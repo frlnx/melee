@@ -24,6 +24,9 @@ class PositionalModel(object):
     def observe(self, func: Callable, action=None):
         self._action_observers[action].add(func)
 
+    def _observe_original(self, func: Callable, action=None):
+        self._action_observers[action].add(func)
+
     def _callback(self, action=None):
         for observer in self._action_observers[action]:
             observer()
