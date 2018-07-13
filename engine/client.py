@@ -157,9 +157,3 @@ class ClientEngine(Engine):
     def update(self, dt):
         super(ClientEngine, self).update(dt)
         self.window.update_view_timers(dt)
-
-    def _client_solve_collisions(self):
-        for other_model in self.models.values():
-            if other_model == self.my_model:
-                continue
-            self.my_controller.solve_collision(other_model)

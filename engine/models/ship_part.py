@@ -1,7 +1,7 @@
 from math import radians, cos, atan2, degrees
 
 from engine.models.base_model import BaseModel
-from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
+from engine.physics.force import MutableOffsets, MutableDegrees
 
 
 class ShipPartModel(BaseModel):
@@ -150,3 +150,7 @@ class ShipPartModel(BaseModel):
         amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position)
         full_torque_radians = atan2(amount_of_force_that_rotates, self.position.distance)
         return degrees(full_torque_radians)
+
+    def damage(self):
+        super(ShipPartModel, self).damage()
+        self.explode()

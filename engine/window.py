@@ -1,19 +1,19 @@
 import ctypes
-
-from engine.views.base_view import BaseView
-from engine.views.factories import DynamicViewFactory
-
-from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
-from pyglet.gl import GL_DIFFUSE, GL_AMBIENT
-from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
-from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
-import pyglet
 import pickle
 from random import random, randrange
 
+import pyglet
+from pyglet.gl import GL_DIFFUSE, GL_AMBIENT
+from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
+from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
+from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
+
+from engine.views.base_view import BaseView
 from engine.views.debris import Debris
+from engine.views.factories import DynamicViewFactory
 
 
+# noinspection PyTypeChecker
 class Window(pyglet.window.Window):
     def __init__(self, input_handler=None):
         super().__init__(width=1280, height=720)

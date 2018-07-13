@@ -87,6 +87,7 @@ class DrydockItem(DrydockElement):
 class ConfigurableItem(DrydockItem):
 
     def __init__(self, model: ShipPartModel, view: ShipPartConfigurationView):
+        # noinspection PyTypeChecker
         super().__init__(model, view)
         self._view = view
         self._mouse_drag_origin = None

@@ -1,11 +1,12 @@
-from math import atan2, degrees, hypot, ceil
 from itertools import chain
+from math import atan2, degrees, hypot, ceil
+from typing import Tuple
+
+from pyglet.graphics import draw, GL_LINES, GL_QUADS
+from pyglet.graphics import glRotatef, glTranslated
 
 from engine.models.ship import ShipModel
 from engine.views.base_view import BaseView
-
-from pyglet.graphics import glRotatef, glTranslated
-from pyglet.graphics import draw, GL_LINES, GL_QUADS
 
 
 class ShipView(BaseView):
@@ -52,14 +53,21 @@ class ShipView(BaseView):
         draw(n_points_to_use, GL_QUADS, ('v3f', self.fuel_gage_v3f[:n_coords]),
              ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
 
-
     def _draw_global(self):
-        lines  = self._model.bounding_box.lines
+        self._draw_bbox(self._model.bounding_box)
+        for bbox in self._model.bounding_box._polygons:
+            self._draw_bbox(bbox, color=(255, 55, 25, 255))
+
+
+    @staticmethod
+    def _draw_bbox(bbox, color: Tuple[int, int, int, int]=None):
+        color = color or (255, 255, 255, 255)
+        lines  = bbox.lines
         v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
         v3f = list(chain(*v3f))
         n_points = int(len(v3f) / 3)
         v3f = ('v3f', v3f)
-        c4B = ('c4B', (255, 255, 255, 255) * n_points)
+        c4B = ('c4B', color * n_points)
         draw(n_points, GL_LINES, v3f, c4B)
 
     def center_camera(self):

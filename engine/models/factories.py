@@ -1,11 +1,8 @@
 import json
 from copy import deepcopy
 from functools import partial
-from itertools import chain
 from math import sin, cos, radians
 from random import normalvariate
-
-from shapely.geometry import MultiPoint
 
 from engine.models.asteroid import AsteroidModel
 from engine.models.projectiles import PlasmaModel
@@ -13,7 +10,7 @@ from engine.models.shield import ShieldModel
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
-from engine.physics.polygon import Polygon
+from engine.physics.polygon import MultiPolygon, Polygon
 
 
 class ShipModelFactory(object):
@@ -29,11 +26,7 @@ class ShipModelFactory(object):
                     acceleration=None, torque=None) -> ShipModel:
         config = deepcopy(self.ships[name])
         parts = self.ship_part_model_factory.manufacture_all(config['parts'])
-        points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in part.bounding_box.lines] for part in parts])))
 
-        bounding_box = Polygon.manufacture(points.convex_hull.exterior.coords)
-        #for part in parts:
-        #    bounding_box += part.bounding_box
         ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
         position = position or (0, 0, 0)
@@ -48,6 +41,14 @@ class ShipModelFactory(object):
         spin = MutableDegrees(*spin)
         acceleration = MutableOffsets(*acceleration)
         torque = MutableDegrees(*torque)
+        bboxes = []
+        for part in parts:
+            bbox = part.bounding_box.__copy__()
+            bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
+            bbox.freeze()
+            bbox.clear_movement()
+            bboxes.append(bbox)
+        bounding_box = MultiPolygon(bboxes)
         bounding_box.freeze()
         bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
         bounding_box.clear_movement()
@@ -142,8 +143,8 @@ class ProjectileModelFactory(object):
         if self.projectiles[name]:
             return self.repurpose(name, position, rotation, movement, spin, acceleration, torque)
         #  config = deepcopy(self.projectiles[name])
-        bounding_box = Polygon.manufacture([(0, 0), (0, 1)],
-                                           x=position.x, y=position.z, rotation=rotation.yaw)
+        bounding_box = MultiPolygon.manufacture([(0, 0), (0, 1)], x=position.x, y=position.z,
+                                                rotation=rotation.yaw)
         projectile = PlasmaModel(position.__copy__(), rotation.__copy__(),
                                  movement.__copy__(), spin.__copy__(),
                                  acceleration.__copy__(), torque.__copy__(), bounding_box)
@@ -190,6 +191,6 @@ class AsteroidModelFactory(object):
         coords = [(sin(radians(d)), cos(radians(d))) for d in range(0, 360, 18)]
         distances = [abs(normalvariate(25, 5)) for _ in coords]
         coords = [(x * d, y * d) for (x, y), d in zip(coords, distances)]
-        bounding_box = Polygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
+        bounding_box = MultiPolygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
         bounding_box.clear_movement()
         return AsteroidModel(position, rotation, movement, spin, acceleration, torque, bounding_box)

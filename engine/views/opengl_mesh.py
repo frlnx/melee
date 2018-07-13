@@ -1,14 +1,15 @@
-from pyglet.gl import *
-import pyglet
+import os
+from collections import defaultdict
 from ctypes import c_float
 from functools import partial
 from itertools import chain
-from collections import defaultdict
 from typing import List, Tuple
-import os
 
-from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
+import pyglet
+from pyglet.gl import *
+
 from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
+from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
 
 
 class Drawable(object):
@@ -141,6 +142,7 @@ class OpenGLFace(Face):
         return n3f_v3f
 
 
+# noinspection PyTypeChecker
 class OpenGLTexturedFace(TexturedFace):
     draw_mode = GL_T2F_N3F_V3F
 

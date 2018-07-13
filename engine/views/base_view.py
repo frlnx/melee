@@ -6,11 +6,12 @@ from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
 from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScalef, \
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
 
-from .opengl_drawables import ExplosionDrawable
-from .opengl_animations import explode
 from engine.models.base_model import BaseModel
+from .opengl_animations import explode
+from .opengl_drawables import ExplosionDrawable
 
 
+# noinspection PyTypeChecker
 class BaseView(object):
     _to_cfloat_array = ctypes.c_float * 4
     _to_cfloat_three_array = ctypes.c_float * 3

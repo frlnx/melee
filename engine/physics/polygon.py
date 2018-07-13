@@ -1,6 +1,6 @@
-from typing import List
+from itertools import compress, product, chain
 from math import radians
-from itertools import compress
+from typing import List, Iterator
 
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point
 
@@ -38,7 +38,7 @@ class BasePolygon(object):
     @classmethod
     def manufacture(cls, coords, x=0, y=0, rotation=0):
         lines = cls.coords_to_lines(coords)
-        polygon = Polygon(lines)
+        polygon = cls(lines)
         polygon.set_position_rotation(x, y, rotation)
         polygon.clear_movement()
         return polygon
@@ -66,6 +66,9 @@ class BasePolygon(object):
         return self._shape
 
     def set_position_rotation(self, x, y, yaw_degrees):
+        self.x = x
+        self.y = y
+        self.rotation = yaw_degrees
         coords = [(l.x1, l.y1) for l in self.lines]
         for line in self.lines:
             line.set_position_rotation(x, y, radians(yaw_degrees))
@@ -127,8 +130,15 @@ class BasePolygon(object):
         self._moving_bottom = self._moving_bottom or min([y for x, y in self._moving_points])
         return self._moving_bottom
 
+    def __repr__(self):
+        return f"{len(self.lines)}-sided at {self.x}, {self.y}"
+
 
 class Polygon(BasePolygon):
+
+    def centroid(self):
+        c = self.shape().centroid
+        return c.x, c.y
 
     def bounding_box_intersects(self, other: BasePolygon):
         if self.right < other.left:
@@ -152,21 +162,27 @@ class Polygon(BasePolygon):
             return False
         return True
 
-    def intersection_point(self, other: "Polygon"):
-        return self._intersection_point(other)
-
-    def _intersection_point(self, other: BasePolygon):
+    def _intersection(self, other: "Polygon"):
         if not self.movement_box_intersects(other):
-            return False, None, None
+            return None
         p1 = self.moving_shape
         p2 = other.moving_shape
         intersection = p1.intersection(p2)
+        if intersection.is_empty:
+            return None
+        return intersection
 
-        if not intersection.is_empty:
+    def intersects(self, other: "Polygon"):
+        intersection = self._intersection(other)
+        return intersection is not None
+
+    def intersection_point(self, other: "Polygon"):
+        intersection = self._intersection(other)
+        if intersection:
             point_x, point_y = intersection.centroid.x, intersection.centroid.y
         else:
             point_x, point_y = None, None
-        return not intersection.is_empty, point_x, point_y
+        return intersection is not None, point_x, point_y
 
     def point_inside(self, x, y):
         return self.moving_shape.contains(Point(x, y))
@@ -179,6 +195,71 @@ class Polygon(BasePolygon):
 
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines],self.x, self.y, self.rotation)
+
+
+class PolygonPart(Polygon):
+
+    def __init__(self, lines: List[Line]):
+        super().__init__(lines)
+        self._original_x = self.x
+        self._original_y = self.y
+        self._original_rotation = self.rotation
+
+    def set_position_rotation(self, x, y, yaw_degrees):
+        x += self._original_x
+        y += self._original_y
+        yaw_degrees += self._original_rotation
+        super(PolygonPart, self).set_position_rotation(x, y, yaw_degrees)
+
+    def freeze(self):
+        super(PolygonPart, self).freeze()
+        self._original_x = self.x
+        self._original_y = self.y
+        self._original_rotation = self.rotation
+        super(PolygonPart, self).freeze()
+
+
+class MultiPolygon(Polygon):
+
+    def __init__(self, polygons: List[PolygonPart]):
+        points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons])))
+        try:
+            lines = self.coords_to_lines(points.convex_hull.exterior.coords)
+        except AttributeError:
+            lines = [Line([(p.x, p.y) for p in points])]
+        super().__init__(lines)
+        self._polygons = polygons
+
+    def __iter__(self) -> Iterator[Polygon]:
+        return self._polygons.__iter__()
+
+    def __len__(self):
+        return len(self._polygons)
+
+    def intersected_polygons(self, other: "MultiPolygon"):
+        own_intersections = set()
+        other_intersections = set()
+        if len(self) == 0 or len(other) == 0 or not self.intersects(other):
+            return own_intersections, other_intersections
+
+        for p1, p2 in product(self, other):
+            if p1.intersects(p2):
+                own_intersections.add(p1)
+                other_intersections.add(p2)
+        return own_intersections, other_intersections
+
+    @classmethod
+    def manufacture(cls, coords, x=0, y=0, rotation=0):
+        lines = cls.coords_to_lines(coords)
+        polygon = MultiPolygon([PolygonPart(lines)])
+        polygon.set_position_rotation(x, y, rotation)
+        polygon.clear_movement()
+        return polygon
+
+    def set_position_rotation(self, x, y, yaw_degrees):
+        super(MultiPolygon, self).set_position_rotation(x, y, yaw_degrees)
+        for polygon in self._polygons:
+            polygon.set_position_rotation(x, y, yaw_degrees)
 
 
 class TemporalPolygon(Polygon):

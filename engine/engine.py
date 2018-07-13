@@ -1,14 +1,14 @@
-from engine.models.base_model import BaseModel
-from engine.models.ship import ShipModel
-from engine.models.factories import ShipModelFactory, AsteroidModelFactory
-from engine.controllers.factories import ControllerFactory
-from engine.pigtwisted import TwistedEventLoop
-from engine.input_handlers import InputHandler
-from engine.physics.force import MutableOffsets, MutableForce
-
 import random
-from typing import Callable, ValuesView
 from itertools import combinations
+from typing import Callable, ValuesView
+
+from engine.controllers.factories import ControllerFactory
+from engine.input_handlers import InputHandler
+from engine.models.base_model import BaseModel
+from engine.models.factories import ShipModelFactory, AsteroidModelFactory
+from engine.models.ship import ShipModel
+from engine.physics.force import MutableOffsets, MutableForce
+from engine.pigtwisted import TwistedEventLoop
 
 
 class Engine(TwistedEventLoop):
@@ -112,7 +112,6 @@ class Engine(TwistedEventLoop):
             self.spawn_ship(controller)
 
     def spawn(self, model: BaseModel):
-        #print("Spawning from network", model.uuid)
         controller = self.controller_factory.manufacture(model)
         self.models[model.uuid] = model
         self._controllers[model.uuid] = controller
@@ -123,7 +122,6 @@ class Engine(TwistedEventLoop):
         self.ships.add(controller)
 
     def decay(self, uuid):
-        #print("Decay from network", uuid)
         model = self.models[uuid]
         model.set_alive(False)
         self.remove_controller_by_uuid(uuid)
@@ -144,18 +142,6 @@ class Engine(TwistedEventLoop):
     def decay_with_callback(self, controller):
         self.decay(controller._model.uuid)
         self._dead_model_callback(controller._model)
-        #print("Informing network of decay", controller._model.uuid)
-
-    def _update(self, dt):
-        goal_time = self._time_spent + dt
-        while self._time_spent < goal_time:
-            first_collision_time, colliding_pairs = self._find_first_collision(dt)
-            self._update(first_collision_time)
-            for m1, m2 in colliding_pairs:
-                self._controllers[m1.uuid].solve_collision(m2)
-            self._time_spent += first_collision_time
-            dt -= first_collision_time
-            dt = max(dt, 0.001)
 
     def update(self, dt):
         spawns = []
@@ -175,6 +161,9 @@ class Engine(TwistedEventLoop):
         for m1, m2 in combinations(self.models.values(), 2):
             assert isinstance(m1, BaseModel)
             assert isinstance(m2, BaseModel)
+            m1_intersection_parts, m2_intersection_parts = m1.bounding_box.intersected_polygons(m2.bounding_box)
+            if not m1_intersection_parts and not m2_intersection_parts:
+                continue
             intersects, x, y = m1.intersection_point(m2)
             if intersects:
                 m1_vector = m2.movement - m1.movement
@@ -185,3 +174,7 @@ class Engine(TwistedEventLoop):
                 m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
                 m1.add_collision(m1_force)
                 m2.add_collision(m2_force)
+            for part in m1.parts_by_bounding_boxes(m1_intersection_parts):
+                part.damage()
+            for part in m2.parts_by_bounding_boxes(m2_intersection_parts):
+                part.damage()

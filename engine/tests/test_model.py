@@ -38,7 +38,6 @@ class TestBoundingBox(object):
             assert actual.y2 == original.y2 + 10
 
 
-
 class TestCollisions(object):
 
     def setup(self):

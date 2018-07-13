@@ -1,6 +1,6 @@
+from collections import defaultdict
 from math import cos, sin, radians
 from typing import Callable, Set
-from collections import defaultdict
 from uuid import uuid4
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
@@ -15,6 +15,7 @@ class PositionalModel(object):
         self._name = name
         self._action_observers = defaultdict(set)
         self._material_observers = set()
+        self.material_value = 0.0
 
     @property
     def name(self):
@@ -103,9 +104,15 @@ class BaseModel(PositionalModel):
         self._explosion_time = 0.0
         self._collisions_to_solve = set()
 
+    def parts_by_bounding_boxes(self, bounding_boxes: set):
+        return {self}
+
     @property
     def destructive_energy(self):
         return 0
+
+    def damage(self):
+        pass
 
     @property
     def collisions_to_solve(self) -> Set[MutableForce]:
@@ -164,7 +171,7 @@ class BaseModel(PositionalModel):
         self._time_consumed += dt
         if self.is_exploding:
             self._explosion_time += dt
-            if self.explosion_timer > 1.0:
+            if self.explosion_timer > 3.0:
                 self.set_alive(False)
 
     @property

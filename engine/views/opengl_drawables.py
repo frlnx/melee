@@ -1,12 +1,14 @@
-from .opengl_shapes import shape_factory
-from .opengl_mesh import Drawable
-from pyglet.gl import *
-from engine.views.opengl_mesh import OpenGLMaterial
 import ctypes
-
 from math import *
 
+from pyglet.gl import *
 
+from engine.views.opengl_mesh import OpenGLMaterial
+from .opengl_mesh import Drawable
+from .opengl_shapes import shape_factory
+
+
+# noinspection PyTypeChecker
 class ExplosionDrawable(Drawable):
 
     def __init__(self):
