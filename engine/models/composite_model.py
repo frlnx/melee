@@ -79,7 +79,9 @@ class CompositeModel(BaseModel):
         coords = (part_model.x, part_model.z)
         if coords in self._parts:
             del self._parts[coords]
-            self.rebuild()
+        if part_model.uuid in self._part_by_uuid:
+            del self._part_by_uuid[part_model.uuid]
+        self.rebuild()
 
     def rebuild(self):
         if len(self.parts) > 0:
@@ -89,6 +91,8 @@ class CompositeModel(BaseModel):
             self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
             bboxes = []
             for part in self.parts:
+                if not part.is_alive:
+                    continue
                 bbox = part.bounding_box.__copy__()
                 bbox.part_id = part.uuid
                 bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
@@ -118,4 +122,3 @@ class CompositeModel(BaseModel):
         for part in self.parts:
             self._torque += part.torque
         return self._torque
-

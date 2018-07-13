@@ -1,6 +1,7 @@
-from .base_model import BaseModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
+from .base_model import BaseModel
+
 
 class AsteroidModel(BaseModel):
 

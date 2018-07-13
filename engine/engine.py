@@ -168,8 +168,9 @@ class Engine(TwistedEventLoop):
             if intersects:
                 m1_vector = m2.movement - m1.movement
                 m2_vector = -m1_vector
-                m1_mass_quota = m2.mass / m1.mass
-                m2_mass_quota = m1.mass / m2.mass
+                combined_mass = m1.mass + m2.mass
+                m1_mass_quota = m2.mass / combined_mass
+                m2_mass_quota = m1.mass / combined_mass
                 m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
                 m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
                 m1.add_collision(m1_force)

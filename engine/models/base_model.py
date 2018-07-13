@@ -148,8 +148,10 @@ class BaseModel(PositionalModel):
         return self._alive
 
     def set_alive(self, state):
+        callback = self._alive != state
         self._alive = state
-        self._callback("alive")
+        if callback:
+            self._callback("alive")
 
     @property
     def data_dict(self):
@@ -173,6 +175,7 @@ class BaseModel(PositionalModel):
             self._explosion_time += dt
             if self.explosion_timer > 3.0:
                 self.set_alive(False)
+                self._exploding = False
 
     @property
     def time_consumed(self):

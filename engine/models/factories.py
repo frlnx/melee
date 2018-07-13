@@ -4,11 +4,7 @@ from functools import partial
 from math import sin, cos, radians
 from random import normalvariate
 
-from engine.models.asteroid import AsteroidModel
-from engine.models.projectiles import PlasmaModel
-from engine.models.shield import ShieldModel
-from engine.models.ship import ShipModel
-from engine.models.ship_part import ShipPartModel
+from engine.models import *
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import MultiPolygon, Polygon
 
