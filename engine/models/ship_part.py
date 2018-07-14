@@ -42,7 +42,11 @@ class ShipPartModel(BaseModel):
 
     def update_working_status(self):
         names_of_connected_parts = set([part.name for part in self.connected_parts])
-        self._working = len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
+        working = len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
+        updated = self._working != working
+        self._working = working
+        if updated:
+            self._callback("working")
 
     def connect(self, other_part: "ShipPartModel"):
         self._connect(other_part)
@@ -50,6 +54,8 @@ class ShipPartModel(BaseModel):
 
     def _connect(self, other_part: "ShipPartModel"):
         self._connected_parts.add(other_part)
+        if other_part.name in self.needs_connection_to:
+            other_part.observe(self.update_working_status, "working")
         self.update_working_status()
 
     def disconnect(self, other_part: "ShipPartModel"):
@@ -59,6 +65,8 @@ class ShipPartModel(BaseModel):
     def _disconnect(self, other_part: "ShipPartModel"):
         try:
             self._connected_parts.remove(other_part)
+            if other_part.name in self.needs_connection_to:
+                other_part.unobserve(self.update_working_status, "working")
             self.update_working_status()
         except KeyError:
             pass

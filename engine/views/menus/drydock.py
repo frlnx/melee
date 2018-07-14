@@ -143,6 +143,7 @@ class ConfigurableItem(DrydockItem):
 class DockableItem(DrydockItem):
     def __init__(self, model: ShipPartModel, view: ShipPartDrydockView, legal_move_func=None):
         super().__init__(model, view)
+        self.model.observe(self.update_status, "working")
         self._view = view
         self.legal_move_func = legal_move_func or (lambda: True)
         self._observers = set()
@@ -428,7 +429,7 @@ class Drydock(ShipConfiguration):
         return item
 
     def item_spawn_from_model(self, model):
-        view = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
+        view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
         view.set_mesh_scale(0.25)
         spawn_func = partial(self.item_from_name, model.name, view_class=ShipPartDrydockView,
                              position=model.position)
@@ -439,7 +440,7 @@ class Drydock(ShipConfiguration):
         return self._held_item
 
     @property
-    def items(self) -> Set[DockableItem]:
+    def items(self) -> Set[DrydockItem]:
         return self._items
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
