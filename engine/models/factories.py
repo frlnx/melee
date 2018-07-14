@@ -90,9 +90,12 @@ class ShipPartModelFactory(object):
         ]
         for build_config in build_configs:
             key = build_config['key']
-            config[key] = placement_config.get(key, build_config.get('default'))
+            config[key] = placement_config.get(key) or build_config.get('default')
             if 'class' in build_config:
-                config[key] = build_config['class'](*config[key])
+                try:
+                    config[key] = build_config['class'](*config[key])
+                except TypeError:
+                    print("DEBUG")
 
         x = config['position'].x
         y = config['position'].z

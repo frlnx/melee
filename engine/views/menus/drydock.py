@@ -3,7 +3,7 @@ import json
 from functools import partial
 from itertools import combinations
 from math import hypot, atan2, degrees
-from typing import Set
+from typing import Set, Callable
 
 from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING
 from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, glScalef
@@ -20,7 +20,8 @@ from engine.views.ship_part import ShipPartDrydockView, NewPartDrydockView, Ship
 
 class DrydockElement(object):
 
-    _to_cfloat_array = ctypes.c_float * 4
+    # noinspection PyTypeChecker
+    _to_cfloat_array: Callable = ctypes.c_float * 4
 
     def __init__(self, model: PositionalModel, view: ShipPartView):
         self.model = model
@@ -237,6 +238,7 @@ class ItemSpawn(DrydockElement):
     def grab(self):
         self.set_highlight(False)
         new_item = self.spawn_func()
+        new_item.set_highlight(True)
         return new_item.grab()
 
 
@@ -310,7 +312,7 @@ class ShipConfiguration(object):
 
     def find_closest_item_to(self, x, y):
         closest_item = None
-        closest_distance = 9999999999999999999
+        closest_distance = float('inf')
         for item in self.highlightables:
             distance = self.distance_to_item(item, x, y)
             if distance < closest_distance:
@@ -412,11 +414,12 @@ class Drydock(ShipConfiguration):
         return new_items
 
     def reset(self):
-        self._items = [self.item_from_name("cockpit")]
+        self._items = {self.item_from_name("cockpit")}
 
     def item_from_name(self, name, model_class=None, view_class=None, position=None):
         model = self.part_factory.manufacture(name, model_class=model_class, position=position)
-        return self.item_from_model(model, view_class=view_class)
+        item = self.item_from_model(model, view_class=view_class)
+        return item
 
     def item_from_model(self, model, view_class=None):
         item = super(Drydock, self).item_from_model(model, view_class=view_class)
@@ -449,9 +452,19 @@ class Drydock(ShipConfiguration):
         else:
             distance = self.distance_to_item(self.highlighted_item, x, y)
             if distance < 50:
-                self._held_item = self.highlighted_item.grab()
+                self.grab(self.highlighted_item)
                 self._held_item.drag(*self._screen_to_model(x, y))
                 self._items.add(self.held_item)
+
+    def grab(self, item: DockableItem):
+        if self.highlighted_item != item:
+            self.highlighted_item.set_highlight(False, False)
+        if self.held_item:
+            self.held_item.drop()
+        self._held_item = item.grab()
+        if self._held_item != self.highlighted_item:
+            self.highlighted_item = self._held_item
+            self._held_item.set_highlight(True)
 
     def _update_connections(self):
         for item1, item2 in combinations(self.items, 2):

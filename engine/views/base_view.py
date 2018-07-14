@@ -149,7 +149,7 @@ class BaseView(object):
         pass
 
     def _draw_global(self):
-        self._draw_bbox(self._model.bounding_box)
+        pass
 
     def _light_on(self):
         glEnable(GL_LIGHTING)
