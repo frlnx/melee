@@ -74,12 +74,10 @@ class CompositeModel(BaseModel):
         self.rebuild()
 
     def rebuild(self):
-        if sum(part.is_alive for part in self.parts) > 0:
-            self._mass = sum([part.mass if part.is_alive and not part.is_exploding else 0 for part in self.parts])
+        if len(self.parts_of_bbox) > 0:
+            self._mass = sum([part.mass for part in self.parts_of_bbox])
             bboxes = []
-            for part in self.parts:
-                if not part.is_alive or part.is_exploding:
-                    continue
+            for part in self.parts_of_bbox:
                 bbox = part.bounding_box.__copy__()
                 bbox.part_id = part.uuid
                 bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
@@ -97,6 +95,10 @@ class CompositeModel(BaseModel):
             self._callback("rebuild")
         else:
             self.set_alive(False)
+
+    @property
+    def parts_of_bbox(self):
+        return [part for part in self.parts if part.is_alive and not part.is_exploding]
 
     @property
     def acceleration(self):

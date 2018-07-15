@@ -10,7 +10,13 @@ class PlasmaModel(BaseModel):
         super(PlasmaModel, self).__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._ttl = 4
         self._mass = 0.001
+        self._alive = True
         self._destructive_energy = 400
+
+    def recycle(self):
+        self._action_observers.clear()
+        self._ttl = 4
+        self._alive = True
 
     @property
     def destructive_energy(self):
@@ -23,6 +29,8 @@ class PlasmaModel(BaseModel):
     def count_down(self, dt):
         if self._ttl > 0:
             self._ttl -= dt
+        else:
+            self.set_alive(False)
 
     def timers(self, dt):
         super(PlasmaModel, self).timers(dt)
@@ -35,4 +43,4 @@ class PlasmaModel(BaseModel):
     def add_collision(self, force: MutableForce):
         self.set_movement(0, 0, 0)
         #self.explode()
-        #self.set_alive(False)
+        self.set_alive(False)

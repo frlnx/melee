@@ -141,7 +141,12 @@ class ProjectileModelFactory(object):
         projectile.set_movement(*movement)
         projectile.set_position_and_rotation(*position, *rotation)
         projectile.set_spin(*spin)
+        projectile.recycle()
+        projectile.observe(lambda: self.recycle(name, projectile) if not projectile.is_alive else None, "alive")
         return projectile
+
+    def recycle(self, name, projectile):
+        self.projectiles[name].append(projectile)
 
     def manufacture(self, name,
                     position: MutableOffsets, rotation: MutableDegrees,
