@@ -124,6 +124,9 @@ class Window(pyglet.window.Window):
                 view.draw()
             else:
                 self.del_view(view)
+        for view in self.views:
+            if view.is_alive:
+                view.draw_transparent()
         glDisable(GL_LIGHTING)
 
     def draw_menu(self):

@@ -36,8 +36,10 @@ class BaseView(object):
         self._mesh = mesh
         if mesh:
             self._draw = self._draw_mesh
+            self._draw_transparent = self._draw_transparent_mesh
         else:
             self._draw = self._draw_nothing
+            self._draw_transparent = self._draw_nothing
         self.yaw_catchup = 0
 
     def explode(self):
@@ -87,8 +89,10 @@ class BaseView(object):
         self._mesh = mesh
         if mesh:
             self._draw = self._draw_mesh
+            self._draw_transparent = self._draw_transparent_mesh
         else:
             self._draw = self._draw_nothing
+            self._draw_transparent = self._draw_nothing
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
@@ -137,6 +141,16 @@ class BaseView(object):
         self.tear_down_matrix()
         self._draw_global()
 
+    def draw_transparent(self):
+        self.set_up_matrix()
+        self.draw_transparent_sub_views()
+        self._light_on()
+        self._draw_transparent()
+        self._light_off()
+        self._draw_local()
+        self.tear_down_matrix()
+        self._draw_global()
+
     @staticmethod
     def _draw_bbox(bbox, color: Tuple[int, int, int, int]=None):
         color = color or (255, 255, 255, 255)
@@ -173,11 +187,21 @@ class BaseView(object):
         for subview in self._sub_views:
             subview.draw()
 
+    def draw_transparent_sub_views(self):
+        for subview in self._sub_views:
+            subview.draw_transparent()
+
     def _draw(self):
         self._mesh.draw()
 
+    def _draw_transparent(self):
+        self._mesh.draw_transparent()
+
     def _draw_mesh(self):
         self._mesh.draw()
+
+    def _draw_transparent_mesh(self):
+        self._mesh.draw_transparent()
 
     def _draw_nothing(self):
         pass

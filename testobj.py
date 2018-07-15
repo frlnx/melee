@@ -14,6 +14,9 @@ class TestWindow(Window):
 
     def __init__(self, obj):
         super().__init__(width=1280, height=720)
+        op = OpenGLWaveFrontParser(object_class=OpenGLMesh)
+        with open(path.join("objects", "backdrop.obj"), 'r') as f:
+            self.backdrop = op.parse(f.readlines())
         self.obj = obj
         self._to_cfloat_array = ctypes.c_float * 4
         self.rotation = 0
@@ -47,8 +50,10 @@ class TestWindow(Window):
         glTranslated(0, 0, -14)
         glRotatef(self.rotation, 0, 1, 0)
         glRotatef(self.rotation / 10, 1, 0, 0)
-
+        self.backdrop.draw()
         self.obj.draw()
+        self.backdrop.draw_transparent()
+        self.obj.draw_transparent()
         return
 
     def on_key_press(self, symbol, modifiers):

@@ -34,13 +34,18 @@ class Drawable(object):
     def _disable_cull_face(self):
         glDisable(GL_CULL_FACE)
 
+    def is_transparent(self):
+        pass
+
 
 class OpenGLMesh(WaveFrontObject):
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
         super().__init__(faces, textured_faces, name, group)
         self.materials = {face.material.name: face.material for face in chain(faces, textured_faces)}
-        self.drawables = self._render_bundles()
+        self.drawables = set()
+        self.transparent_drawables = set()
+        self._render_bundles()
         self.animations = set()
         self.transmutations = set()
 
@@ -68,12 +73,14 @@ class OpenGLMesh(WaveFrontObject):
             n_points = min(face.n_vertices, 5)
             material_n_points_draw_mode_key = (face.material.name, n_points, face.draw_mode)
             faces_by_material_n_points_draw_mode[material_n_points_draw_mode_key].append(face)
-        bundles = set()
+
         for (material_name, n_points, draw_mode), faces in faces_by_material_n_points_draw_mode.items():
             material = self.materials[material_name]
             bundle = OpenGLFaceBundle(faces, material, n_points, draw_mode)
-            bundles.add(bundle)
-        return bundles
+            if bundle.is_transparent():
+                self.transparent_drawables.add(bundle)
+            else:
+                self.drawables.add(bundle)
 
     def set_double_sided(self, state):
         for drawable in self.drawables:
@@ -104,8 +111,11 @@ class OpenGLMesh(WaveFrontObject):
             for material in self.materials.values():
                 transmutation(material, dt)
 
-    def add_drawable(self, drawable):
-        self.drawables.add(drawable)
+    def add_drawable(self, drawable: Drawable):
+        if drawable.is_transparent():
+            self.transparent_drawables.add(drawable)
+        else:
+            self.drawables.add(drawable)
 
     def remove_drawable(self, drawable):
         try:
@@ -114,11 +124,25 @@ class OpenGLMesh(WaveFrontObject):
             pass
 
     def draw(self):
+        self.push_attributes()
+        for bundle in self.drawables:
+            bundle.draw()
+        self.pop_attributes()
+
+    def draw_transparent(self):
+        self.push_attributes()
+        for bundle in self.transparent_drawables:
+            bundle.draw()
+        self.pop_attributes()
+
+    @staticmethod
+    def push_attributes():
         glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT)
         glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT)
         glDisable(GL_TEXTURE_2D)
-        for bundle in self.drawables:
-            bundle.draw()
+
+    @staticmethod
+    def pop_attributes():
         glPopAttrib()
         glPopClientAttrib()
 
@@ -338,6 +362,9 @@ class OpenGLFaceBundle(Drawable):
         self.material.set_material()
         glInterleavedArrays(self.draw_mode, 0, self.c_draw_data)
         glDrawArrays(self.shape, 0, len(self.faces) * self.n_points)
+
+    def is_transparent(self):
+        return self.material.alpha < 1.0
 
     def __repr__(self):
         return "{} {}-gons of {}".format(len(self.faces), self.n_points, self.material.name)

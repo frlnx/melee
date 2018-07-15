@@ -27,7 +27,7 @@ class Keyboard(InputHandler):
         except KeyError:
             pass
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def _on_mouse_motion(self, x, y, dx, dy):
         if dx > 0:
             self.axis["x"] = max(0, min(1.0, dx / self.sensitivity))
             self.axis["-x"] = 0
