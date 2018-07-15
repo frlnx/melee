@@ -11,6 +11,7 @@ from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH
 from engine.views.base_view import BaseView
 from engine.views.debris import Debris
 from engine.views.factories import DynamicViewFactory
+from engine.views.hud import Hud
 
 
 # noinspection PyTypeChecker
@@ -19,6 +20,7 @@ class Window(pyglet.window.Window):
         super().__init__(width=1280, height=720)
         with open('meshfactory.pkl', 'rb') as f:
             self.mesh_factory = pickle.load(f)
+        self.hud = Hud()
         self._to_cfloat_array = ctypes.c_float * 4
         self.view_factory = DynamicViewFactory(self.mesh_factory)
         self.views = set()
@@ -51,6 +53,7 @@ class Window(pyglet.window.Window):
 
     def spawn(self, model):
         view = self.view_factory.manufacture(model)
+        self.hud.add_model(model)
         #  self.spawn_sound.play()
         self.new_views.add(view)
         if self.my_model is None:
@@ -87,6 +90,7 @@ class Window(pyglet.window.Window):
             self.draw_space()
             self.integrate_new_views()
             self.remove_views()
+            self.draw_hud()
 
     def set_up_perspective(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -129,6 +133,14 @@ class Window(pyglet.window.Window):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         self.menu.draw()
+
+    def draw_hud(self):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, self.width, 0, self.height, -1., 1000.)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        self.hud.draw()
 
     def integrate_new_views(self):
         self.views.update(self.new_views)
