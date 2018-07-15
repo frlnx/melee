@@ -10,7 +10,7 @@ from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScal
 from pyglet.graphics import draw, GL_LINES
 
 from engine.models.base_model import BaseModel
-from .opengl_animations import explode
+from .opengl_animations import Explosion
 from .opengl_drawables import ExplosionDrawable
 
 
@@ -45,7 +45,9 @@ class BaseView(object):
         schedule(explosion.timer)
         schedule_once(lambda x: unschedule(explosion.timer), 2.)
         schedule_once(lambda x: self._mesh.remove_drawable(explosion), 2.)
-        self._mesh.add_animation(explode)
+        explosion_animator = Explosion(self._mesh.all_faces)
+        self._mesh.add_animation(explosion_animator.animate)
+        schedule_once(lambda x: explosion_animator.expire(), 6.)
         self._mesh.add_drawable(explosion)
         self._mesh.set_double_sided(True)
 
@@ -90,6 +92,7 @@ class BaseView(object):
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
+        sub_view._model.observe(lambda: self.remove_sub_view(sub_view), "alive")
 
     def remove_sub_view(self, sub_view):
         try:

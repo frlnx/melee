@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from functools import partial
+from itertools import combinations
 from math import sin, cos, radians
 from random import normalvariate
 
@@ -22,6 +23,11 @@ class ShipModelFactory(object):
                     acceleration=None, torque=None) -> ShipModel:
         config = deepcopy(self.ships[name])
         parts = self.ship_part_model_factory.manufacture_all(config['parts'])
+
+        for part1, part2 in combinations(parts, 2):
+            distance = self.distance(part1, part2)
+            if distance < 1.7:
+                part1.connect(part2)
 
         ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
@@ -53,6 +59,10 @@ class ShipModelFactory(object):
                          movement=movement, spin=spin, acceleration=acceleration, torque=torque,
                          bounding_box=bounding_box)
         return ship
+
+    @classmethod
+    def distance(cls, part1: ShipPartModel, part2: ShipPartModel):
+        return (part1.position - part2.position).distance
 
 
 class ShipPartModelFactory(object):
@@ -92,10 +102,7 @@ class ShipPartModelFactory(object):
             key = build_config['key']
             config[key] = placement_config.get(key) or build_config.get('default')
             if 'class' in build_config:
-                try:
-                    config[key] = build_config['class'](*config[key])
-                except TypeError:
-                    print("DEBUG")
+                config[key] = build_config['class'](*config[key])
 
         x = config['position'].x
         y = config['position'].z

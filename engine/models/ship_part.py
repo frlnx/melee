@@ -41,12 +41,16 @@ class ShipPartModel(BaseModel):
         return self._working
 
     def update_working_status(self):
-        names_of_connected_parts = set([part.name for part in self.connected_parts])
-        working = len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
+        working = self.needs_fullfilled and self.is_alive and not self.is_exploding
         updated = self._working != working
         self._working = working
         if updated:
             self._callback("working")
+
+    @property
+    def needs_fullfilled(self):
+        names_of_connected_parts = set([part.name for part in self.connected_parts if part.working])
+        return len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
 
     def connect(self, other_part: "ShipPartModel"):
         self._connect(other_part)
@@ -56,6 +60,8 @@ class ShipPartModel(BaseModel):
         self._connected_parts.add(other_part)
         if other_part.name in self.needs_connection_to:
             other_part.observe(self.update_working_status, "working")
+            other_part.observe(self.update_working_status, "explode")
+            other_part.observe(self.update_working_status, "alive")
         self.update_working_status()
 
     def disconnect(self, other_part: "ShipPartModel"):
@@ -67,18 +73,23 @@ class ShipPartModel(BaseModel):
             self._connected_parts.remove(other_part)
             if other_part.name in self.needs_connection_to:
                 other_part.unobserve(self.update_working_status, "working")
+                other_part.unobserve(self.update_working_status, "explode")
+                other_part.unobserve(self.update_working_status, "alive")
             self.update_working_status()
         except KeyError:
             pass
 
+    def disconnect_all(self):
+        for connected_part in self.connected_parts:
+            connected_part.unobserve(self.update_working_status, "working")
+            connected_part.unobserve(self.update_working_status, "explode")
+            connected_part.unobserve(self.update_working_status, "alive")
+        self.connected_parts.clear()
+        self.update_working_status()
+
     @property
     def connected_parts(self):
         return self._connected_parts
-
-    def __getstate__(self):
-        d = super(ShipPartModel, self).__getstate__()
-        d['_material_observers'] = set()
-        return d
 
     def set_controls(self, button=None, keyboard=None, axis=None):
         self.button = button
@@ -162,3 +173,7 @@ class ShipPartModel(BaseModel):
     def damage(self):
         super(ShipPartModel, self).damage()
         self.explode()
+
+    def explode(self):
+        super(ShipPartModel, self).explode()
+        self.disconnect_all()

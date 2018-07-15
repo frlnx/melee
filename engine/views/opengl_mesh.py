@@ -44,6 +44,10 @@ class OpenGLMesh(WaveFrontObject):
         self.animations = set()
         self.transmutations = set()
 
+    @property
+    def all_faces(self):
+        return chain(self._faces, self._textured_faces)
+
     def update_material(self, material_name, material_mode, material_channel, value):
         channels = 'rgba'
         values = [int(channel not in material_channel) or value for channel in channels]
@@ -95,8 +99,7 @@ class OpenGLMesh(WaveFrontObject):
 
     def timer(self, dt):
         for animation in self.animations:
-            for face in self._faces + self._textured_faces:
-                animation(face, dt)
+            animation(dt)
         for transmutation in self.transmutations:
             for material in self.materials.values():
                 transmutation(material, dt)

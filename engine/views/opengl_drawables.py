@@ -8,7 +8,6 @@ from .opengl_mesh import Drawable
 from .opengl_shapes import shape_factory
 
 
-# noinspection PyTypeChecker
 class ExplosionDrawable(Drawable):
 
     def __init__(self):
