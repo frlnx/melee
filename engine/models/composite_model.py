@@ -1,23 +1,25 @@
+from itertools import combinations
 from typing import Set
 
 from engine.models.base_model import BaseModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
-from engine.physics.polygon import Polygon, MultiPolygon
+from engine.physics.polygon import MultiPolygon
 
 
 class CompositeModel(BaseModel):
     def __init__(self, parts: Set[BaseModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees,
-                 bounding_box: Polygon):
-        super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
+                 acceleration: MutableOffsets, torque: MutableDegrees):
         self._parts = {(part.x, part.z): part for part in parts}
         self._part_by_uuid = {part.uuid: part for part in parts}
-        self._mass = sum([part.mass for part in self.parts])
-        bb_width = (self._bounding_box.right - self._bounding_box.left)
-        bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-        self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        self._rebuild_connections()
+        self._position = position
+        self._rotation = rotation
+        bounding_box = self._build_bounding_box(self.parts_of_bbox)
+        super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
+        self._calculate_mass()
+        self._calculate_inertia()
         self._own_spawns = []
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
@@ -49,11 +51,17 @@ class CompositeModel(BaseModel):
                 spawns.append(part.pop_spawn())
         return spawns
 
-    def set_parts(self, parts):
-        self.parts.clear()
-        self.parts.update(parts)
-        self._part_by_uuid.clear()
-        for part in parts:
+    def set_parts(self, parts: set):
+        new_parts = {p.uuid for p in parts} - {p.uuid for p in self.parts}
+        removed_parts = {p.uuid for p in self.parts} - {p.uuid for p in parts}
+        for uuid in removed_parts:
+            removed_part = self._part_by_uuid[uuid]
+            removed_part.disconnect_all()
+            removed_part.remove_all_observers()
+            del self._part_by_uuid[uuid]
+        self._parts.clear()
+        self._parts.update({(part.x, part.z): part for part in parts})
+        for part in new_parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
             self._part_by_uuid[part.uuid] = part
         self.rebuild()
@@ -75,26 +83,45 @@ class CompositeModel(BaseModel):
 
     def rebuild(self):
         if len(self.parts_of_bbox) > 0:
-            self._mass = sum([part.mass for part in self.parts_of_bbox])
-            bboxes = []
-            for part in self.parts_of_bbox:
-                bbox = part.bounding_box.__copy__()
-                bbox.part_id = part.uuid
-                bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
-                bbox.freeze()
-                bbox.clear_movement()
-                bboxes.append(bbox)
-            bounding_box = MultiPolygon(bboxes)
-            bounding_box.freeze()
-            bounding_box.set_position_rotation(self.position.x, self.position.z, self.rotation.yaw)
-            bounding_box.clear_movement()
-            self._bounding_box = bounding_box
-            bb_width = (self._bounding_box.right - self._bounding_box.left)
-            bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-            self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+            self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
+            self._calculate_mass()
+            self._calculate_inertia()
             self._callback("rebuild")
         else:
             self.set_alive(False)
+
+    def _build_bounding_box(self, ship_parts: list) -> MultiPolygon:
+        bboxes = []
+        for part in ship_parts:
+            bbox = part.bounding_box.__copy__()
+            bbox.part_id = part.uuid
+            bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
+            bbox.freeze()
+            bbox.clear_movement()
+            bboxes.append(bbox)
+        bounding_box = MultiPolygon(bboxes)
+        bounding_box.freeze()
+        bounding_box.set_position_rotation(self.position.x, self.position.z, self.rotation.yaw)
+        bounding_box.clear_movement()
+        return bounding_box
+
+    def _calculate_mass(self):
+        self._mass = sum([part.mass for part in self.parts_of_bbox])
+
+    def _calculate_inertia(self):
+        bb_width = (self._bounding_box.right - self._bounding_box.left)
+        bb_height = (self._bounding_box.top - self._bounding_box.bottom)
+        self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+
+    def _rebuild_connections(self):
+        for part in self.parts:
+            part.disconnect_all()
+        for part1, part2 in combinations(self.parts, 2):
+            distance = (part1.position - part2.position).distance
+            if distance < 1.7:
+                part1.connect(part2)
+            else:
+                part1.disconnect(part2)
 
     @property
     def parts_of_bbox(self):

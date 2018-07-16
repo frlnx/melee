@@ -390,11 +390,18 @@ class Drydock(ShipConfiguration):
     default_item_class = DockableItem
 
     def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
+        self.original_model = ship
+        ship = ship.copy()
         super().__init__(ship, view_factory)
         self.part_factory = ShipPartModelFactory()
         self._update_connections()
         self._held_item = None
         self._new_items = self._build_new_items()
+
+    def save_all(self):
+        super(Drydock, self).save_all()
+        self.original_model.set_parts(self.ship.parts)
+        self.original_model.rebuild()
 
     @property
     def highlightables(self):

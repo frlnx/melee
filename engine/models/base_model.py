@@ -37,6 +37,9 @@ class PositionalModel(object):
         except KeyError:
             pass
 
+    def remove_all_observers(self):
+        self._action_observers.clear()
+
     def set_material_value(self, value):
         self.material_value = value
         self._callback("material")

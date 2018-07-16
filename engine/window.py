@@ -1,6 +1,7 @@
 import ctypes
 import pickle
 from random import random, randrange
+from typing import Callable
 
 import pyglet
 from pyglet.gl import GL_DIFFUSE, GL_AMBIENT
@@ -14,14 +15,14 @@ from engine.views.factories import DynamicViewFactory
 from engine.views.hud import Hud
 
 
-# noinspection PyTypeChecker
 class Window(pyglet.window.Window):
+    _to_cfloat_array: Callable = ctypes.c_float * 4
+
     def __init__(self, input_handler=None):
         super().__init__(width=1280, height=720)
         with open('meshfactory.pkl', 'rb') as f:
             self.mesh_factory = pickle.load(f)
         self.hud = Hud()
-        self._to_cfloat_array = ctypes.c_float * 4
         self.view_factory = DynamicViewFactory(self.mesh_factory)
         self.views = set()
         self.new_views = set()
@@ -59,7 +60,7 @@ class Window(pyglet.window.Window):
         if self.my_model is None:
             self.my_model = model
             self.my_view = view
-            for i in range(30):
+            for i in range(100):
                 self.debris.append(Debris(randrange(-40, 40), randrange(-4, 4), randrange(-40, 40),
                                           random(), model.movement))
 

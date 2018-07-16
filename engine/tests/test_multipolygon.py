@@ -32,6 +32,11 @@ class TestMultiPolygonCollision(object):
         collider = MultiPolygon.manufacture([(-.9, -10), (-.9, -10)])
         collider.set_position_rotation(-.9, 20, 0)
         self.polygon_part_sets = target.intersected_polygons(collider)
+        self.polygon_part_sets_reversed = collider.intersected_polygons(target)
+
+    def test_polygon_parts_are_reversed_when_called_in_reverse(self):
+        first, second = self.polygon_part_sets
+        assert (second, first) == self.polygon_part_sets_reversed
 
     def test_two_collisions_on_target(self):
         target_set, _ = self.polygon_part_sets

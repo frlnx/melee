@@ -1,7 +1,6 @@
 import json
 from copy import deepcopy
 from functools import partial
-from itertools import combinations
 from math import sin, cos, radians
 from random import normalvariate
 
@@ -24,10 +23,10 @@ class ShipModelFactory(object):
         config = deepcopy(self.ships[name])
         parts = self.ship_part_model_factory.manufacture_all(config['parts'])
 
-        for part1, part2 in combinations(parts, 2):
-            distance = self.distance(part1, part2)
-            if distance < 1.7:
-                part1.connect(part2)
+        #for part1, part2 in combinations(parts, 2):
+        #    distance = self.distance(part1, part2)
+        #    if distance < 1.7:
+        #        part1.connect(part2)
 
         ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
@@ -43,21 +42,8 @@ class ShipModelFactory(object):
         spin = MutableDegrees(*spin)
         acceleration = MutableOffsets(*acceleration)
         torque = MutableDegrees(*torque)
-        bboxes = []
-        for part in parts:
-            bbox = part.bounding_box.__copy__()
-            bbox.part_id = part.uuid
-            bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
-            bbox.freeze()
-            bbox.clear_movement()
-            bboxes.append(bbox)
-        bounding_box = MultiPolygon(bboxes)
-        bounding_box.freeze()
-        bounding_box.set_position_rotation(position.x, position.z, rotation.yaw)
-        bounding_box.clear_movement()
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
-                         movement=movement, spin=spin, acceleration=acceleration, torque=torque,
-                         bounding_box=bounding_box)
+                         movement=movement, spin=spin, acceleration=acceleration, torque=torque)
         return ship
 
     @classmethod
@@ -110,6 +96,8 @@ class ShipPartModelFactory(object):
         bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
                                            x=x, y=y, rotation=yaw)
         config['bounding_box'] = bounding_box
+        config['states'] = {t['name']: t for t in config.get('states', [{"name": "idle"}])}
+        config['needs_connection_to'] = set(config.get('needs_connection_to', []))
         model_class = model_class or self.model_map.get(name, ShipPartModel)
         part = model_class(**config)
         return part

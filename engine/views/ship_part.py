@@ -23,7 +23,7 @@ class ShipPartView(BaseView):
     def set_effect_value(self, effect_value):
         if self._model.material_affected:
             self._mesh.update_material(self._model.material_affected, self._model.material_mode,
-                                       self._model.material_channel, effect_value)
+                                       self._model.material_channels, effect_value)
 
 
 class PartDrydockView(ShipPartView):

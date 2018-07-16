@@ -11,7 +11,7 @@ class ShipPartModel(BaseModel):
                  acceleration: MutableOffsets, torque: MutableDegrees, bounding_box, **part_spec):
         super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._name = name
-        self._states = {t['name']: t for t in part_spec.get('states', [{"name": "idle"}])}
+        self._states: dict = part_spec['states']
         self.button = part_spec.get('button')
         self.keyboard = part_spec.get('keyboard')
         self.mouse = part_spec.get('mouse', [])
@@ -20,8 +20,8 @@ class ShipPartModel(BaseModel):
         self._mesh_name = part_spec.get('mesh_name')
         self.material_affected = part_spec.get('material_affected')
         self.material_mode = part_spec.get('material_mode')
-        self.material_channel = part_spec.get('material_channels')
-        self.needs_connection_to = set(part_spec.get('needs_connection_to', []))
+        self.material_channels = part_spec.get('material_channels')
+        self.needs_connection_to: set = part_spec['needs_connection_to']
         self.material_value = 0
         self.input_value = 0
         self._spawn = None
@@ -57,6 +57,8 @@ class ShipPartModel(BaseModel):
         other_part._connect(self)
 
     def _connect(self, other_part: "ShipPartModel"):
+        if other_part in self.connected_parts:
+            return
         self._connected_parts.add(other_part)
         if other_part.name in self.needs_connection_to:
             other_part.observe(self.update_working_status, "working")
@@ -71,19 +73,20 @@ class ShipPartModel(BaseModel):
     def _disconnect(self, other_part: "ShipPartModel"):
         try:
             self._connected_parts.remove(other_part)
+        except KeyError:
+            pass
+        else:
             if other_part.name in self.needs_connection_to:
                 other_part.unobserve(self.update_working_status, "working")
                 other_part.unobserve(self.update_working_status, "explode")
                 other_part.unobserve(self.update_working_status, "alive")
             self.update_working_status()
-        except KeyError:
-            pass
 
     def disconnect_all(self):
         for connected_part in self.connected_parts:
-            connected_part.unobserve(self.update_working_status, "working")
-            connected_part.unobserve(self.update_working_status, "explode")
-            connected_part.unobserve(self.update_working_status, "alive")
+            for signal in ["working", "explode", "alive"]:
+                connected_part.unobserve(self.update_working_status, signal)
+                self.unobserve(connected_part.update_working_status, signal)
         self.connected_parts.clear()
         self.update_working_status()
 
@@ -177,3 +180,13 @@ class ShipPartModel(BaseModel):
     def explode(self):
         super(ShipPartModel, self).explode()
         self.disconnect_all()
+
+    def copy(self):
+        return self.__class__(name=self.name, position=self.position.__copy__(), rotation=self.rotation.__copy__(),
+                              movement=self.movement.__copy__(), spin=self.spin.__copy__(),
+                              acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
+                              bounding_box=self.bounding_box.__copy__(), states=self._states.copy(),
+                              keyboard=self.keyboard, mouse=self.mouse.copy(), axis=self.axis, button=self.button,
+                              needs_connection_to=self.needs_connection_to.copy(), mesh_name=self.mesh_name,
+                              material_affected=self.material_affected, material_channels=self.material_channels,
+                              material_mode=self.material_mode)

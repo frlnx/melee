@@ -3,15 +3,13 @@ from typing import Set
 from engine.models.composite_model import CompositeModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
-from engine.physics.polygon import Polygon
 
 
 class ShipModel(CompositeModel):
     def __init__(self, ship_id, parts: Set[ShipPartModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees,
-                 bounding_box: Polygon):
-        super().__init__(parts, position, rotation, movement, spin, acceleration, torque, bounding_box)
+                 acceleration: MutableOffsets, torque: MutableDegrees):
+        super().__init__(parts, position, rotation, movement, spin, acceleration, torque)
         self.ship_id = ship_id
         self._target_position = self.position
         self._target_rotation = self.rotation
@@ -43,3 +41,11 @@ class ShipModel(CompositeModel):
     @property
     def fuel_percentage(self):
         return 1.00
+
+    def copy(self):
+        parts = [part.copy() for part in self.parts]
+        return self.__class__(self.ship_id, parts,
+                              position=self.position.__copy__(), rotation=self.position.__copy__(),
+                              movement=self.movement.__copy__(), spin=self.spin.__copy__(),
+                              acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
+                              bounding_box=self.bounding_box.__copy__())

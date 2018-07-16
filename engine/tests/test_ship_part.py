@@ -1,8 +1,5 @@
 from engine.controllers.factories import ShipPartControllerFactory
 from engine.models.factories import ShipPartModelFactory
-from engine.input_handlers import InputHandler
-
-from math import degrees
 
 controller_factory = ShipPartControllerFactory()
 model_factory = ShipPartModelFactory()
@@ -12,6 +9,7 @@ class TestHorizontalEngineAt135DegreesOff(object):
 
     def setup(self):
         model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 90, 0])
+        model._working = True
         self.target = model
         self.target.set_state("active")
         self.target.set_input_value(1.0)
@@ -37,6 +35,7 @@ class TestHorizontalEngineAt45DegreesOff(object):
 
     def setup(self):
         model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 0, 0])
+        model._working = True
         self.target = model
         self.target.set_state("active")
         self.target.set_input_value(1.0)
