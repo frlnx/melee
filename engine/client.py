@@ -8,10 +8,9 @@ from engine.window import Window
 
 
 class ClientEngine(Engine):
-
     version = (1, 0, 0)
 
-    def __init__(self, input_handler=None, window=None):
+    def __init__(self, input_handler=None, window: Window = None):
         super().__init__()
 
         self.my_model = self.smf.manufacture("ship", position=self.random_position())
@@ -19,10 +18,9 @@ class ClientEngine(Engine):
         self.my_controller = None
 
         if window is None:
-            self.window = Window()
+            self.window: Window = Window(input_handler=input_handler)
         else:
-            self.window = window
-        self.window.spawn(self.my_model)
+            self.window: Window = window
         self.window.connect = self.connect
         if input_handler is not None:
             self.input_handler = input_handler
@@ -42,8 +40,8 @@ class ClientEngine(Engine):
 
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
-            if self.window.menu and self.callsign:
-                self.close_menu()
+            if self.window._menu and self.callsign:
+                self.window.close_menu()
             else:
                 if self.callsign:
                     self._menu_main_menu()
@@ -53,7 +51,7 @@ class ClientEngine(Engine):
     def _menu_login(self):
         login_menu = InputMenu.input_menu("Log in", self._menu_start, self._menu_left, self._menu_bottom,
                                           self._menu_exit, 36)
-        self.set_menu(login_menu)
+        self.window.set_menu(login_menu)
 
     def _menu_start(self, callsign: ''):
         self.callsign = callsign
@@ -61,23 +59,23 @@ class ClientEngine(Engine):
         self._menu_main_menu()
 
     def _menu_main_menu(self):
-        self.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu", self._main_menu_functions,
-                                                                self._menu_left, self._menu_bottom))
+        self.window.set_menu(BaseMenu.labeled_menu_from_function_names("Main Menu", self._main_menu_functions,
+                                                                       self._menu_left, self._menu_bottom))
 
     def _menu_start_local(self):
         self.start_local()
-        self._main_menu_functions = [self.close_menu, self._menu_shipyard, self._menu_controls,
+        self._main_menu_functions = [self.window.close_menu, self._menu_shipyard, self._menu_controls,
                                      self._menu_network, self._menu_exit]
-        self.close_menu()
+        self.window.close_menu()
 
     def _menu_shipyard(self):
-        self.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
-                                                               0, self._menu_bottom,
-                                                               self.window.view_factory))
+        self.window.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
+                                                                      0, self._menu_bottom,
+                                                                      self.window.view_factory))
 
     def _menu_network(self):
-        self.set_menu(InputMenu.input_menu("Network", self._menu_connect, self._menu_left, self._menu_bottom,
-                                           self._menu_main_menu, 36))
+        self.window.set_menu(InputMenu.input_menu("Network", self._menu_connect, self._menu_left, self._menu_bottom,
+                                                  self._menu_main_menu, 36))
 
     def _menu_controls(self):
         menu = ControlConfigMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
@@ -85,7 +83,7 @@ class ClientEngine(Engine):
                                                             self.window.view_factory)
         if self.input_handler:
             self.input_handler.push_handlers(menu)
-        self.set_menu(menu)
+        self.window.set_menu(menu)
 
     def _menu_exit(self):
         self.window.close()
@@ -98,23 +96,10 @@ class ClientEngine(Engine):
         self.spawn_self()
         self.connect_func(host, port)
         self.solve_collisions = self._client_solve_collisions
-        
-    def set_menu(self, menu):
-        if self.window.menu is not None:
-            self.window.remove_handlers(self.window.menu)
-            if self.input_handler:
-                self.input_handler.remove_handlers(self.window.menu)
-        self.window.menu = menu
-        self.window.push_handlers(self.window.menu)
-
-    def close_menu(self):
-        self.window.remove_handlers(self.window.menu)
-        if self.input_handler:
-            self.input_handler.remove_handlers(self.window.menu)
-        self.window.menu = None
 
     def start_local(self):
         self.spawn_self()
+        self.window.spawn(self.my_model)
 
         m2 = self.smf.manufacture("ship", position=self.random_position())
         self._new_model_callback(m2)

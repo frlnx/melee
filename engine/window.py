@@ -29,12 +29,13 @@ class Window(pyglet.window.Window):
         self.del_views = set()
         self.my_model = None
         self.my_view = None
-        self.menu = None
+        self._menu = None
         self._exit = False
         self.backdrop = self.mesh_factory.manufacture("backdrop")
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
         self.input_handler = input_handler
         self.debris = []
+        self.on_draw = self._on_draw_menu
 
         if input_handler:
             input_handler.push_handlers(self)
@@ -76,22 +77,40 @@ class Window(pyglet.window.Window):
         glMatrixMode(GL_MODELVIEW)
         return True
 
+    def set_menu(self, menu):
+        if self._menu is not None:
+            self.remove_handlers(self._menu)
+            if self.input_handler:
+                self.input_handler.remove_handlers(self._menu)
+        self._menu = menu
+        self.push_handlers(self._menu)
+        self.on_draw = self._on_draw_menu
+
+    def close_menu(self):
+        self.remove_handlers(self._menu)
+        if self.input_handler:
+            self.input_handler.remove_handlers(self._menu)
+        self._menu = None
+        self.on_draw = self._on_draw_game
+
     def on_draw(self):
-        self.clear()
+        pass
+
+    def _on_draw_menu(self):
+        self.set_up_perspective()
+        self.backdrop.draw()
+        self.draw_menu()
+
+    def _on_draw_game(self):
         self.set_up_perspective()
         self.my_view.align_camera()
-
         self.backdrop.draw()
-
-        if self.menu:
-            self.draw_menu()
-        else:
-            self.draw_debris()
-            self.my_view.center_camera()
-            self.draw_space()
-            self.integrate_new_views()
-            self.remove_views()
-            self.draw_hud()
+        self.draw_debris()
+        self.my_view.center_camera()
+        self.draw_space()
+        self.integrate_new_views()
+        self.remove_views()
+        self.draw_hud()
 
     def set_up_perspective(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -136,7 +155,7 @@ class Window(pyglet.window.Window):
         glOrtho(0, self.width, 0, self.height, -1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        self.menu.draw()
+        self._menu.draw()
 
     def draw_hud(self):
         glMatrixMode(GL_PROJECTION)

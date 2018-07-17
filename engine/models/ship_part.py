@@ -1,4 +1,5 @@
 from math import radians, cos, atan2, degrees
+from typing import Set
 
 from engine.models.base_model import BaseModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -84,14 +85,14 @@ class ShipPartModel(BaseModel):
 
     def disconnect_all(self):
         for connected_part in self.connected_parts:
+            connected_part._disconnect(self)
             for signal in ["working", "explode", "alive"]:
-                connected_part.unobserve(self.update_working_status, signal)
                 self.unobserve(connected_part.update_working_status, signal)
         self.connected_parts.clear()
         self.update_working_status()
 
     @property
-    def connected_parts(self):
+    def connected_parts(self) -> Set["ShipPartModel"]:
         return self._connected_parts
 
     def set_controls(self, button=None, keyboard=None, axis=None):

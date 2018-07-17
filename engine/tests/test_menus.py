@@ -1,4 +1,5 @@
 from engine.models.factories import ShipModelFactory
+from engine.tests.fake_view_factory import FakeFactory
 from engine.views import menus
 
 
@@ -32,17 +33,6 @@ class TestInputMenu(object):
 
     def test_menu_func_is_callable(self):
         self.target.buttons[0].func()
-
-
-class FakeFactory(object):
-    def manufacture(self, name, view_class=None):
-        class Drawable(object):
-            def draw(self):
-                pass
-
-            def set_mesh_scale(self, scale):
-                pass
-        return Drawable()
 
 
 class TestConfigControlsMenu(object):

@@ -52,19 +52,18 @@ class CompositeModel(BaseModel):
         return spawns
 
     def set_parts(self, parts: set):
-        new_parts = {p.uuid for p in parts} - {p.uuid for p in self.parts}
-        removed_parts = {p.uuid for p in self.parts} - {p.uuid for p in parts}
-        for uuid in removed_parts:
-            removed_part = self._part_by_uuid[uuid]
+        for removed_part in self.parts:
             removed_part.disconnect_all()
             removed_part.remove_all_observers()
-            del self._part_by_uuid[uuid]
         self._parts.clear()
-        self._parts.update({(part.x, part.z): part for part in parts})
-        for part in new_parts:
+        self._part_by_uuid.clear()
+        self._parts = {(part.x, part.z): part for part in parts}
+        self._part_by_uuid = {part.uuid: part for part in parts}
+        for part in self.parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
             self._part_by_uuid[part.uuid] = part
         self.rebuild()
+        self._rebuild_connections()
 
     def add_part(self, part):
         x, z = part.x, part.z
@@ -82,6 +81,7 @@ class CompositeModel(BaseModel):
         self.rebuild()
 
     def rebuild(self):
+        print("Rebuild")
         if len(self.parts_of_bbox) > 0:
             self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
             self._calculate_mass()

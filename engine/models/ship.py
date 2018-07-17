@@ -45,7 +45,6 @@ class ShipModel(CompositeModel):
     def copy(self):
         parts = [part.copy() for part in self.parts]
         return self.__class__(self.ship_id, parts,
-                              position=self.position.__copy__(), rotation=self.position.__copy__(),
+                              position=self.position.__copy__(), rotation=self.rotation.__copy__(),
                               movement=self.movement.__copy__(), spin=self.spin.__copy__(),
-                              acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
-                              bounding_box=self.bounding_box.__copy__())
+                              acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__())
