@@ -3,7 +3,6 @@ from typing import Set
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
 from engine.input_handlers import InputHandler
-from engine.models.base_model import BaseModel
 from engine.models.ship import ShipModel
 
 
@@ -52,27 +51,17 @@ class ShipController(BaseController):
             self._possible_targets.remove(target_model)
         except ValueError:
             pass
+        if self._model.target == target_model:
+            self.select_next_target()
 
     def select_next_target(self):
         next_target = self.next_target()
-        self.select_target(next_target)
-        self.update_target_position()
+        self._model.set_target(next_target)
 
-    def next_target(self) -> BaseModel:
+    def next_target(self) -> ShipModel:
         index = self._possible_targets.index(self._target_model)
         target_model = self._possible_targets[(index + 1) % len(self._possible_targets)]
         return target_model
-
-    def select_target(self, target: BaseModel):
-        try:
-            self._target_model.unobserve(self.update_target_position)
-        except AttributeError:
-            pass
-        self._target_model = target
-        self._target_model.observe(self.update_target_position)
-
-    def update_target_position(self):
-        self._model.set_target_position_rotation(self._target_model.position, self._target_model.rotation)
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:

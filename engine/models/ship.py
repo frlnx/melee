@@ -11,8 +11,7 @@ class ShipModel(CompositeModel):
                  acceleration: MutableOffsets, torque: MutableDegrees):
         super().__init__(parts, position, rotation, movement, spin, acceleration, torque)
         self.ship_id = ship_id
-        self._target_position = self.position
-        self._target_rotation = self.rotation
+        self._target: ShipModel = None
         self.shields = []
         self._fuel_parts = [part for part in parts if part.state_spec.get('fuel storage')]
         self._max_fuel = sum([part.state_spec.get('fuel storage', 0) for part in self._fuel_parts])
@@ -23,20 +22,13 @@ class ShipModel(CompositeModel):
     def apply_global_force(self, force: 'MutableForce'):
         super(ShipModel, self).apply_global_force(force)
 
-    def set_target_position_rotation(self, position: MutableOffsets, rotation: MutableDegrees):
-        self._target_position = position
-        self._target_rotation = rotation
-
-    def set_target_position(self, position: MutableOffsets):
-        self._target_position = position
+    def set_target(self, target: "ShipModel"):
+        self._target = target
+        self._callback("target")
 
     @property
-    def target_pos(self):
-        return self._target_position
-
-    @property
-    def has_target(self):
-        return self._target_position is not None
+    def target(self) -> "ShipModel":
+        return self._target or self
 
     @property
     def fuel_percentage(self):
