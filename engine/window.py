@@ -22,8 +22,8 @@ class Window(pyglet.window.Window):
         super().__init__(width=1280, height=720)
         with open('meshfactory.pkl', 'rb') as f:
             self.mesh_factory = pickle.load(f)
-        self.hud = Hud()
         self.view_factory = DynamicViewFactory(self.mesh_factory)
+        self.hud = Hud(self.view_factory)
         self.views = set()
         self.new_views = set()
         self.del_views = set()
@@ -150,20 +150,19 @@ class Window(pyglet.window.Window):
         glDisable(GL_LIGHTING)
 
     def draw_menu(self):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0, self.width, 0, self.height, -1., 1000.)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        self._set_up_flat_ortho_projection()
         self._menu.draw()
 
     def draw_hud(self):
+        self._set_up_flat_ortho_projection()
+        self.hud.draw()
+
+    def _set_up_flat_ortho_projection(self):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glOrtho(0, self.width, 0, self.height, -1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        self.hud.draw()
 
     def integrate_new_views(self):
         self.views.update(self.new_views)

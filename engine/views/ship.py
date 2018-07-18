@@ -58,4 +58,4 @@ class ShipView(BaseView):
             self._draw_bbox(bbox, color=(255, 55, 25, 255))
 
     def center_camera(self):
-        glTranslated(*-self._model.position)
+        glTranslated(*-self.position)

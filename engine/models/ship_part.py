@@ -42,14 +42,14 @@ class ShipPartModel(BaseModel):
         return self._working
 
     def update_working_status(self):
-        working = self.needs_fullfilled and self.is_alive and not self.is_exploding
+        working = self.needs_fulfilled and self.is_alive and not self.is_exploding
         updated = self._working != working
         self._working = working
         if updated:
             self._callback("working")
 
     @property
-    def needs_fullfilled(self):
+    def needs_fulfilled(self):
         names_of_connected_parts = set([part.name for part in self.connected_parts if part.working])
         return len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
 

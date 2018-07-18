@@ -6,7 +6,7 @@ from random import normalvariate
 
 from engine.models import *
 from engine.physics.force import MutableOffsets, MutableDegrees
-from engine.physics.polygon import MultiPolygon, Polygon
+from engine.physics.polygon import MultiPolygon
 
 
 class ShipModelFactory(object):
@@ -22,11 +22,6 @@ class ShipModelFactory(object):
                     acceleration=None, torque=None) -> ShipModel:
         config = deepcopy(self.ships[name])
         parts = self.ship_part_model_factory.manufacture_all(config['parts'])
-
-        #for part1, part2 in combinations(parts, 2):
-        #    distance = self.distance(part1, part2)
-        #    if distance < 1.7:
-        #        part1.connect(part2)
 
         ship_id = "Unknown ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
@@ -93,8 +88,8 @@ class ShipPartModelFactory(object):
         x = config['position'].x
         y = config['position'].z
         yaw = config['rotation'].yaw
-        bounding_box = Polygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                           x=x, y=y, rotation=yaw)
+        bounding_box = MultiPolygon.manufacture([(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                                x=x, y=y, rotation=yaw)
         config['bounding_box'] = bounding_box
         config['states'] = {t['name']: t for t in config.get('states', [{"name": "idle"}])}
         config['needs_connection_to'] = set(config.get('needs_connection_to', []))

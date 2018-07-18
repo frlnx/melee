@@ -23,6 +23,7 @@ class CompositeModel(BaseModel):
         self._own_spawns = []
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
+            part.observe(self.rebuild, "explode")
 
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         parts = set()
@@ -61,6 +62,7 @@ class CompositeModel(BaseModel):
         self._part_by_uuid = {part.uuid: part for part in parts}
         for part in self.parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
+            part.observe(self.rebuild, "explode")
             self._part_by_uuid[part.uuid] = part
         self.rebuild()
         self._rebuild_connections()
@@ -70,6 +72,7 @@ class CompositeModel(BaseModel):
         self._parts[(x, z)] = part
         self._part_by_uuid[part.uuid] = part
         part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
+        part.observe(self.rebuild, "explode")
         self.rebuild()
 
     def remove_part(self, part_model):
@@ -78,10 +81,10 @@ class CompositeModel(BaseModel):
             del self._parts[coords]
         if part_model.uuid in self._part_by_uuid:
             del self._part_by_uuid[part_model.uuid]
+            part_model.unobserve(self.rebuild, "explode")
         self.rebuild()
 
     def rebuild(self):
-        print("Rebuild")
         if len(self.parts_of_bbox) > 0:
             self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
             self._calculate_mass()

@@ -14,7 +14,6 @@ from .opengl_animations import Explosion
 from .opengl_drawables import ExplosionDrawable
 
 
-# noinspection PyTypeChecker
 class BaseView(object):
     _to_cfloat_array = ctypes.c_float * 4
     _to_cfloat_three_array = ctypes.c_float * 3
@@ -210,14 +209,13 @@ class BaseView(object):
         glPopMatrix()
 
     def align_camera(self):
-        yaw = -self._model.yaw #- (self._model.spin.yaw / 2 - self.yaw_catchup)
-        glRotatef(yaw, 0, 1, 0)
+        glRotatef(-self.yaw, 0, 1, 0)
 
     def center_camera(self):
-        glRotatef(-self._model.pitch, 1, 0, 0)
-        glRotatef(-self._model.yaw, 0, 1, 0)
-        glRotatef(-self._model.roll, 0, 0, 1)
-        x, y, z = self._model.position
+        glRotatef(-self.pitch, 1, 0, 0)
+        glRotatef(-self.yaw, 0, 1, 0)
+        glRotatef(-self.roll, 0, 0, 1)
+        x, y, z = self.position
         glTranslated(-x, -y - 23, -z)
 
     def clear_sub_views(self):
@@ -229,4 +227,3 @@ class BaseView(object):
         if self._sub_views:
             for sub_view in self._sub_views:
                 sub_view.update_view_timer(dt)
-        self.yaw_catchup += (self._model.spin.yaw - self.yaw_catchup) * dt * 2
