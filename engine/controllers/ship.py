@@ -28,10 +28,6 @@ class ShipController(BaseController):
             self._model.add_own_spawn(part)
             self._model.remove_part(part)
 
-    def destroy_part(self, part):
-        self._model.remove_part(part)
-        part.set_alive(False)
-
     @property
     def spawns(self):
         return self._model.spawns
@@ -69,12 +65,11 @@ class ShipController(BaseController):
 
     def update(self, dt):
         super().update(dt)
+        for sub_controller in self._sub_controllers:
+            sub_controller.update(dt)
         buttons_done = set()
         for button in self._gamepad.buttons:
             if button in self._button_config:
                 self._button_config[button]()
                 buttons_done.add(button)
         self._gamepad.buttons -= buttons_done
-
-    def move_to(self, location):
-        self._model.set_position(*location)

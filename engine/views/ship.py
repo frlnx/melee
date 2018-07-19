@@ -28,18 +28,11 @@ class ShipView(BaseView):
         glTranslated(0, -distance, distance / 3)
         glRotatef(-45, 1, 0, 0)
         super().align_camera()
-        #yaw = sorted([-10, degrees(atan2(x - tx, distance / 2)) / 2, 10])[1]
-        #glRotatef(yaw, 0, 1, 0)
-
-        #pitch = sorted([-75, -degrees(atan2(z - tz, distance / 2)) / 2, 0])[1]
-        #roll = sorted([-50, degrees(atan2(x - tx, distance / 2)) / 2, 50])[1]
-        #glRotatef(yaw, 0, 1, 0)
-        #glRotatef(roll, 0, 0, 1)
 
     def _draw_local(self):
-        self._draw_fuel_gage()
+        self._draw_fuel_gauge()
 
-    def _draw_fuel_gage(self):
+    def _draw_fuel_gauge(self):
         n_filled_boxes = int(ceil(self._model.fuel_percentage * 10))
         n_unfilled_boxes = 10 - n_filled_boxes
         green_color_box = [0., 1., .3, 1.] * 4

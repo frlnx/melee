@@ -25,6 +25,11 @@ class CompositeModel(BaseModel):
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
             part.observe(self.rebuild, "explode")
 
+    def run(self, dt):
+        super(CompositeModel, self).run(dt)
+        for part in self.parts:
+            part.run(dt)
+
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         parts = set()
         for bbox in bounding_boxes:

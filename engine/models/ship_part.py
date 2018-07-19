@@ -22,6 +22,8 @@ class ShipPartModel(BaseModel):
         self.material_affected = part_spec.get('material_affected')
         self.material_mode = part_spec.get('material_mode')
         self.material_channels = part_spec.get('material_channels')
+        self.max_fuel_stored = part_spec.get('fuel storage')
+        self._fuel_stored = part_spec.get('fuel storage')
         self.needs_connection_to: set = part_spec['needs_connection_to']
         self.material_value = 0
         self.input_value = 0
@@ -34,6 +36,10 @@ class ShipPartModel(BaseModel):
         self._integrity = 100
 
     @property
+    def fuel_stored(self):
+        return self._fuel_stored
+
+    @property
     def integrity(self):
         return self._integrity
 
@@ -42,11 +48,28 @@ class ShipPartModel(BaseModel):
         return self._working
 
     def update_working_status(self):
-        working = self.needs_fulfilled and self.is_alive and not self.is_exploding
+        working = self.needs_fulfilled and self.is_alive and not self.is_exploding and self.fuel_stored != 0
         updated = self._working != working
         self._working = working
         if updated:
             self._callback("working")
+
+    @property
+    def _connected_fuel_tanks(self):
+        return [part for part in self.connected_parts if part.fuel_stored]
+
+    def _consume_fuel(self, amount):
+        fuel_tanks = self._connected_fuel_tanks
+        n_fuel_tanks = len(fuel_tanks)
+        amount_per_tank = amount / n_fuel_tanks
+        for fuel_tank in fuel_tanks:
+            fuel_tank.drain_fuel(amount_per_tank)
+
+    def drain_fuel(self, amount):
+        self._fuel_stored -= amount
+        self._fuel_stored = max(0, self._fuel_stored)
+        if self._fuel_stored == 0:
+            self.update_working_status()
 
     @property
     def needs_fulfilled(self):
@@ -101,12 +124,18 @@ class ShipPartModel(BaseModel):
         self.axis = axis
 
     def set_input_value(self, value):
-        self.input_value = value
+        self.input_value = self.working and value or 0
         thrust = self.input_value * self.state_spec.get('thrust generated', 0)
         torque_yaw = self.full_torque * thrust
         self.set_local_acceleration(0, 0, -thrust)
         self.set_torque(0, torque_yaw, 0)
         self.set_material_value(value)
+
+    def run(self, dt):
+        fuel_consumption = self.state_spec.get('fuel consumption')
+        if fuel_consumption and self.input_value > 0 and self.working:
+            fuel_consumed = fuel_consumption * self.input_value
+            self._consume_fuel(fuel_consumed)
 
     def timers(self, dt):
         super().timers(dt)

@@ -13,8 +13,8 @@ class ShipModel(CompositeModel):
         self.ship_id = ship_id
         self._target: ShipModel = None
         self.shields = []
-        self._fuel_parts = [part for part in parts if part.state_spec.get('fuel storage')]
-        self._max_fuel = sum([part.state_spec.get('fuel storage', 0) for part in self._fuel_parts])
+        self._fuel_parts = [part for part in parts if part.max_fuel_stored]
+        self._max_fuel = sum([part.max_fuel_stored for part in self._fuel_parts])
 
     def set_ship_id(self, identification):
         self.ship_id = identification
@@ -32,7 +32,7 @@ class ShipModel(CompositeModel):
 
     @property
     def fuel_percentage(self):
-        return 1.00
+        return sum(part.fuel_stored for part in self.parts if part.fuel_stored) / self._max_fuel
 
     def copy(self):
         parts = [part.copy() for part in self.parts]

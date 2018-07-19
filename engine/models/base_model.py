@@ -175,6 +175,18 @@ class BaseModel(PositionalModel):
         self._torque.set(0, data_dict['torque'], 0)
         self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
 
+    def run(self, dt):
+        half_of_acceleration = self.acceleration * dt / 2
+        half_of_torque = self.torque * dt / 2
+        self.reset_collisions()
+        self.movement.translate(half_of_acceleration)
+        self.spin.translate(half_of_torque)
+        self.translate(*(self.movement * dt))
+        self.rotate(*(self.spin * dt))
+        self.movement.translate(half_of_acceleration)
+        self.spin.translate(half_of_torque)
+        self.timers(dt)
+
     def timers(self, dt):
         self._time_consumed += dt
         if self.is_exploding:

@@ -35,10 +35,10 @@
     "mesh_name": "fuel tank",
     "states": [
       {
-        "name": "idle",
-        "fuel storage": 5000
+        "name": "idle"
       }
-    ]
+    ],
+    "fuel storage": 10000
   },
   {
     "name": "generator",
@@ -46,7 +46,7 @@
     "states": [
       {
         "name": "idle",
-        "fuel consumption": 10,
+        "fuel consumption": 1,
         "power generation": 150
       }
     ],
@@ -61,7 +61,7 @@
       },
       {
         "name": "active",
-        "fuel consumption": 10,
+        "fuel consumption": 5,
         "thrust generated": 5
       }
     ],
