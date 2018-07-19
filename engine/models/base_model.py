@@ -104,7 +104,7 @@ class BaseModel(PositionalModel):
             self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
         except AttributeError:
             self.inertia = 1
-        self.update_needed = False
+        self.bounding_box_update_needed = False
         self._alive = True
         self._exploding = False
         self._explosion_time = 0.0
@@ -185,6 +185,9 @@ class BaseModel(PositionalModel):
         self.rotate(*(self.spin * dt))
         self.movement.translate(half_of_acceleration)
         self.spin.translate(half_of_torque)
+        if self.bounding_box_update_needed:
+            self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)
+            self.bounding_box_update_needed = False
         self.timers(dt)
 
     def timers(self, dt):
@@ -250,9 +253,8 @@ class BaseModel(PositionalModel):
         return self.bounding_box.intersection_point(other_model.bounding_box)
 
     def update(self):
-        self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)
         self._callback()
-        self.update_needed = True
+        self.bounding_box_update_needed = True
 
     @property
     def name(self):

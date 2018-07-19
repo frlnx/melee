@@ -1,6 +1,5 @@
-from engine.physics.moving_shapes import MovingPolygon
 from engine.physics.force import MutableOffsets, MutableDegrees
-
+from engine.physics.moving_shapes import MovingPolygon
 
 
 class TestMovingPolygonCollisions(object):

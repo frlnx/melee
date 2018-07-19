@@ -33,15 +33,10 @@ class ShipPartModel(BaseModel):
         self._working = False
         self.update_working_status()
         self.full_torque = self._full_torque()
-        self._integrity = 100
 
     @property
     def fuel_stored(self):
         return self._fuel_stored
-
-    @property
-    def integrity(self):
-        return self._integrity
 
     @property
     def working(self):
@@ -66,6 +61,8 @@ class ShipPartModel(BaseModel):
             fuel_tank.drain_fuel(amount_per_tank)
 
     def drain_fuel(self, amount):
+        if self._fuel_stored is None:
+            raise AttributeError(f"No fuel stored in a {self.name}")
         self._fuel_stored -= amount
         self._fuel_stored = max(0, self._fuel_stored)
         if self._fuel_stored == 0:

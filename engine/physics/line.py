@@ -1,7 +1,7 @@
-from typing import List, Tuple
 from math import *
-from shapely.geometry import LineString
+from typing import List, Tuple
 
+from shapely.geometry import LineString
 
 
 class Point(object):
@@ -36,6 +36,7 @@ class BaseLine(object):
         self.x = 0
         self.y = 0
         self.rotation = 0
+        self.length = hypot(self.dx, self.dy)
         self.right = max(self.x1, self.x2)
         self.left = min(self.x1, self.x2)
         self.top = max(self.y1, self.y2)

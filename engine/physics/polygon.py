@@ -78,11 +78,11 @@ class BasePolygon(object):
         self.x = x
         self.y = y
         self.rotation = yaw_degrees
-        coords = [(l.x1, l.y1) for l in self.lines]
+        self._moving_points.clear()
         for line in self.lines:
+            self._moving_points.append((line.x1, line.y1))
             line.set_position_rotation(x, y, radians(yaw_degrees))
-        coords += [(l.x1, l.y1) for l in self.lines]
-        self._moving_points = coords
+            self._moving_points.append((line.x1, line.y1))
         self._moving_shape = None
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None

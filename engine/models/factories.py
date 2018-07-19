@@ -138,8 +138,8 @@ class ProjectileModelFactory(object):
         if self.projectiles[name]:
             return self.repurpose(name, position, rotation, movement, spin, acceleration, torque)
         #  config = deepcopy(self.projectiles[name])
-        bounding_box = MultiPolygon.manufacture([(0, 0), (0, 1)], x=position.x, y=position.z,
-                                                rotation=rotation.yaw)
+        bounding_box = MultiPolygon.manufacture([(-.1, -.1), (.1, -.1), (.1, .1), (-.1, .1)],
+                                                x=position.x, y=position.z, rotation=rotation.yaw)
         projectile = PlasmaModel(position.__copy__(), rotation.__copy__(),
                                  movement.__copy__(), spin.__copy__(),
                                  acceleration.__copy__(), torque.__copy__(), bounding_box)
