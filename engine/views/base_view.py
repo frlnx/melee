@@ -153,7 +153,7 @@ class BaseView(object):
     @staticmethod
     def _draw_bbox(bbox, color: Tuple[int, int, int, int]=None):
         color = color or (255, 255, 255, 255)
-        lines  = bbox.lines
+        lines = bbox.lines
         v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
         v3f = list(chain(*v3f))
         n_points = int(len(v3f) / 3)

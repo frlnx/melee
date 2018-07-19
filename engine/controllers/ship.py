@@ -11,7 +11,6 @@ class ShipController(BaseController):
     def __init__(self, model: ShipModel, gamepad: InputHandler):
         super().__init__(model, gamepad)
         self._model = model
-        self._target_model = model
         self._possible_targets = [model]
         self._button_config = {
             3: self.select_next_target,
@@ -55,7 +54,7 @@ class ShipController(BaseController):
         self._model.set_target(next_target)
 
     def next_target(self) -> ShipModel:
-        index = self._possible_targets.index(self._target_model)
+        index = self._possible_targets.index(self._model.target)
         target_model = self._possible_targets[(index + 1) % len(self._possible_targets)]
         return target_model
 

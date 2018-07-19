@@ -14,6 +14,7 @@ class TestBoundingBox(object):
         ship = model_factory.manufacture("ship")
         self.target = ship.bounding_box
         ship.set_position_and_rotation(10, 0, 10, 0, 0, 0)
+        ship.update_bounding_box()
 
     def test_bounding_box_width_is_5(self):
         assert 5.4 == round(self.target.right - self.target.left, 1)
@@ -50,12 +51,14 @@ class TestCollisions(object):
 
     def test_collision_on_translation(self):
         self.target2.set_position(1, 0, 0)
+        self.target2.update_bounding_box()
         self.target2.bounding_box.clear_movement()
         assert self.target1.intersection_point(self.target2)[0]
         assert self.target2.intersection_point(self.target1)[0]
 
     def test_collision_on_rotation(self):
         self.target2.set_rotation(0, 90, 0)
+        self.target2.update_bounding_box()
         self.target2.bounding_box.clear_movement()
         assert self.target1.intersection_point(self.target2)[0]
         assert self.target2.intersection_point(self.target1)[0]
@@ -63,12 +66,14 @@ class TestCollisions(object):
     def test_collision_on_rotation_and_translation(self):
         self.target2.set_position(1, 0, 0)
         self.target2.set_rotation(0, 90, 0)
+        self.target2.update_bounding_box()
         self.target2.bounding_box.clear_movement()
         assert self.target1.intersection_point(self.target2)[0]
         assert self.target2.intersection_point(self.target1)[0]
 
     def test_non_collision_on_big_translation(self):
         self.target2.set_position(100, 0, 0)
+        self.target2.update_bounding_box()
         self.target2.bounding_box.clear_movement()
         assert not self.target1.intersection_point(self.target2)[0]
         assert not self.target2.intersection_point(self.target1)[0]

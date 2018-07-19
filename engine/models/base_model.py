@@ -4,7 +4,7 @@ from typing import Callable, Set
 from uuid import uuid4
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
-from engine.physics.polygon import Polygon
+from engine.physics.polygon import MultiPolygon
 
 
 class PositionalModel(object):
@@ -86,7 +86,7 @@ class BaseModel(PositionalModel):
                  spin: MutableDegrees,
                  acceleration: MutableOffsets,
                  torque: MutableDegrees,
-                 bounding_box: Polygon):
+                 bounding_box: MultiPolygon):
         super(BaseModel, self).__init__()
         self.uuid = uuid4()
         self._mass = 1
@@ -199,9 +199,12 @@ class BaseModel(PositionalModel):
         self.movement.translate(half_of_acceleration)
         self.spin.translate(half_of_torque)
         if self.bounding_box_update_needed:
-            self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)
-            self.bounding_box_update_needed = False
+            self.update_bounding_box()
         self.timers(dt)
+
+    def update_bounding_box(self):
+        self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)
+        self.bounding_box_update_needed = False
 
     def timers(self, dt):
         self._time_consumed += dt

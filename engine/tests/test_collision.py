@@ -1,7 +1,7 @@
-from engine.models.factories import ShipModelFactory
-from engine.physics.line import Line
 from itertools import chain
 
+from engine.models.factories import ShipModelFactory
+from engine.physics.line import Line
 
 factory = ShipModelFactory()
 
@@ -50,6 +50,7 @@ class TestBoundingBox(object):
         bb_xes = list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         bb_yes = list(chain(*[[line.y1, line.y2] for line in self.ship1.bounding_box.lines]))
         self.ship1.set_position_and_rotation(0, 0, 0, 0, 0, 0)
+        self.ship1.update_bounding_box()
         moved_coords = list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         assert bb_xes != list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         assert [round(x - 10, 1) for x in bb_xes] == [round(x, 1) for x in moved_coords]
