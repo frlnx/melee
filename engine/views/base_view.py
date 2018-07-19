@@ -155,9 +155,6 @@ class BaseView(object):
         color = color or (255, 255, 255, 255)
         lines  = bbox.lines
         v3f = [(line.x1, -10.0, line.y1, line.x2, -10.0, line.y2) for line in lines]
-        #  mp = bbox._moving_points
-        #  v3f = [(p[0], -10.0, p[1], mp[i+1][0], -10, mp[i+1][1]) for i, p in enumerate(bbox._moving_points[:-2])]
-        #  v3f.append((mp[-2][0], -10, mp[-2][1], mp[-1][0], -10, mp[-1][1]))
         v3f = list(chain(*v3f))
         n_points = int(len(v3f) / 3)
         v3f = ('v3f', v3f)

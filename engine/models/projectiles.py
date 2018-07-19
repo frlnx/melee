@@ -14,6 +14,7 @@ class PlasmaModel(BaseModel):
         self._destructive_energy = 400
 
     def recycle(self):
+        self.bounding_box.clear_movement()
         self._action_observers.clear()
         self._ttl = 4
         self._alive = True

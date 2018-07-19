@@ -120,6 +120,19 @@ class BaseModel(PositionalModel):
     def damage(self):
         pass
 
+    def intersected_polygons(self, other: "BaseModel"):
+        own_intersections, other_intersections = self.bounding_box.intersected_polygons(other.bounding_box)
+        delta_movement = self.movement - other.movement
+        r = delta_movement.direction.yaw_radian
+
+        def order_by_direction(part):
+            x, y = part.centroid()
+            return x * sin(r) + y * cos(r)
+        own_intersections = sorted(own_intersections, key=order_by_direction)
+        other_intersections = sorted(other_intersections, key=order_by_direction)
+        other_intersections.reverse()
+        return own_intersections, other_intersections
+
     @property
     def collisions_to_solve(self) -> Set[MutableForce]:
         return self._collisions_to_solve

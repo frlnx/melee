@@ -161,7 +161,7 @@ class Engine(TwistedEventLoop):
         for m1, m2 in combinations(self.models.values(), 2):
             assert isinstance(m1, BaseModel)
             assert isinstance(m2, BaseModel)
-            m1_intersection_parts, m2_intersection_parts = m1.bounding_box.intersected_polygons(m2.bounding_box)
+            m1_intersection_parts, m2_intersection_parts = m1.intersected_polygons(m2)
             if not m1_intersection_parts and not m2_intersection_parts:
                 continue
             intersects, x, y = m1.intersection_point(m2)
@@ -175,7 +175,8 @@ class Engine(TwistedEventLoop):
                 m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
                 m1.add_collision(m1_force)
                 m2.add_collision(m2_force)
-            for part in m1.parts_by_bounding_boxes(m1_intersection_parts):
+            n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
+            for part in m1.parts_by_bounding_boxes(m1_intersection_parts[:n_parts_damaged]):
                 part.damage()
-            for part in m2.parts_by_bounding_boxes(m2_intersection_parts):
+            for part in m2.parts_by_bounding_boxes(m2_intersection_parts[:n_parts_damaged]):
                 part.damage()
