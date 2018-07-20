@@ -80,17 +80,9 @@
       {
         "name": "active",
         "power required": 100,
-        "shield": [[0, 0], [1, -1], [2, -1.5], [3, -1.75]]
+        "shield_arc_distance": 10
       }
     ],
-    "material_affected": "Shield_Arc",
-    "material_mode": "diffuse",
-    "material_channels": "a"
-  },
-  {
-    "name": "shield arc",
-    "states": [
-      {"name": "idle"}
-    ]
+    "needs_connection_to": ["shield", "generator"]
   }
 ]

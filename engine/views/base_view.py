@@ -40,6 +40,8 @@ class BaseView(object):
             self._draw = self._draw_nothing
             self._draw_transparent = self._draw_nothing
         self.yaw_catchup = 0
+        if model.is_exploding:
+            self.explode()
 
     def explode(self):
         explosion = ExplosionDrawable()

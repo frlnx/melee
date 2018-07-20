@@ -208,7 +208,7 @@ class ShipPartModel(BaseModel):
         super(ShipPartModel, self).explode()
         self.disconnect_all()
 
-    def copy(self):
+    def copy(self) -> "ShipPartModel":
         return self.__class__(name=self.name, position=self.position.__copy__(), rotation=self.rotation.__copy__(),
                               movement=self.movement.__copy__(), spin=self.spin.__copy__(),
                               acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),

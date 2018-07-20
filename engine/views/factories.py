@@ -7,7 +7,7 @@ from engine.physics.polygon import Polygon
 from engine.views.base_view import BaseView
 from engine.views.ship import ShipView
 from engine.views.ship_part import ShipPartView
-from .opengl_mesh import OpenGLTexturedFace, OpenGLTexturedMaterial, OpenGLMesh, OpenGLMaterial, OpenGLFace
+from .opengl_mesh import OpenGLTexturedFace, OpenGLTexturedMaterial, OpenGLMesh, OpenGLFace
 
 
 class ViewFactory(object):
@@ -17,9 +17,9 @@ class ViewFactory(object):
         AsteroidModel: {"method": "_spheroid",
                         "material": partial(OpenGLTexturedMaterial, texture_file_name="ROCKS002.TGA",
                                             diffuse=(0.7, 0.7, 0.7), name="Rock Surface")},
-        ShieldModel: {"method": "_hexagon_fence",
-                      "material": partial(OpenGLMaterial, diffuse=(0, 0, 0), emissive=(.54, .81, .94),
-                                          alpha=.5, name="Shield")}
+        #ShieldModel: {"method": "_hexagon_fence",
+        #              "material": partial(OpenGLMaterial, diffuse=(0, 0, 0), emissive=(.54, .81, .94),
+        #                                  alpha=.5, name="Shield")}
     }
 
     def __init__(self, mesh_factory, view_class=BaseView):
@@ -131,8 +131,7 @@ class DynamicViewFactory(ViewFactory):
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
         PlasmaModel: BaseView,
-        AsteroidModel: BaseView,
-        ShieldModel: BaseView
+        AsteroidModel: BaseView
     }
 
     def manufacture(self, model: PositionalModel, view_class=None):
@@ -141,7 +140,6 @@ class DynamicViewFactory(ViewFactory):
         view = view_class(model, mesh=mesh)
         if hasattr(model, 'parts') and isinstance(model, CompositeModel):
             self.rebuild_subviews(view, model)
-            #model.observe(lambda: self.rebuild_subviews(view, model), "rebuild")
         return view
 
     def rebuild_subviews(self, ship_view: BaseView, model: CompositeModel):

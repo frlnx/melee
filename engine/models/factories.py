@@ -39,17 +39,30 @@ class ShipModelFactory(object):
         torque = MutableDegrees(*torque)
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
                          movement=movement, spin=spin, acceleration=acceleration, torque=torque)
+        #  for part in parts:
+        #      part.observe(self.jettison_exploding_part_function(ship, part), "explode")
         return ship
 
     @classmethod
     def distance(cls, part1: ShipPartModel, part2: ShipPartModel):
         return (part1.position - part2.position).distance
 
+    @staticmethod
+    def jettison_exploding_part_function(ship: ShipModel, prat: ShipPartModel):
+        def jettison_exploding_part():
+            part = prat.copy()
+            part.set_movement(*ship.momentum_at(part.position).forces)
+            ship.mutate_offsets_to_global(part.position)
+            part.set_rotation(*ship.rotation)
+            ship.add_own_spawn(part)
+            part.explode()
+        return jettison_exploding_part
+
 
 class ShipPartModelFactory(object):
 
     ship_parts = {}
-    model_map = {"shield arc": ShieldModel}
+    model_map = {}
 
     def __init__(self):
         if len(self.ship_parts) == 0:
@@ -129,6 +142,8 @@ class ProjectileModelFactory(object):
         return projectile
 
     def recycle(self, name, projectile):
+        projectile.set_position(0, -1000, 0)
+        projectile.bounding_box.clear_movement()
         self.projectiles[name].append(projectile)
 
     def manufacture(self, name,

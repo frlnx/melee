@@ -169,7 +169,6 @@ class OpenGLFace(Face):
         return n3f_v3f
 
 
-# noinspection PyTypeChecker
 class OpenGLTexturedFace(TexturedFace):
     draw_mode = GL_T2F_N3F_V3F
 
@@ -300,7 +299,6 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
 
     def __getstate__(self):
         d = super(OpenGLTexturedMaterial, self).__getstate__()
-        # del d['textures']
         d['texture'] = None
         return d
 
