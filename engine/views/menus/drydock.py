@@ -184,20 +184,23 @@ class DockableItem(DrydockItem):
     def set_xy(self, x, y):
         o_x, o_y = self.x, self.y
         for new_x, new_y in [(x, y), (x, o_y), (o_x, y)]:
-            self.model.set_position(new_x, 0, new_y)
+            self.model.teleport_to(new_x, 0, new_y)
             if self.legal_move_func(self):
                 self.update()
-                break
-            else:
-                self.model.set_position(o_x, 0, o_y)
+                return
+        self.model.teleport_to(o_x, 0, o_y)
 
     def set_yaw(self, yaw):
         o_yaw = self.yaw
         self.model.set_rotation(0, yaw, 0)
+        self.model.update_bounding_box()
+        self.model.bounding_box.clear_movement()
         if self.legal_move_func(self):
             self.update()
         else:
             self.model.set_rotation(0, o_yaw, 0)
+            self.model.update_bounding_box()
+            self.model.bounding_box.clear_movement()
 
     def grab(self):
         self.held = True
@@ -217,6 +220,7 @@ class DockableItem(DrydockItem):
         for observer in self._observers:
             observer()
         self.update_status()
+        self.model.update()
 
     def update_status(self):
         if not self.model.connected_parts:
@@ -486,8 +490,7 @@ class Drydock(ShipConfiguration):
         for item in self.items:
             if item == trial_item:
                 continue
-            intersects, x, y = item.bbox.intersection_point(trial_item.bbox)
-            if intersects:
+            if item.bbox.intersects(trial_item.bbox):
                 return False
         return True
 

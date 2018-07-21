@@ -37,6 +37,9 @@ class PositionalModel(object):
         except KeyError:
             pass
 
+    def is_exploding(self):
+        return False
+
     def remove_all_observers(self):
         self._action_observers.clear()
 
@@ -282,6 +285,12 @@ class BaseModel(PositionalModel):
 
     def set_position(self, x, y, z):
         if self._position.set(x, y, z):
+            self.update()
+
+    def teleport_to(self, x, y, z):
+        if self._position.set(x, y, z):
+            self.update_bounding_box()
+            self.bounding_box.clear_movement()
             self.update()
 
     def translate(self, *xyz):
