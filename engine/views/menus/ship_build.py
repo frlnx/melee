@@ -34,6 +34,8 @@ class ShipBuildMenu(BaseMenu):
         return cls(heading, buttons, x, y, drydock)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if buttons == 4:
+            self.drydock.translate(dx, dy)
         self.drydock.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
 
     def on_mouse_release(self, x, y, button, modifiers):

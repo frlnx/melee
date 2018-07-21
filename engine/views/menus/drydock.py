@@ -264,6 +264,10 @@ class ShipConfiguration(object):
             self._items.add(item)
         self.highlighted_item = None
 
+    def translate(self, x, y):
+        self.x_offset += x
+        self.y_offset += y
+
     def reset(self):
         pass
 
@@ -456,8 +460,8 @@ class Drydock(ShipConfiguration):
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if modifiers & MOD_CTRL:
-            x = round(x / 10) * 10
-            y = round(y / 10) * 10
+            x = round((x - self.x_offset) / 10) * 10 + self.x_offset
+            y = round((y - self.y_offset) / 10) * 10 + self.y_offset
         self.highlighted_item.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         if self.held_item:
             self._held_item.drag(*self._screen_to_model(x, y))
