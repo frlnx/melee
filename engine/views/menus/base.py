@@ -45,6 +45,17 @@ class BaseButton(object):
         return self.left < x < self.right and self.bottom < y < self.top
 
 
+class MenuComponent(object):
+    def __init__(self, left, right, bottom, top):
+        self.left, self.right, self.bottom, self.top = left, right, bottom, top
+
+    def in_area(self, x, y):
+        return (self.left < x < self.right) and (self.bottom < y < self.top)
+
+    def draw(self):
+        pass
+
+
 class BaseMenu(object):
     
     def __init__(self, heading: str, buttons: List[BaseButton], x, y):

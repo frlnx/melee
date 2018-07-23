@@ -3,17 +3,20 @@ import json
 from functools import partial
 from itertools import combinations
 from math import hypot, atan2, degrees
-from typing import Set, Callable
+from typing import Callable
 
-from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING
-from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, glScalef
-from pyglet.window.key import symbol_string, MOD_CTRL
+from pyglet.gl import GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHTING, GL_LINES
+from pyglet.gl import glDisable, glMatrixMode, glLoadIdentity, glRotatef, glTranslatef, glScalef, glPushMatrix, \
+    glPopMatrix
+from pyglet.graphics import draw
+from pyglet.window.key import symbol_string
 
 from engine.models.base_model import PositionalModel
 from engine.models.factories import ShipPartModelFactory
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.views.factories import DynamicViewFactory
+from engine.views.menus.base import MenuComponent
 from engine.views.ship_part import ShipPartDrydockView, NewPartDrydockView, ShipPartView, \
     ShipPartConfigurationView
 
@@ -247,13 +250,41 @@ class ItemSpawn(DrydockElement):
         return new_item.grab()
 
 
-class ShipPartDisplay(object):
+class ShipBuildMenuComponent(MenuComponent):
+
+    def __init__(self, left, right, bottom, top, x_offset, y_offset):
+        super().__init__(left, right, bottom, top)
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.v2i_bounding_box = ('v2i', [left, bottom, right, bottom, right, bottom, right, top,
+                                         right, top, left, top, left, top, left, bottom])
+        self.c4B_bounding_box = ('c4B', [150, 150, 200, 255] * 8)
+
+    def grab(self, x, y) -> DockableItem:
+        pass
+
+    def drop(self, item: DockableItem):
+        pass
+
+    def drag(self, item, x, y, snap=False):
+        pass
+
+    def translate(self, x, y):
+        pass
+
+    def highlight_at(self, x, y):
+        pass
+
+    def draw(self):
+        draw(8, GL_LINES, self.v2i_bounding_box, self.c4B_bounding_box)
+
+
+class ShipPartDisplay(ShipBuildMenuComponent):
     default_part_view_class = ShipPartView
     default_item_class = DrydockItem
 
-    def __init__(self, items: set, x=720, y=360, scale=100):
-        self.x_offset = x
-        self.y_offset = y
+    def __init__(self, items: set, left, right, bottom, top, x, y, scale=100):
+        super().__init__(left, right, bottom, top, x, y)
         self.scale = scale
         self.gl_scale_f = [scale] * 3
         self._items = items
@@ -272,12 +303,10 @@ class ShipPartDisplay(object):
         self.x_offset += x
         self.y_offset += y
 
-    def in_area(self, x, y):
-        x, y = self._screen_to_model(x, y)
-        for item in self.items:
-            if item.x - .5 < x < item.x + .5 and item.y - .5 < y < item.y + .5:
-                return True
-        return False
+    def grab(self, x, y):
+        item = self.find_closest_item_to(x, y)
+        if item:
+            return item.grab()
 
     @property
     def items(self) -> set:
@@ -287,7 +316,7 @@ class ShipPartDisplay(object):
     def highlightables(self):
         return self.items
 
-    def on_mouse_motion(self, x, y, dx, dy):
+    def highlight_at(self, x, y):
         self.set_highlighted_item(self.find_closest_item_to(x, y))
 
     def find_closest_item_to(self, x, y):
@@ -307,6 +336,8 @@ class ShipPartDisplay(object):
         return (x - self.x_offset) / self.scale, (self.y_offset - y) / self.scale
 
     def draw(self):
+        super(ShipPartDisplay, self).draw()
+        glPushMatrix()
         glDisable(GL_DEPTH_TEST)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -316,6 +347,7 @@ class ShipPartDisplay(object):
         for item in self.highlightables:
             item.draw()
         glDisable(GL_LIGHTING)
+        glPopMatrix()
 
     def on_mouse_press(self, x, y, button, modifiers):
         pass
@@ -338,14 +370,14 @@ class ShipPartDisplay(object):
 
 class ShipConfiguration(ShipPartDisplay):
 
-    def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, x, y, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
         self.view_factory = view_factory
         items = set()
         for part in ship.parts:
             item = self.item_from_model(part, view_class=self.default_part_view_class)
             items.add(item)
-        super(ShipConfiguration, self).__init__(items)
+        super().__init__(items, left, right, bottom, top, x, y)
 
     def reset(self):
         pass
@@ -418,90 +450,28 @@ class Drydock(ShipConfiguration):
     default_part_view_class = ShipPartDrydockView
     default_item_class = DockableItem
 
-    def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, x, y, ship: ShipModel, view_factory: DynamicViewFactory):
         self.original_model = ship
         ship = ship.copy()
-        super().__init__(ship, view_factory)
-        self.part_factory = ShipPartModelFactory()
+        super().__init__(left, right, bottom, top, x, y, ship, view_factory)
         self._update_connections()
-        self._held_item = None
-        self._new_items = self._build_new_items()
 
     def save_all(self):
         super(Drydock, self).save_all()
         self.original_model.set_parts(self.ship.parts)
         self.original_model.rebuild()
 
-    @property
-    def highlightables(self):
-        return self.items | self._new_items
-
-    def _build_new_items(self):
-        new_items = set()
-        for i, part_name in enumerate(self.part_factory.ship_parts):
-            x = -self.x_offset / self.scale + i + 0.5
-            y = self.y_offset / self.scale - 0.5
-            model = PositionalModel(x=x, z=y, name=part_name)
-            try:
-                item = self.item_spawn_from_model(model)
-            except KeyError:
-                print("No mesh for {}, ignoring".format(part_name))
-            else:
-                new_items.add(item)
-        return new_items
-
     def reset(self):
-        self._items = {self.item_from_name("cockpit")}
+        self._items = set()
 
-    def item_from_name(self, name, model_class=None, view_class=None, position=None):
-        model = self.part_factory.manufacture(name, model_class=model_class, position=position)
-        item = self.item_from_model(model, view_class=view_class)
-        return item
-
-    def item_from_model(self, model, view_class=None):
-        item = super(Drydock, self).item_from_model(model, view_class=view_class)
-        item.legal_move_func = self._legal_placement
-        item.observe(self._update_connections)
-        return item
-
-    def item_spawn_from_model(self, model):
-        view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
-        view.set_mesh_scale(0.25)
-        spawn_func = partial(self.item_from_name, model.name, view_class=ShipPartDrydockView,
-                             position=model.position)
-        return ItemSpawn(model, view, spawn_func=spawn_func)
-
-    @property
-    def held_item(self) -> DockableItem:
-        return self._held_item
-
-    @property
-    def items(self) -> Set[DrydockItem]:
-        return self._items
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if modifiers & MOD_CTRL:
+    def drag(self, item, x, y, snap=False):
+        if snap:
             x = round((x - self.x_offset) / 10) * 10 + self.x_offset
             y = round((y - self.y_offset) / 10) * 10 + self.y_offset
-        self.highlighted_item.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
-        if self.held_item:
-            self._held_item.drag(*self._screen_to_model(x, y))
-        else:
-            distance = self.distance_to_item(self.highlighted_item, x, y)
-            if distance < 50:
-                self.grab(self.highlighted_item)
-                self._held_item.drag(*self._screen_to_model(x, y))
-                self._items.add(self.held_item)
-
-    def grab(self, item: DockableItem):
-        if self.highlighted_item != item:
-            self.highlighted_item.set_highlight(False, False)
-        if self.held_item:
-            self.held_item.drop()
-        self._held_item = item.grab()
-        if self._held_item != self.highlighted_item:
-            self.set_highlighted_item(self._held_item)
-            self._held_item.set_highlight(True)
+        if item:
+            if item not in self.items:
+                self.add_item(item)
+            item.drag(*self._screen_to_model(x, y))
 
     def _update_connections(self):
         for item1, item2 in combinations(self.items, 2):
@@ -519,15 +489,18 @@ class Drydock(ShipConfiguration):
                 return False
         return True
 
-    def on_mouse_release(self, x, y, button, modifiers):
-        if self._held_item:
-            self._held_item.on_mouse_release(x, y, button, modifiers)
-            self._held_item.drop()
-            self._held_item = None
+    def drop(self, item: DockableItem):
+        if item:
+            item.drop()
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        if not self.held_item:
-            self.set_highlighted_item(self.find_closest_item_to(x, y))
+    def add_item(self, item):
+        item.legal_move_func = self._legal_placement
+        item.observe(self._update_connections)
+        self.items.add(item)
+
+    def highlight_at(self, x, y):
+        super(Drydock, self).highlight_at(x, y)
+        if self.highlighted_item:
             distance = self.distance_to_item(self.highlighted_item, x, y)
             model_highlight = 0. <= distance < 25
             circle_highlight = 25. <= distance < 50
@@ -538,66 +511,52 @@ class PartStore(ShipPartDisplay):
     default_part_view_class = ShipPartDrydockView
     default_item_class = DockableItem
 
-    def __init__(self, drydock: Drydock, view_factory: DynamicViewFactory, x=None, y=None):
+    def __init__(self, left, right, bottom, top, x, y, view_factory: DynamicViewFactory):
         self.view_factory = view_factory
-        self.drydock = drydock
         self.part_factory = ShipPartModelFactory()
-        self._held_item = None
-        self.x_offset = x
-        self.y_offset = y
+        self.x_offset = x = (left - right) / 2 + left
+        self.y_offset = y = 0 #(bottom - top) / 2 + bottom
         self.scale = 100
-        super().__init__(self._build_new_items(), x=x, y=y)
+        super().__init__(self._build_new_items(), left, right, bottom, top, x, y)
 
     def _build_new_items(self):
         new_items = set()
         for i, part_name in enumerate(self.part_factory.ship_parts):
-            x = -self.x_offset / self.scale + i + 0.5
-            y = self.y_offset / self.scale - 0.5
+            x = 1
+            y = -i - 1
             model = PositionalModel(x=x, z=y, name=part_name)
-            try:
-                item = self.item_spawn_from_model(model)
-            except KeyError:
-                print("No mesh for {}, ignoring".format(part_name))
-            else:
-                new_items.add(item)
+            item = self.item_spawn_from_model(model)
+            new_items.add(item)
         return new_items
+
+    def translate(self, x, y):
+        original_x_offset = self.x_offset
+        super(PartStore, self).translate(x, y)
+        self.x_offset = original_x_offset
+        self.y_offset = max(min(200, self.y_offset), -100)
 
     def item_spawn_from_model(self, model):
         view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
         view.set_mesh_scale(0.25)
-        spawn_func = partial(self.drydock.item_from_name, model.name, view_class=ShipPartDrydockView,
+        spawn_func = partial(self.item_from_name, model.name, view_class=ShipPartDrydockView,
                              position=model.position)
         return ItemSpawn(model, view, spawn_func=spawn_func)
 
-    @property
-    def held_item(self) -> DockableItem:
-        return self.drydock.held_item
+    def item_from_name(self, name, model_class=None, view_class=None, position=None):
+        model = self.part_factory.manufacture(name, model_class=model_class, position=position)
+        item = self.item_from_model(model, view_class=view_class)
+        return item
 
-    @property
-    def highlighted_item(self):
-        return self.drydock.highlighted_item
+    def item_from_model(self, model, view_class=None):
+        view_class = view_class or self.default_part_view_class
+        view = self.view_factory.manufacture(model, view_class=view_class)
+        view.set_mesh_scale(0.25)
+        item = self.default_item_class(model, view)
+        return item
 
-    def set_highlighted_item(self, item):
-        self.drydock.set_highlighted_item(item)
+    def drag(self, item, x, y, snap=False):
+        pass
 
-    @property
-    def items(self) -> Set[DrydockItem]:
-        return self._items
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if modifiers & MOD_CTRL:
-            x = round((x - self.x_offset) / 10) * 10 + self.x_offset
-            y = round((y - self.y_offset) / 10) * 10 + self.y_offset
-        if not self.held_item:
-            distance = self.distance_to_item(self.highlighted_item, x, y)
-            if distance < 50:
-                self.drydock.grab(self.highlighted_item)
-                self.drydock._held_item.drag(*self._screen_to_model(x, y))
-                self.drydock._items.add(self.held_item)
-
-    def on_mouse_motion(self, x, y, dx, dy):
-        if not self.held_item:
-            self.set_highlighted_item(self.find_closest_item_to(x, y))
-            distance = self.distance_to_item(self.highlighted_item, x, y)
-            model_highlight = 0. <= distance < 50
-            self.highlighted_item.set_highlight(model_highlight)
+    def drop(self, item):
+        pass
+    
