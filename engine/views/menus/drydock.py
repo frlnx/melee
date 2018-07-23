@@ -247,54 +247,75 @@ class ItemSpawn(DrydockElement):
         return new_item.grab()
 
 
-class ShipConfiguration(object):
+class ShipPartDisplay(object):
     default_part_view_class = ShipPartView
     default_item_class = DrydockItem
 
-    def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
-        self.ship = ship
-        self.view_factory = view_factory
-        self.x_offset = 720
-        self.y_offset = 360
-        self.scale = 100
-        self.gl_scale_f = [self.scale] * 3
-        self._items = set()
-        for part in ship.parts:
-            item = self.item_from_model(part, view_class=self.default_part_view_class)
-            self._items.add(item)
-        self.highlighted_item = None
+    def __init__(self, items: set, x=720, y=360, scale=100):
+        self.x_offset = x
+        self.y_offset = y
+        self.scale = scale
+        self.gl_scale_f = [scale] * 3
+        self._items = items
+        self._highlighted_item: DrydockItem = None
+
+    @property
+    def highlighted_item(self):
+        return self._highlighted_item
+
+    def set_highlighted_item(self, item):
+        if self.highlighted_item:
+            self._highlighted_item.set_highlight(False, False)
+        self._highlighted_item = item
 
     def translate(self, x, y):
         self.x_offset += x
         self.y_offset += y
 
-    def reset(self):
-        pass
-
-    def item_from_model(self, model, view_class=None):
-        view_class = view_class or self.default_part_view_class
-        view = self.view_factory.manufacture(model, view_class=view_class)
-        view.set_mesh_scale(0.25)
-        item = self.default_item_class(model, view)
-        return item
+    def in_area(self, x, y):
+        x, y = self._screen_to_model(x, y)
+        for item in self.items:
+            if item.x - .5 < x < item.x + .5 and item.y - .5 < y < item.y + .5:
+                return True
+        return False
 
     @property
     def items(self) -> set:
         return self._items
 
-    def save_all(self):
-        part_data = [
-            {
-                "position": list(item.model.position),
-                "rotation": list(item.model.rotation),
-                "name": item.model.name,
-                "axis": item.model.axis,
-                "button": item.model.button,
-                "keyboard": item.model.keyboard
-            } for item in self.items
-        ]
-        with open('ship.json', 'w') as fp:
-            json.dump({"name": "ship", "parts": part_data}, fp)
+    @property
+    def highlightables(self):
+        return self.items
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.set_highlighted_item(self.find_closest_item_to(x, y))
+
+    def find_closest_item_to(self, x, y):
+        closest_item = None
+        closest_distance = float('inf')
+        for item in self.highlightables:
+            distance = self.distance_to_item(item, x, y)
+            if distance < closest_distance:
+                closest_item = item
+                closest_distance = distance
+        return closest_item
+
+    def distance_to_item(self, item, x, y):
+        return hypot(item.x * self.scale + self.x_offset - x, self.y_offset - y - item.y * self.scale)
+
+    def _screen_to_model(self, x, y):
+        return (x - self.x_offset) / self.scale, (self.y_offset - y) / self.scale
+
+    def draw(self):
+        glDisable(GL_DEPTH_TEST)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        glRotatef(90, 1, 0, 0)
+        glTranslatef(self.x_offset, -100, -self.y_offset)
+        glScalef(*self.gl_scale_f)
+        for item in self.highlightables:
+            item.draw()
+        glDisable(GL_LIGHTING)
 
     def on_mouse_press(self, x, y, button, modifiers):
         pass
@@ -314,41 +335,41 @@ class ShipConfiguration(object):
     def on_joyaxis_motion(self, joystick, axis, value):
         pass
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        if self.highlighted_item:
-            self.highlighted_item.set_highlight(False, False)
-        self.highlighted_item = self.find_closest_item_to(x, y)
 
-    def find_closest_item_to(self, x, y):
-        closest_item = None
-        closest_distance = float('inf')
-        for item in self.highlightables:
-            distance = self.distance_to_item(item, x, y)
-            if distance < closest_distance:
-                closest_item = item
-                closest_distance = distance
-        return closest_item
+class ShipConfiguration(ShipPartDisplay):
 
-    @property
-    def highlightables(self):
-        return self.items
+    def __init__(self, ship: ShipModel, view_factory: DynamicViewFactory):
+        self.ship = ship
+        self.view_factory = view_factory
+        items = set()
+        for part in ship.parts:
+            item = self.item_from_model(part, view_class=self.default_part_view_class)
+            items.add(item)
+        super(ShipConfiguration, self).__init__(items)
 
-    def distance_to_item(self, item, x, y):
-        return hypot(item.x * self.scale + self.x_offset - x, self.y_offset - y - item.y * self.scale)
+    def reset(self):
+        pass
 
-    def _screen_to_model(self, x, y):
-        return (x - self.x_offset) / self.scale, (self.y_offset - y) / self.scale
+    def item_from_model(self, model, view_class=None):
+        view_class = view_class or self.default_part_view_class
+        view = self.view_factory.manufacture(model, view_class=view_class)
+        view.set_mesh_scale(0.25)
+        item = self.default_item_class(model, view)
+        return item
 
-    def draw(self):
-        glDisable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glRotatef(90, 1, 0, 0)
-        glTranslatef(self.x_offset, -100, -self.y_offset)
-        glScalef(*self.gl_scale_f)
-        for item in self.highlightables:
-            item.draw()
-        glDisable(GL_LIGHTING)
+    def save_all(self):
+        part_data = [
+            {
+                "position": list(item.model.position),
+                "rotation": list(item.model.rotation),
+                "name": item.model.name,
+                "axis": item.model.axis,
+                "button": item.model.button,
+                "keyboard": item.model.keyboard
+            } for item in self.items
+        ]
+        with open('ship.json', 'w') as fp:
+            json.dump({"name": "ship", "parts": part_data}, fp)
 
 
 class ControlConfiguration(ShipConfiguration):
@@ -479,7 +500,7 @@ class Drydock(ShipConfiguration):
             self.held_item.drop()
         self._held_item = item.grab()
         if self._held_item != self.highlighted_item:
-            self.highlighted_item = self._held_item
+            self.set_highlighted_item(self._held_item)
             self._held_item.set_highlight(True)
 
     def _update_connections(self):
@@ -506,11 +527,77 @@ class Drydock(ShipConfiguration):
 
     def on_mouse_motion(self, x, y, dx, dy):
         if not self.held_item:
-            if self.highlighted_item:
-                self.highlighted_item.set_highlight(False, False)
-            self.highlighted_item = self.find_closest_item_to(x, y)
-            self.highlighted_item.on_mouse_motion(x, y, dx, dy)
+            self.set_highlighted_item(self.find_closest_item_to(x, y))
             distance = self.distance_to_item(self.highlighted_item, x, y)
             model_highlight = 0. <= distance < 25
             circle_highlight = 25. <= distance < 50
             self.highlighted_item.set_highlight(model_highlight, circle_highlight)
+
+
+class PartStore(ShipPartDisplay):
+    default_part_view_class = ShipPartDrydockView
+    default_item_class = DockableItem
+
+    def __init__(self, drydock: Drydock, view_factory: DynamicViewFactory, x=None, y=None):
+        self.view_factory = view_factory
+        self.drydock = drydock
+        self.part_factory = ShipPartModelFactory()
+        self._held_item = None
+        self.x_offset = x
+        self.y_offset = y
+        self.scale = 100
+        super().__init__(self._build_new_items(), x=x, y=y)
+
+    def _build_new_items(self):
+        new_items = set()
+        for i, part_name in enumerate(self.part_factory.ship_parts):
+            x = -self.x_offset / self.scale + i + 0.5
+            y = self.y_offset / self.scale - 0.5
+            model = PositionalModel(x=x, z=y, name=part_name)
+            try:
+                item = self.item_spawn_from_model(model)
+            except KeyError:
+                print("No mesh for {}, ignoring".format(part_name))
+            else:
+                new_items.add(item)
+        return new_items
+
+    def item_spawn_from_model(self, model):
+        view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
+        view.set_mesh_scale(0.25)
+        spawn_func = partial(self.drydock.item_from_name, model.name, view_class=ShipPartDrydockView,
+                             position=model.position)
+        return ItemSpawn(model, view, spawn_func=spawn_func)
+
+    @property
+    def held_item(self) -> DockableItem:
+        return self.drydock.held_item
+
+    @property
+    def highlighted_item(self):
+        return self.drydock.highlighted_item
+
+    def set_highlighted_item(self, item):
+        self.drydock.set_highlighted_item(item)
+
+    @property
+    def items(self) -> Set[DrydockItem]:
+        return self._items
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if modifiers & MOD_CTRL:
+            x = round((x - self.x_offset) / 10) * 10 + self.x_offset
+            y = round((y - self.y_offset) / 10) * 10 + self.y_offset
+        if not self.held_item:
+            distance = self.distance_to_item(self.highlighted_item, x, y)
+            if distance < 50:
+                self.drydock.grab(self.highlighted_item)
+                self.drydock._held_item.drag(*self._screen_to_model(x, y))
+                self.drydock._items.add(self.held_item)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        if not self.held_item:
+            self.set_highlighted_item(self.find_closest_item_to(x, y))
+            distance = self.distance_to_item(self.highlighted_item, x, y)
+            model_highlight = 0. <= distance < 50
+            self.highlighted_item.set_highlight(model_highlight)

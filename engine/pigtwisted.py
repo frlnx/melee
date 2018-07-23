@@ -1,9 +1,9 @@
-from queue import Queue, Empty
 from functools import partial
-import pyglet
+from queue import Queue, Empty
 
-from twisted.python import log
+import pyglet
 from twisted.internet import _threadedselect
+from twisted.python import log
 
 
 class TwistedEventLoop(pyglet.app.base.EventLoop):
@@ -90,6 +90,9 @@ class PygletReactor(_threadedselect.ThreadedSelectReactor):
 
 
 def install(event_loop):
+    import sys
+    if 'twisted.internet.reactor' in sys.modules:
+        del sys.modules['twisted.internet.reactor']
     reactor = PygletReactor(event_loop=event_loop)
     from twisted.internet.main import installReactor
     installReactor(reactor)

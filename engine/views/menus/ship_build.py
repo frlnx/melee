@@ -3,21 +3,23 @@ from typing import List, Callable
 from engine.models import ShipModel
 from engine.models.factories import ShipPartModelFactory
 from engine.views.menus.base import BaseMenu, BaseButton
-from .drydock import Drydock
+from .drydock import Drydock, PartStore
 
 
 class ShipBuildMenu(BaseMenu):
 
     ship_part_model_factory = ShipPartModelFactory()
 
-    def __init__(self, heading: str, buttons: List[BaseButton], x, y, drydock: Drydock):
+    def __init__(self, heading: str, buttons: List[BaseButton], x, y, drydock: Drydock, part_store: PartStore):
         super().__init__(heading, buttons, x, y)
         self.drydock = drydock
+        self.part_store = part_store
 
     @classmethod
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable,
                                    x, y, view_factory, font_size=36):
         drydock = Drydock(ship_model, view_factory)
+        part_store = PartStore(drydock, view_factory, x=800, y=400)
         heading = "Shipyard"
         callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset)]
         height = int(font_size * 1.6)
@@ -31,20 +33,28 @@ class ShipBuildMenu(BaseMenu):
                                                func=func)
             buttons.append(button)
 
-        return cls(heading, buttons, x, y, drydock)
+        return cls(heading, buttons, x, y, drydock, part_store)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if buttons == 4:
             self.drydock.translate(dx, dy)
-        self.drydock.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
+        else:
+            if self.part_store.in_area(x, y):
+                self.part_store.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
+            else:
+                self.drydock.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.drydock.on_mouse_release(x, y, button, modifiers)
 
     def on_mouse_motion(self, x, y, dx, dy):
         super(ShipBuildMenu, self).on_mouse_motion(x, y, dx, dy)
-        self.drydock.on_mouse_motion(x, y, dx, dy)
+        if self.part_store.in_area(x, y):
+            self.part_store.on_mouse_motion(x, y, dx, dy)
+        else:
+            self.drydock.on_mouse_motion(x, y, dx, dy)
 
     def draw(self):
         super(ShipBuildMenu, self).draw()
         self.drydock.draw()
+        self.part_store.draw()
