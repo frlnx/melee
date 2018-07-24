@@ -1,12 +1,9 @@
-from engine.models.factories import ProjectileModelSpawnFunctionFactory
+from engine.controllers.base_controller import BaseController
 from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
-from engine.controllers.base_controller import BaseController
-from engine.models.ship import ShipModel
-from engine.models.ship_part import ShipPartModel
-from engine.models.projectiles import PlasmaModel
-from engine.models.asteroid import AsteroidModel
 from engine.input_handlers import InputHandler
+from engine.models import *
+from engine.models.factories import ProjectileModelSpawnFunctionFactory
 
 
 class ControllerFactory(object):

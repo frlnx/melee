@@ -14,8 +14,12 @@ class ControlConfigMenu(BaseMenu):
 
     @classmethod
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable, x, y,
-                                   view_factory, font_size=36):
-        control_config = ControlConfiguration(ship=ship_model, view_factory=view_factory)
+                                   view_factory, font_size=36, screen_width=1280, screen_height=720):
+        left = 0
+        right = screen_width
+        bottom = 0
+        top = screen_height
+        control_config = ControlConfiguration(left, right, bottom, top, ship=ship_model, view_factory=view_factory)
 
         heading = "Configure controls"
         callables = [("<- Back", close_menu_function),
@@ -42,7 +46,7 @@ class ControlConfigMenu(BaseMenu):
 
     def on_mouse_motion(self, x, y, dx, dy):
         super(ControlConfigMenu, self).on_mouse_motion(x, y, dx, dy)
-        self.control_config.on_mouse_motion(x, y, dx, dy)
+        self.control_config.highlight_at(x, y)
 
     def on_mouse_press(self, x, y, button, modifiers):
         super(ControlConfigMenu, self).on_mouse_press(x, y, button, modifiers)

@@ -363,17 +363,23 @@ class ShipPartDisplay(ShipBuildMenuComponent):
 
 class ShipConfiguration(ShipPartDisplay):
 
-    def __init__(self, left, right, bottom, top, x, y, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
         self.view_factory = view_factory
         items = set()
         for part in ship.parts:
             item = self.item_from_model(part, view_class=self.default_part_view_class)
             items.add(item)
+        x = (right - left) / 2 + left
+        y = (top - bottom) / 2 + bottom
         super().__init__(items, left, right, bottom, top, x, y)
 
     def reset(self):
         pass
+
+    def set_highlighted_item(self, item):
+        super(ShipConfiguration, self).set_highlighted_item(item)
+        self._highlighted_item.set_highlight(True, False)
 
     def item_from_model(self, model, view_class=None):
         view_class = view_class or self.default_part_view_class
@@ -400,6 +406,7 @@ class ShipConfiguration(ShipPartDisplay):
 class ControlConfiguration(ShipConfiguration):
     default_part_view_class = ShipPartConfigurationView
     default_item_class = ConfigurableItem
+    _highlighted_item: ConfigurableItem
 
     def set_mode(self, mode):
         for item in self.items:
@@ -411,6 +418,10 @@ class ControlConfiguration(ShipConfiguration):
 
     def on_mouse_press(self, x, y, button, modifiers):
         pass
+
+    @property
+    def highlighted_item(self) -> ConfigurableItem:
+        return self._highlighted_item
 
     def on_key_press(self, symbol, modifiers):
         if self.highlighted_item:
@@ -434,19 +445,15 @@ class ControlConfiguration(ShipConfiguration):
         if self.highlighted_item:
             self.highlighted_item.on_joyaxis_motion(joystick, axis, value)
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        super(ControlConfiguration, self).on_mouse_motion(x, y, dx, dy)
-        self.highlighted_item.set_highlight(True)
-
 
 class Drydock(ShipConfiguration):
     default_part_view_class = ShipPartDrydockView
     default_item_class = DockableItem
 
-    def __init__(self, left, right, bottom, top, x, y, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
         self.original_model = ship
         ship = ship.copy()
-        super().__init__(left, right, bottom, top, x, y, ship, view_factory)
+        super().__init__(left, right, bottom, top, ship, view_factory)
         self._update_connections()
         for item in self.items:
             item.legal_move_func = self._legal_placement
@@ -507,18 +514,18 @@ class PartStore(ShipPartDisplay):
     default_part_view_class = ShipPartDrydockView
     default_item_class = DockableItem
 
-    def __init__(self, left, right, bottom, top, x, y, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, view_factory: DynamicViewFactory):
         self.view_factory = view_factory
         self.part_factory = ShipPartModelFactory()
-        self.x_offset = x = (left - right) / 2 + left
-        self.y_offset = y = 0 #(bottom - top) / 2 + bottom
+        self.x_offset = x = (right - left) / 2 + left
+        self.y_offset = y = 0
         self.scale = 100
         super().__init__(self._build_new_items(), left, right, bottom, top, x, y)
 
     def _build_new_items(self):
         new_items = set()
         for i, part_name in enumerate(self.part_factory.ship_parts):
-            x = 1
+            x = 0
             y = -i - 1
             model = PositionalModel(x=x, z=y, name=part_name)
             item = self.item_spawn_from_model(model)
@@ -555,4 +562,3 @@ class PartStore(ShipPartDisplay):
 
     def drop(self, item):
         pass
-    

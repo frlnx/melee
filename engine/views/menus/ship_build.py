@@ -22,8 +22,8 @@ class ShipBuildMenu(BaseMenu):
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable,
                                    x, y, view_factory, font_size=36, screen_width=1280, screen_height=720):
         vertical_ruler = screen_width - 100
-        drydock = Drydock(0, vertical_ruler, 0, screen_height, 720, 360, ship_model, view_factory)
-        part_store = PartStore(vertical_ruler, screen_width, 0, screen_height, 800, 600, view_factory)
+        drydock = Drydock(0, vertical_ruler, 0, screen_height, ship_model, view_factory)
+        part_store = PartStore(vertical_ruler, screen_width, 0, screen_height, view_factory)
         heading = "Shipyard"
         callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset)]
         height = int(font_size * 1.6)
