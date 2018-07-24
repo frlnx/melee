@@ -38,7 +38,7 @@
         "name": "idle"
       }
     ],
-    "fuel storage": 10000
+    "fuel_storage": 10000
   },
   {
     "name": "generator",

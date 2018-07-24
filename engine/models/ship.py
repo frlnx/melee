@@ -30,6 +30,11 @@ class ShipModel(CompositeModel):
     def target(self) -> "ShipModel":
         return self._target or self
 
+    def rebuild(self):
+        super(ShipModel, self).rebuild()
+        self._fuel_parts = [part for part in self.parts if part.max_fuel_stored]
+        self._max_fuel = sum([part.max_fuel_stored for part in self._fuel_parts])
+
     @property
     def fuel_percentage(self):
         return sum(part.fuel_stored for part in self.parts if part.fuel_stored) / self._max_fuel

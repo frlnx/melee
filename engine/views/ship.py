@@ -12,6 +12,11 @@ class ShipView(BaseView):
     def __init__(self, model: ShipModel, mesh=None):
         super().__init__(model, mesh=mesh)
         self._model = model
+        self.fuel_gage_v3f: list = None
+        self.rebuild_callback()
+        model.observe(self.rebuild_callback, "rebuild")
+
+    def rebuild_callback(self):
         coords = []
         _box_coords = [(-0.1, -10., -0.1), (0.1, -10., -0.1), (0.1, -10., 0.1), (-0.1, -10., 0.1)]
         for i in range(10):
@@ -40,8 +45,11 @@ class ShipView(BaseView):
         n_boxes_to_draw = 10
         n_points_to_use = n_boxes_to_draw * 4
         n_coords = n_points_to_use * 3
-        draw(n_points_to_use, GL_QUADS, ('v3f', self.fuel_gage_v3f[:n_coords]),
-             ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
+        try:
+            draw(n_points_to_use, GL_QUADS, ('v3f', self.fuel_gage_v3f[:n_coords]),
+                 ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
+        except AssertionError:
+            print(self.fuel_gage_v3f)
 
     def _draw_global(self):
         self._draw_bbox(self._model.bounding_box)

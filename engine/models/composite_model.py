@@ -130,6 +130,8 @@ class CompositeModel(BaseModel):
                 part1.connect(part2)
             else:
                 part1.disconnect(part2)
+        for part in self.parts:
+            part.update_working_status()
 
     @property
     def parts_of_bbox(self):

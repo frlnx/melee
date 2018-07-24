@@ -165,9 +165,6 @@ class DockableItem(DrydockItem):
     def observe(self, callback):
         self._observers.add(callback)
 
-    def save(self):
-        self.model.set_position_and_rotation(self.x, 0, self.y, 0, self.yaw, 0)
-
     def set_highlight(self, part=False, circle=False):
         super(DockableItem, self).set_highlight(part)
         self._highlight_circle = circle
@@ -457,7 +454,7 @@ class Drydock(ShipConfiguration):
 
     def save_all(self):
         super(Drydock, self).save_all()
-        self.original_model.set_parts(self.ship.parts)
+        self.original_model.set_parts({item.model for item in self.items})
         self.original_model.rebuild()
 
     def reset(self):
