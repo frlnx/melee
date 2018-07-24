@@ -148,7 +148,8 @@ class Engine(TwistedEventLoop):
         decays = []
         for controller in self.controllers:
             controller.update(dt)
-            spawns += controller.spawns
+            new_spawns = controller.spawns
+            spawns += new_spawns
             if not controller.is_alive:
                 decays.append(controller)
         for decaying_controller in decays:

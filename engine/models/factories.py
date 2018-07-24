@@ -135,15 +135,15 @@ class ProjectileModelFactory(object):
         projectile = self.projectiles[name].pop()
         print(len(self.projectiles[name]), "left")
         projectile.set_movement(*movement)
-        projectile.set_position_and_rotation(*position, *rotation)
+        projectile.teleport_to(*position)
+        projectile.teleport_screw(*rotation)
         projectile.set_spin(*spin)
         projectile.recycle()
         projectile.observe(lambda: self.recycle(name, projectile) if not projectile.is_alive else None, "alive")
         return projectile
 
     def recycle(self, name, projectile):
-        projectile.set_position(0, -1000, 0)
-        projectile.bounding_box.clear_movement()
+        projectile.teleport_to(0, -1000, 0)
         self.projectiles[name].append(projectile)
 
     def manufacture(self, name,
