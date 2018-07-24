@@ -307,6 +307,12 @@ class BaseModel(PositionalModel):
         if self._rotation.set(*pitch_yaw_roll):
             self.update()
 
+    def teleport_screw(self, *pitch_yaw_roll):
+        if self._rotation.set(*pitch_yaw_roll):
+            self.update_bounding_box()
+            self.bounding_box.clear_movement()
+            self.update()
+
     def set_movement(self, dx, dy, dz):
         if self._movement.set(dx, dy, dz):
             self.update()

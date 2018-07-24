@@ -148,7 +148,7 @@ class DockableItem(DrydockItem):
         super().__init__(model, view)
         self.model.observe(self.update_status, "working")
         self._view = view
-        self.legal_move_func = legal_move_func or (lambda: True)
+        self.legal_move_func = legal_move_func or (lambda x: True)
         self._observers = set()
         self._highlight_circle = False
         self.update_status()
@@ -195,15 +195,11 @@ class DockableItem(DrydockItem):
 
     def set_yaw(self, yaw):
         o_yaw = self.yaw
-        self.model.set_rotation(0, yaw, 0)
-        self.model.update_bounding_box()
-        self.model.bounding_box.clear_movement()
+        self.model.teleport_screw(0, yaw, 0)
         if self.legal_move_func(self):
             self.update()
         else:
-            self.model.set_rotation(0, o_yaw, 0)
-            self.model.update_bounding_box()
-            self.model.bounding_box.clear_movement()
+            self.model.teleport_screw(0, o_yaw, 0)
 
     def grab(self):
         self.held = True
@@ -455,6 +451,9 @@ class Drydock(ShipConfiguration):
         ship = ship.copy()
         super().__init__(left, right, bottom, top, x, y, ship, view_factory)
         self._update_connections()
+        for item in self.items:
+            item.legal_move_func = self._legal_placement
+            item.observe(self._update_connections)
 
     def save_all(self):
         super(Drydock, self).save_all()
