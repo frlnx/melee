@@ -1,12 +1,12 @@
 from engine.models.base_model import BaseModel
 from engine.physics.force import MutableDegrees, MutableOffsets, MutableForce
-from engine.physics.polygon import Polygon
 
 
 class PlasmaModel(BaseModel):
 
     def __init__(self, position: MutableOffsets, rotation: MutableDegrees, movement: MutableOffsets,
-                 spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees, bounding_box: Polygon):
+                 spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees,
+                 bounding_box: "MultiPolygon"):
         super(PlasmaModel, self).__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._ttl = 4
         self._mass = 0.001
