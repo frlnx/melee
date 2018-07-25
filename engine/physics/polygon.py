@@ -1,5 +1,5 @@
 from itertools import compress, product, chain
-from math import radians
+from math import radians, atan2, degrees
 from typing import List, Iterator
 from uuid import uuid4
 
@@ -60,6 +60,47 @@ class BasePolygon(object):
     def moving_shape(self):
         self._moving_shape = self._moving_shape or MultiPoint(self._moving_points).convex_hull
         return self._moving_shape
+
+    @property
+    def moving_polygon(self) -> "Polygon":
+        point_string = self.convex_hull(self._moving_points)
+        return Polygon.manufacture(coords=point_string)
+
+    @classmethod
+    def convex_hull(cls, points):
+        y_es = [p[1] for p in points]
+        smallest_y = min(y_es)
+        smallest_y_index = y_es.index(smallest_y)
+        starting_point = points[smallest_y_index]
+        point_string = [starting_point]
+        last_angle = 0
+        while True:
+            last_point = point_string[-1]
+            eval_points = list(points)
+            eval_points.remove(last_point)
+            angles = cls.get_angles_for_points_from_point(last_point, eval_points)
+            delta_angles = [cls.delta_angle(a, last_angle) % 360 for a in angles]
+            min_angle = min(delta_angles)
+            min_angle_point = eval_points[delta_angles.index(min_angle)]
+            if min_angle_point in point_string:
+                return point_string[point_string.index(min_angle_point):]
+            point_string.append(min_angle_point)
+            last_angle += min_angle
+
+    @classmethod
+    def delta_angle(cls, angle, reference_angle):
+        return (((angle % 360) - (reference_angle % 360) + 180) % 360) - 180
+
+    @classmethod
+    def get_angles_for_points_from_point(cls, point, points):
+        x1, y1 = point
+        angles = []
+        for p in points:
+            x2, y2 = p
+            angle = atan2(y2 - y1, x2 - x1)
+            angle = degrees(angle)
+            angles.append(angle)
+        return angles
 
     def make_shape(self):
         coords = [(l.x1, l.y1) for l in self.lines]
@@ -174,12 +215,30 @@ class Polygon(BasePolygon):
     def _intersection(self, other: "Polygon"):
         if not self.movement_box_intersects(other):
             return None
-        p1 = self.moving_shape
-        p2 = other.moving_shape
-        intersection = p1.intersection(p2)
-        if intersection.is_empty:
-            return None
-        return intersection
+        points = set()
+        intersects = False
+        for l1, l2 in product(self.lines, other.lines):
+            line_intersects, point_x, point_y = l1.intersection_point(l2)
+            if line_intersects:
+                intersects = True
+                points.add((point_x, point_y))
+        own_break_lines = [Line([l.x1, l.y1, other.left - 1, other.bottom - 1]) for l in self.lines]
+        own_break_lines += [Line([l.x2, l.y2, other.left - 1, other.bottom - 1]) for l in self.lines]
+        other_break_lines = [Line([l.x1, l.y1, self.left - 1, self.bottom - 1]) for l in other.lines]
+        other_break_lines += [Line([l.x2, l.y2, self.left - 1, self.bottom - 1]) for l in other.lines]
+        for l1, l2 in product(self.lines, other_break_lines):
+            line_intersects, point_x, point_y = l1.intersection_point(l2)
+            if line_intersects:
+                intersects = True
+                points.add((point_x, point_y))
+
+        for l1, l2 in product(own_break_lines, other.lines):
+            line_intersects, point_x, point_y = l1.intersection_point(l2)
+            if line_intersects:
+                intersects = True
+                points.add((point_x, point_y))
+
+        return
 
     def intersects(self, other: "Polygon"):
         intersection = self._intersection(other)
@@ -231,11 +290,8 @@ class PolygonPart(Polygon):
 class MultiPolygon(Polygon):
 
     def __init__(self, polygons: List[PolygonPart]):
-        points = MultiPoint(list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons])))
-        try:
-            lines = self.coords_to_lines(points.convex_hull.exterior.coords)
-        except AttributeError:
-            lines = [Line([(p.x, p.y) for p in points])]
+        points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons]))
+        lines = self.coords_to_lines(self.convex_hull(points))
         super().__init__(lines)
         self._polygons = polygons
 

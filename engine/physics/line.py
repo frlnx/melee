@@ -73,6 +73,14 @@ class BaseLine(object):
     def dy(self):
         return self.y1 - self.y2
 
+    @property
+    def dxa(self):
+        return self.x2 - self.x1
+
+    @property
+    def dya(self):
+        return self.y2 - self.y1
+
     def freeze(self):
         self.original_x1 = self.x1
         self.original_y1 = self.y1
@@ -102,6 +110,8 @@ class BaseLine(object):
 
 class Line(BaseLine):
 
+    precision = 9
+
     def bounding_box_intersects(self, other: BaseLine):
         if self.right < other.left:
             return False
@@ -113,7 +123,7 @@ class Line(BaseLine):
             return False
         return True
 
-    def intersection_point(self, other: 'Line'):
+    def _intersection_point(self, other: 'Line'):
         sg_line1 = LineString([(self.x1, self.y1), (self.x2, self.y2)])
         sg_line2 = LineString([(other.x1, other.y1), (other.x2, other.y2)])
         intersection = sg_line1.intersection(sg_line2)
@@ -122,3 +132,35 @@ class Line(BaseLine):
         else:
             point_x, point_y = 0, 0
         return not intersection.is_empty, point_x, point_y
+
+    def intersection_point(self, other):
+
+        if not self.bounding_box_intersects(other):
+            return False, float('nan'), float('nan')
+
+        common_denominator = self._common_denominator_with(other)
+
+        if self.parallel_to(other):
+            print("Lines are parallel")
+            return False, float('nan'), float('nan')
+
+        k_x = other.dxa * (self.y1 - other.y1) - other.dya * (self.x1 - other.x1)
+        k_y = self.dxa * (self.y1 - other.y1) - self.dya * (self.x1 - other.x1)
+
+        k_x /= common_denominator
+        k_y /= common_denominator
+
+        k_x_upper, k_x_lower = round(k_x, self.precision), round(k_x - 1, self.precision)
+        k_y_upper, k_y_lower = round(k_y, self.precision), round(k_y - 1, self.precision)
+
+        if k_x_lower <= 0 <= k_x_upper and k_y_lower <= 0 <= k_y_upper:
+            intersection_x = self.x1 + k_x * self.dxa
+            intersection_y = self.y1 + k_x * self.dya
+            return True, intersection_x, intersection_y
+        return False, float('nan'), float('nan')
+
+    def _common_denominator_with(self, other: "Line"):
+        return self.dx * other.dy - other.dx * self.dy
+
+    def parallel_to(self, other: "Line"):
+        return round(self._common_denominator_with(other), self.precision) == 0

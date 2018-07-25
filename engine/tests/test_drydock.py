@@ -9,7 +9,7 @@ class TestDryDockSave(object):
         smf = ShipModelFactory()
         self.ship = smf.manufacture("ship")
         self.original_parts = self.ship.parts
-        drydock = Drydock(self.ship, FakeFactory())
+        drydock = Drydock(0, 1, 0, 1, self.ship, FakeFactory())
         drydock.save_all()
         self.parts_after_save = self.ship.parts
 

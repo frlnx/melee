@@ -1,5 +1,6 @@
-from engine.physics.line import Line
 from math import radians
+
+from engine.physics.line import Line
 
 
 class TestLineRotation(object):
@@ -81,10 +82,10 @@ class TestNonLineIntersection(object):
         self.target = line1.intersection_point(line2)
 
     def test_intersection_point_x_is_zero(self):
-        assert round(self.target[1], 2) == 0
+        assert round(self.target[1], 2) != round(self.target[1], 2)
 
     def test_intersection_point_y_is_zero(self):
-        assert round(self.target[2], 2) == 0
+        assert round(self.target[2], 2) != round(self.target[2], 2)
 
     def test_lines_intersects(self):
         assert not self.target[0]
