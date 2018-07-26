@@ -79,11 +79,11 @@ class Engine(TwistedEventLoop):
         self.ships = set()
         self.models = {}
 
-    def spawn_asteroids(self, n):
+    def spawn_asteroids(self, n, area=200):
         i = 0
         failed_attempts = 0
         while i <= n and failed_attempts <= n * 2:
-            model = self.amf.manufacture(self.random_position(area=200))
+            model = self.amf.manufacture(self.random_position(area=area))
             retry = False
             for other_model in self.models.values():
                 if model.bounding_box.bounding_box_intersects(other_model.bounding_box):

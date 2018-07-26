@@ -1,6 +1,6 @@
-from typing import List, Tuple
 from itertools import product
 from math import hypot, degrees
+from typing import List, Tuple
 
 from engine.physics.force import MutableOffsets, MutableDegrees
 from .line import Line
@@ -30,10 +30,6 @@ class MovingLine(Line):
         side2.freeze()
         self._opposite.freeze()
         return side1, side2, self._opposite
-
-    def set_position_rotation(self, x, y, radii):
-        super(MovingLine, self).set_position_rotation(x, y, radii)
-
 
     def bounding_box_intersects_in_timeframe(self, other: 'MovingLine', timeframe: float):
         self_x = self._movement.x * timeframe

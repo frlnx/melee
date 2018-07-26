@@ -1,26 +1,18 @@
+from functools import reduce
 from itertools import compress, product, chain
 from math import radians, atan2, degrees
 from typing import List, Iterator
 from uuid import uuid4
-
-from shapely.geometry import LinearRing, LineString, MultiPoint, Point
 
 from engine.physics.line import Line
 
 
 class BasePolygon(object):
 
-    closed_shape_class_map = {
-        True: LinearRing,
-        False: LineString
-    }
-
     def __init__(self, lines: List[Line], closed=True, part_id=None):
         self.part_id = part_id or uuid4().hex
         self._lines = lines
-        self._shape_class = self.closed_shape_class_map[closed]
         self._shape = None
-        self.shape = self.make_shape
         self.rotation = 0
         self.x = 0
         self.y = 0
@@ -57,17 +49,19 @@ class BasePolygon(object):
         return self._lines
 
     @property
-    def moving_shape(self):
-        self._moving_shape = self._moving_shape or MultiPoint(self._moving_points).convex_hull
-        return self._moving_shape
-
-    @property
     def moving_polygon(self) -> "Polygon":
         point_string = self.convex_hull(self._moving_points)
         return Polygon.manufacture(coords=point_string)
 
+    @property
+    def moving_lines(self):
+        return self.moving_polygon.lines
+
     @classmethod
     def convex_hull(cls, points):
+        points = list(set(points))
+        if len(points) <= 3:
+            return points
         y_es = [p[1] for p in points]
         smallest_y = min(y_es)
         smallest_y_index = y_es.index(smallest_y)
@@ -102,16 +96,6 @@ class BasePolygon(object):
             angles.append(angle)
         return angles
 
-    def make_shape(self):
-        coords = [(l.x1, l.y1) for l in self.lines]
-        coords.append((self.lines[-1].x2, self.lines[-1].y2))
-        self._shape = self._shape_class(coords)
-        self.shape = self._default_shape_function
-        return self._shape
-
-    def shape(self):
-        return self._shape
-
     def _default_shape_function(self):
         return self._shape
 
@@ -122,12 +106,12 @@ class BasePolygon(object):
         self._moving_points.clear()
         for line in self.lines:
             self._moving_points.append((line.x1, line.y1))
-            line.set_position_rotation(x, y, radians(yaw_degrees))
-            self._moving_points.append((line.x1, line.y1))
+            if line.set_position_rotation(x, y, radians(yaw_degrees)):
+                self._moving_points.append((line.x1, line.y1))
         self._moving_shape = None
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
-        self.shape = self.make_shape
+        #  self.shape = self.make_shape
 
     def clear_movement(self):
         self._moving_points = [(l.x1, l.y1) for l in self.lines]
@@ -187,8 +171,9 @@ class BasePolygon(object):
 class Polygon(BasePolygon):
 
     def centroid(self):
-        c = self.shape().centroid
-        return c.x, c.y
+        points = [l.centroid for l in self.lines]
+        centroid = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), points)
+        return centroid[0] / len(points), centroid[1] / len(points)
 
     def bounding_box_intersects(self, other: BasePolygon):
         if self.right < other.left:
@@ -212,9 +197,31 @@ class Polygon(BasePolygon):
             return False
         return True
 
-    def _intersection(self, other: "Polygon"):
+    def _intersection_polygon(self, other: "Polygon"):
         if not self.movement_box_intersects(other):
             return None
+
+
+
+
+        primary_iter = iter(self.lines)
+        secondary_iter = iter(other.lines)
+        points = []
+
+        intersects = False
+        x, y = None, None
+        for l1 in primary_iter:
+            for l2 in secondary_iter:
+                intersects, x, y = l1.intersection_point(l2)
+                if intersects:
+                    break
+            if intersects:
+                break
+        if not intersects:
+            return None
+        points.append((x, y))
+        primary_iter, secondary_iter = secondary_iter, primary_iter
+
         points = set()
         intersects = False
         for l1, l2 in product(self.lines, other.lines):
@@ -240,26 +247,37 @@ class Polygon(BasePolygon):
 
         return
 
-    def intersects(self, other: "Polygon"):
-        intersection = self._intersection(other)
-        return intersection is not None
+    def intersects(self, other):
+        try:
+            for l1, l2 in product(self.moving_lines, other.moving_lines):
+                intersects, x, y = l1.intersection_point(l2)
+                if intersects:
+                    return True
+        except AttributeError:
+            for l1 in self.moving_lines:
+                intersects, x, y = l1.intersection_point(other)
+                if intersects:
+                    return True
+        return False
 
-    def intersection_point(self, other: "Polygon"):
-        intersection = self._intersection(other)
-        if intersection:
-            point_x, point_y = intersection.centroid.x, intersection.centroid.y
-        else:
-            point_x, point_y = None, None
-        return intersection is not None, point_x, point_y
+    def intersection_point(self, other):
+        if isinstance(other, Polygon):
+            for l1, l2 in product(self.moving_lines, other.moving_lines):
+                intersects, x, y = l1.intersection_point(l2)
+                if intersects:
+                    return True, x, y
+        elif isinstance(other, Line):
+            for l1 in self.moving_lines:
+                intersects, x, y = l1.intersection_point(other)
+                if intersects:
+                    return True, x, y
+        return False, None, None
 
     def point_inside(self, x, y):
-        return self.moving_shape.contains(Point(x, y))
-
-    def __iadd__(self, other: "Polygon"):
-        p1 = self.make_shape()
-        p2 = other.make_shape()
-        new_shape = p1.union(p2)
-        return self.manufacture(new_shape.coords)
+        outside_point = (self.moving_polygon.left - 1, self.moving_polygon.bottom - 1)
+        break_line = Line([(x, y), outside_point])
+        n_broken_lines = sum(int(l.intersection_point(break_line)[0]) for l in self.moving_polygon.lines)
+        return n_broken_lines % 2 == 1
 
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines], self.x, self.y, self.rotation)
@@ -291,7 +309,8 @@ class MultiPolygon(Polygon):
 
     def __init__(self, polygons: List[PolygonPart]):
         points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons]))
-        lines = self.coords_to_lines(self.convex_hull(points))
+        hull = self.convex_hull(points)
+        lines = self.coords_to_lines(hull)
         super().__init__(lines)
         self._polygons = polygons
 
@@ -305,6 +324,7 @@ class MultiPolygon(Polygon):
         own_intersections = set()
         other_intersections = set()
         if len(self) == 0 or len(other) == 0 or not self.intersects(other):
+            print(len(self), len(other), self.intersects(other))
             return own_intersections, other_intersections
 
         for p1, p2 in product(self, other):

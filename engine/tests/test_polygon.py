@@ -1,5 +1,6 @@
-import pytest
 from itertools import product
+
+import pytest
 
 from engine.physics.polygon import Polygon
 
@@ -30,6 +31,7 @@ class TestPolygonIntersection(object):
     def test_intersection_is_at_origo(self):
         assert round(self.x, 2) == 0
         assert round(self.y, 2) == 0
+
 
 class TestPolygonMovement(object):
 

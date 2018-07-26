@@ -43,6 +43,8 @@ class BaseLine(object):
         self.bottom = min(self.y1, self.y2)
 
     def set_position_rotation(self, x, y, radii):
+        if self.x == x and self.y == y and self.rotation == radii:
+            return False
         cos_val = cos(radii)
         sin_val = sin(radii)
         self.x1 = x + self.original_x1 * cos_val - self.original_y1 * sin_val
@@ -56,6 +58,7 @@ class BaseLine(object):
         self.left = min(self.x1, self.x2)
         self.top = max(self.y1, self.y2)
         self.bottom = min(self.y1, self.y2)
+        return True
 
     @property
     def centroid(self):

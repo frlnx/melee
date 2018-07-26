@@ -383,7 +383,7 @@ class ShipConfiguration(ShipPartDisplay):
 
     def item_from_model(self, model, view_class=None):
         view_class = view_class or self.default_part_view_class
-        view = self.view_factory.manufacture(model, view_class=view_class)
+        view: ShipPartDrydockView = self.view_factory.manufacture(model, view_class=view_class)
         view.set_mesh_scale(0.25)
         item = self.default_item_class(model, view)
         return item
@@ -552,7 +552,7 @@ class PartStore(ShipPartDisplay):
 
     def item_from_model(self, model, view_class=None):
         view_class = view_class or self.default_part_view_class
-        view = self.view_factory.manufacture(model, view_class=view_class)
+        view: ShipPartDrydockView = self.view_factory.manufacture(model, view_class=view_class)
         view.set_mesh_scale(0.25)
         item = self.default_item_class(model, view)
         return item
