@@ -1,8 +1,6 @@
 from math import *
 from typing import List, Tuple
 
-from shapely.geometry import LineString
-
 
 class Point(object):
 
@@ -125,16 +123,6 @@ class Line(BaseLine):
         if self.bottom > other.top:
             return False
         return True
-
-    def _intersection_point(self, other: 'Line'):
-        sg_line1 = LineString([(self.x1, self.y1), (self.x2, self.y2)])
-        sg_line2 = LineString([(other.x1, other.y1), (other.x2, other.y2)])
-        intersection = sg_line1.intersection(sg_line2)
-        if not intersection.is_empty:
-            point_x, point_y = intersection.centroid.x, intersection.centroid.y
-        else:
-            point_x, point_y = 0, 0
-        return not intersection.is_empty, point_x, point_y
 
     def intersection_point(self, other):
 

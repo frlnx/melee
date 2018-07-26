@@ -1,7 +1,4 @@
-# pywavefront
 pyglet
 pytest
 numpy
-#imageio
 twisted
-shapely
