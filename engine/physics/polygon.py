@@ -77,7 +77,9 @@ class BasePolygon(object):
             min_angle = min(delta_angles)
             min_angle_point = eval_points[delta_angles.index(min_angle)]
             if min_angle_point in point_string:
-                return point_string[point_string.index(min_angle_point):]
+                hull = point_string[point_string.index(min_angle_point):]
+                hull.reverse()
+                return hull
             point_string.append(min_angle_point)
             last_angle += min_angle
 
@@ -248,6 +250,8 @@ class Polygon(BasePolygon):
         return
 
     def intersects(self, other):
+        if not self.movement_box_intersects(other):
+            return False
         try:
             for l1, l2 in product(self.moving_lines, other.moving_lines):
                 intersects, x, y = l1.intersection_point(l2)
@@ -261,6 +265,8 @@ class Polygon(BasePolygon):
         return False
 
     def intersection_point(self, other):
+        if not self.movement_box_intersects(other):
+            return False, None, None
         if isinstance(other, Polygon):
             for l1, l2 in product(self.moving_lines, other.moving_lines):
                 intersects, x, y = l1.intersection_point(l2)
@@ -324,7 +330,6 @@ class MultiPolygon(Polygon):
         own_intersections = set()
         other_intersections = set()
         if len(self) == 0 or len(other) == 0 or not self.intersects(other):
-            print(len(self), len(other), self.intersects(other))
             return own_intersections, other_intersections
 
         for p1, p2 in product(self, other):
