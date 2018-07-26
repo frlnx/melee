@@ -1,4 +1,3 @@
 pyglet
 pytest
-numpy
 twisted

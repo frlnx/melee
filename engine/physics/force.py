@@ -1,8 +1,6 @@
 from __future__ import division
-from math import sqrt, atan2, cos, sin, degrees, radians
-from collections import namedtuple
 
-from numpy import cross, dot
+from math import sqrt, atan2, cos, sin, degrees, radians
 
 
 class Vector(object):
@@ -30,12 +28,6 @@ class Vector(object):
 
     def __truediv__(self, other):
         return self.__div__(other)
-
-    def cross(self, other):
-        return self.__class__(*cross(self, other.xyz))
-
-    def dot(self, other):
-        return self.__class__(*dot(self, other.xyz))
 
     def __repr__(self):
         return "V: {} {} {}".format(*self)
@@ -94,14 +86,6 @@ class MutableVector(Vector):
 
     def __imul__(self, other: float) -> "MutableVector":
         self.set(*[x + other for x in self])
-        return self
-
-    def icross(self, other):
-        self.set(*cross(self.xyz, other.xyz))
-        return self
-
-    def idot(self, other):
-        self.set(*dot(self.xyz, other.xyz))
         return self
 
     @property
