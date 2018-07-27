@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from engine import ClientEngine
+from engine.client import ClientEngine
 from engine.input_handlers import Keyboard, GamePad
 from engine.network.client import NetworkClient
 from engine.window import Window
