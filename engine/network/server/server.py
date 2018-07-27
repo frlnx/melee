@@ -1,5 +1,5 @@
-from engine.network.factories import BroadcastServerFactory
-from engine.network.update_protocol import UpdateServerProtocol
+from engine.network.server.factories import BroadcastServerFactory
+from engine.network.server.update_protocol import UpdateServerProtocol
 from engine.pigtwisted import install
 from engine import ServerEngine
 
