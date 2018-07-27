@@ -10,9 +10,8 @@ from engine.window import Window
 class ClientEngine(Engine):
     version = (1, 0, 0)
 
-    def __init__(self, input_handler=None, window: Window = None):
-        super().__init__()
-
+    def __init__(self, event_loop: "TwistedEventLoop", input_handler=None, window: Window = None):
+        super().__init__(event_loop)
         self.my_model = self.smf.manufacture("ship", position=self.random_position())
         self.models[self.my_model.uuid] = self.my_model
         self.my_controller = None
@@ -37,6 +36,9 @@ class ClientEngine(Engine):
                                      self._menu_network, self.exit]
         self.callsign = None
         self._menu_login()
+
+    def exit(self):
+        print("EXIT")
 
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:

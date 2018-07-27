@@ -1,13 +1,14 @@
 from engine.network.factories import EventClientFactory
 from engine.network.update_protocol import UpdateClientProtocol
 from engine.pigtwisted import install
-from engine import ClientEngine
+from engine.client import ClientEngine
 
 
 class NetworkClient(object):
 
     def __init__(self, engine: ClientEngine):
-        install(engine)
+        event_loop = engine._event_loop
+        install(event_loop)
         from twisted.internet import reactor
         self.engine = engine
         self.engine.bind_connect(self.connect)

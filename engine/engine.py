@@ -1,27 +1,29 @@
 import random
 from itertools import combinations
 from typing import Callable, ValuesView
+import time
+
+from twisted.internet.task import LoopingCall
 
 from engine.controllers.factories import ControllerFactory
 from engine.models.base_model import BaseModel
 from engine.models.factories import ShipModelFactory, AsteroidModelFactory
 from engine.models.ship import ShipModel
 from engine.physics.force import MutableOffsets, MutableForce
-from engine.pigtwisted import TwistedEventLoop
 
 
-class Engine(TwistedEventLoop):
+class Engine(object):
 
     version = (1, 0, 0)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, event_loop):
+        self._event_loop = event_loop
         self.smf = ShipModelFactory()
         self.amf = AsteroidModelFactory()
         self.controller_factory = ControllerFactory()
         self.has_exit = True
-        self.clock.schedule(self.update)
-        self.clock.set_fps_limit(60)
+        self._event_loop.clock.schedule(self.update)
+        self._event_loop.clock.set_fps_limit(60)
         self.rnd = random.seed()
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
@@ -29,6 +31,15 @@ class Engine(TwistedEventLoop):
         self.ships = set()
         self.models = {}
         self._time_spent = 0
+        self._scheduled_taks = {"update": None}
+
+    def schedule(self, func: Callable):
+        LoopingCall(lambda: self._call_with_time_since(func))
+
+    def _call_with_time_since(self, func: Callable):
+        last_time = self._scheduled_taks.get(func.__name__, time.time())
+        dt = time.time() - last_time
+        func(dt)
 
     @property
     def controllers(self) -> ValuesView["engine.controllers.BaseController"]:
@@ -104,7 +115,7 @@ class Engine(TwistedEventLoop):
     def spawn_with_callback(self, model: BaseModel):
         self._new_model_callback(model)
         self.models[model.uuid] = model
-        controller = self.controller_factory.manufacture(model, input_handler=self.input_handler)
+        controller = self.controller_factory.manufacture(model)
         self._controllers[model.uuid] = controller
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
