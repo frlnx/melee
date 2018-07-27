@@ -34,7 +34,8 @@ class Engine(object):
         self._scheduled_taks = {"update": None}
 
     def schedule(self, func: Callable):
-        LoopingCall(lambda: self._call_with_time_since(func))
+        lc = LoopingCall(lambda: self._call_with_time_since(func))
+        lc.start(1/60)
 
     def _call_with_time_since(self, func: Callable):
         last_time = self._scheduled_taks.get(func.__name__, time.time())
