@@ -15,7 +15,7 @@ class ViewFactory(object):
     _zeroes = (0, 0, 0)
     model_mesh_map = {
         AsteroidModel: {"method": "_spheroid",
-                        "material": partial(OpenGLTexturedMaterial, texture_file_name="ROCKS002.TGA",
+                        "material": partial(OpenGLTexturedMaterial, texture_file_name="asteroid.png",
                                             diffuse=(0.7, 0.7, 0.7), name="Rock Surface")},
         #ShieldModel: {"method": "_hexagon_fence",
         #              "material": partial(OpenGLMaterial, diffuse=(0, 0, 0), emissive=(.54, .81, .94),

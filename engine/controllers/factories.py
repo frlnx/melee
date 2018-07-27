@@ -1,7 +1,6 @@
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship import ShipController
 from engine.controllers.ship_part import ShipPartController
-from engine.input_handlers import InputHandler
 from engine.models import *
 from engine.models.factories import ProjectileModelSpawnFunctionFactory
 
@@ -9,7 +8,7 @@ from engine.models.factories import ProjectileModelSpawnFunctionFactory
 class ControllerFactory(object):
 
     def __init__(self):
-        self.dummy_input_handler = InputHandler()
+        self.dummy_input_handler = None
         self.model_controller_map = {
             ShipModel: ShipControllerFactory().manufacture,
             ShipPartModel: ShipPartControllerFactory().manufacture,

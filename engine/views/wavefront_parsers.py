@@ -280,7 +280,11 @@ class WavefrontObjectFactory(object):
         for file_path in files_to_load:
             with open(file_path, 'r') as f:
                 lines = f.readlines()
-                wfo = object_parser.parse(lines)
+                try:
+                    wfo = object_parser.parse(lines)
+                except:
+                    print(file_path)
+                    raise
                 self.object_map[wfo.name] = wfo
 
     def manufacture(self, name):

@@ -2,13 +2,12 @@ from typing import Set
 
 from engine.controllers.base_controller import BaseController
 from engine.controllers.ship_part import ShipPartController
-from engine.input_handlers import InputHandler
 from engine.models.ship import ShipModel
 
 
 class ShipController(BaseController):
 
-    def __init__(self, model: ShipModel, gamepad: InputHandler):
+    def __init__(self, model: ShipModel, gamepad: "InputHandler"):
         super().__init__(model, gamepad)
         self._model = model
         self._possible_targets = [model]
@@ -66,9 +65,10 @@ class ShipController(BaseController):
         super().update(dt)
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
-        buttons_done = set()
-        for button in self._gamepad.buttons:
-            if button in self._button_config:
-                self._button_config[button]()
-                buttons_done.add(button)
-        self._gamepad.buttons -= buttons_done
+        if self._gamepad:
+            buttons_done = set()
+            for button in self._gamepad.buttons:
+                if button in self._button_config:
+                    self._button_config[button]()
+                    buttons_done.add(button)
+            self._gamepad.buttons -= buttons_done

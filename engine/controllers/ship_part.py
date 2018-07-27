@@ -1,19 +1,22 @@
 from typing import Callable
 
 from engine.controllers.base_controller import BaseController
-from engine.input_handlers import InputHandler
 from engine.models.ship_part import ShipPartModel
 
 
 class ShipPartController(BaseController):
 
-    def __init__(self, model: ShipPartModel, gamepad: InputHandler, spawn_func: Callable):
+    def __init__(self, model: ShipPartModel, gamepad: "InputHandler", spawn_func: Callable):
         super().__init__(model, gamepad)
         self._model = model
         self._spawn_func = spawn_func
 
     def update(self, dt):
         self._model.timers(dt)
+        if self._gamepad:
+            self.get_input()
+
+    def get_input(self):
         if not self._model.working:
             self._model.set_input_value(0.)
             self._model.set_state("idle")

@@ -1,10 +1,9 @@
-from engine.input_handlers import InputHandler
 from engine.models.base_model import BaseModel
 
 
 class BaseController(object):
 
-    def __init__(self, model: BaseModel, gamepad: InputHandler):
+    def __init__(self, model: BaseModel, gamepad: "InputHandler"=None):
         self._model = model
         self._gamepad = gamepad
         self._sub_controllers = set()
