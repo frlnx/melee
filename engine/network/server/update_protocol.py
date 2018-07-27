@@ -7,7 +7,7 @@ class UpdateServerProtocol(UpdateProtocol):
     def __init__(self, engine: Engine):
         super().__init__(engine)
         self.addresses = []
-        self.engine.clock.schedule_interval(self.update, interval=1)
+        self.engine.schedule_interval(self.update, interval=1)
 
     def register_address(self, ip, port):
         self.addresses.append((ip, port))

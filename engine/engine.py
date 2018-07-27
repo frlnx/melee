@@ -1,7 +1,7 @@
 import random
+import time
 from itertools import combinations
 from typing import Callable, ValuesView
-import time
 
 from twisted.internet.task import LoopingCall
 
@@ -14,6 +14,8 @@ from engine.physics.force import MutableOffsets, MutableForce
 
 class Engine(object):
 
+    fps = 60
+
     version = (1, 0, 0)
 
     def __init__(self, event_loop):
@@ -22,8 +24,7 @@ class Engine(object):
         self.amf = AsteroidModelFactory()
         self.controller_factory = ControllerFactory()
         self.has_exit = True
-        self._event_loop.clock.schedule(self.update)
-        self._event_loop.clock.set_fps_limit(60)
+        self.schedule(self.update)
         self.rnd = random.seed()
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
@@ -31,16 +32,22 @@ class Engine(object):
         self.ships = set()
         self.models = {}
         self._time_spent = 0
-        self._scheduled_taks = {"update": None}
+        self._scheduled_taks = {}
 
     def schedule(self, func: Callable):
+        self.schedule_interval(func, 1 / self.fps)
+
+    def schedule_interval(self, func, interval):
         lc = LoopingCall(lambda: self._call_with_time_since(func))
-        lc.start(1/60)
+        lc.start(interval)
 
     def _call_with_time_since(self, func: Callable):
-        last_time = self._scheduled_taks.get(func.__name__, time.time())
-        dt = time.time() - last_time
+        func_name = func.__name__
+        last_time = self._scheduled_taks.get(func_name, time.time())
+        now = time.time()
+        dt = now - last_time
         func(dt)
+        self._scheduled_taks[func_name] = now
 
     @property
     def controllers(self) -> ValuesView["engine.controllers.BaseController"]:

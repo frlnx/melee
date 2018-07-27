@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pyglet
 
 from engine.engine import Engine
@@ -36,9 +38,16 @@ class ClientEngine(Engine):
                                      self._menu_network, self.exit]
         self.callsign = None
         self._menu_login()
+        self._event_loop.clock.set_fps_limit(self.fps)
+
+    def schedule(self, func: Callable):
+        self._event_loop.clock.schedule(func)
+
+    def schedule_interval(self, func, interval):
+        self._event_loop.clock.schedule_interval(func, interval)
 
     def exit(self):
-        print("EXIT")
+        self._event_loop.exit()
 
     def on_key_press(self, symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
@@ -97,7 +106,6 @@ class ClientEngine(Engine):
     def connect(self, host, port):
         self.spawn_self()
         self.connect_func(host, port)
-        self.solve_collisions = self._client_solve_collisions
 
     def start_local(self):
         self.spawn_self()
