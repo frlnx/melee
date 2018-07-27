@@ -3,7 +3,6 @@ from itertools import combinations
 from typing import Callable, ValuesView
 
 from engine.controllers.factories import ControllerFactory
-from engine.input_handlers import InputHandler
 from engine.models.base_model import BaseModel
 from engine.models.factories import ShipModelFactory, AsteroidModelFactory
 from engine.models.ship import ShipModel
@@ -24,7 +23,6 @@ class Engine(TwistedEventLoop):
         self.clock.schedule(self.update)
         self.clock.set_fps_limit(60)
         self.rnd = random.seed()
-        self.input_handler = InputHandler()
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
         self._controllers = dict()
