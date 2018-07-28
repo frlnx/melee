@@ -108,6 +108,8 @@ class ClientEngine(Engine):
         self.connect_func(host, port)
 
     def start_network(self):
+        self._main_menu_functions = [self.window.close_menu, self._menu_shipyard, self._menu_controls,
+                                     self._menu_network, self._menu_exit]
         self.window.close_menu()
 
     def start_local(self):
@@ -140,10 +142,6 @@ class ClientEngine(Engine):
     def spawn_ship(self, controller):
         super(ClientEngine, self).spawn_ship(controller)
         self.propagate_target(controller._model)
-
-    def spawn_with_callback(self, model: BaseModel):
-        super(ClientEngine, self).spawn_with_callback(model)
-        self.window.spawn(model)
 
     def decay(self, uuid):
         model = self.models[uuid]

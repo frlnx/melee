@@ -33,7 +33,7 @@ class BroadcastProtocol(EventProtocol):
         self.send_player_list()
         self.own_model = frame['model']
         self.engine.register_player(self.username, self.own_model.uuid)
-        self.spawn_model(frame)
+        self.spawn_model({"command": "spawn_model", "model": frame["model"]})
         self.send_spawn_all_models()
         self.send_enter()
 

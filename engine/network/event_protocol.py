@@ -15,7 +15,6 @@ class EventProtocol(Int32StringReceiver):
         self._latency = 0
         self.commands = {
             "handshake": self.handshake,
-            "register_own_ship": self.register_own_ship,
             "ping": self.ping,
             "pong": self.pong,
             "spawn": self.spawn_model,
