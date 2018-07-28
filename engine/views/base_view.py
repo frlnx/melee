@@ -43,6 +43,9 @@ class BaseView(object):
         if model.is_exploding:
             self.explode()
 
+    def distance_to(self, other):
+        return (self.position - other.position).distance
+
     @property
     def model(self):
         return self._model

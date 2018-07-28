@@ -14,6 +14,7 @@ class BroadcastProtocol(EventProtocol):
                 "register_own_ship": self.register_own_ship
             }
         )
+        self.engine.observe(self.send_player_list, "players")
 
     def spawn_model(self, frame):
         super(BroadcastProtocol, self).spawn_model(frame)
@@ -32,8 +33,8 @@ class BroadcastProtocol(EventProtocol):
     def register_own_ship(self, frame):
         self.send_player_list()
         self.own_model = frame['model']
+        self.spawn_model({"command": "spawn", "model": frame["model"]})
         self.engine.register_player(self.username, self.own_model.uuid)
-        self.spawn_model({"command": "spawn_model", "model": frame["model"]})
         self.send_spawn_all_models()
         self.send_enter()
 

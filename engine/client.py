@@ -104,12 +104,12 @@ class ClientEngine(Engine):
         self.connect(host, port)
 
     def connect(self, host, port):
-        self.spawn_self()
         self.connect_func(host, port)
 
     def start_network(self):
         self._main_menu_functions = [self.window.close_menu, self._menu_shipyard, self._menu_controls,
                                      self._menu_network, self._menu_exit]
+        self.spawn_self()
         self.window.close_menu()
 
     def start_local(self):
@@ -149,7 +149,8 @@ class ClientEngine(Engine):
         super(ClientEngine, self).decay(uuid)
 
     def propagate_target(self, ship: BaseModel):
-        self.my_controller.register_target(ship)
+        pass
+        #self.my_controller.register_target(ship)
 
     def update(self, dt):
         super(ClientEngine, self).update(dt)

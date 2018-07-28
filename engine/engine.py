@@ -36,6 +36,7 @@ class Engine(object):
         self._time_spent = 0
         self._scheduled_taks = {}
         self._players = {}
+        self._collision_check_models = set()
 
 
     def observe(self, func: Callable, action: str):
@@ -152,10 +153,14 @@ class Engine(object):
 
     def spawn(self, model: BaseModel):
         self.models[model.uuid] = model
+        model.observe(lambda: self._add_to_collision_checks(model))
         controller = self.controller_factory.manufacture(model)
         self._controllers[model.uuid] = controller
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
+
+    def _add_to_collision_checks(self, model):
+        self._collision_check_models.add(model)
 
     def spawn_ship(self, controller):
         self.ships.add(controller)
@@ -198,25 +203,31 @@ class Engine(object):
             self.spawn_with_callback(model)
 
     def register_collisions(self):
-        for m1, m2 in combinations(self.models.values(), 2):
-            assert isinstance(m1, BaseModel)
-            assert isinstance(m2, BaseModel)
-            m1_intersection_parts, m2_intersection_parts = m1.intersected_polygons(m2)
-            if not m1_intersection_parts and not m2_intersection_parts:
-                continue
-            intersects, x, y = m1.intersection_point(m2)
-            if intersects:
-                m1_vector = m2.movement - m1.movement
-                m2_vector = -m1_vector
-                combined_mass = m1.mass + m2.mass
-                m1_mass_quota = m2.mass / combined_mass
-                m2_mass_quota = m1.mass / combined_mass
-                m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
-                m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
-                m1.add_collision(m1_force)
-                m2.add_collision(m2_force)
-            n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
-            for part in m1.parts_by_bounding_boxes(m1_intersection_parts[:n_parts_damaged]):
-                part.damage()
-            for part in m2.parts_by_bounding_boxes(m2_intersection_parts[:n_parts_damaged]):
-                part.damage()
+        for m1 in self._collision_check_models:
+            for m2 in self.models.values():
+                if m1 == m2:
+                    continue
+
+        #for m1, m2 in combinations(self.models.values(), 2):
+                assert isinstance(m1, BaseModel)
+                assert isinstance(m2, BaseModel)
+                m1_intersection_parts, m2_intersection_parts = m1.intersected_polygons(m2)
+                if not m1_intersection_parts and not m2_intersection_parts:
+                    continue
+                intersects, x, y = m1.intersection_point(m2)
+                if intersects:
+                    m1_vector = m2.movement - m1.movement
+                    m2_vector = -m1_vector
+                    combined_mass = m1.mass + m2.mass
+                    m1_mass_quota = m2.mass / combined_mass
+                    m2_mass_quota = m1.mass / combined_mass
+                    m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
+                    m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
+                    m1.add_collision(m1_force)
+                    m2.add_collision(m2_force)
+                n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
+                for part in m1.parts_by_bounding_boxes(m1_intersection_parts[:n_parts_damaged]):
+                    part.damage()
+                for part in m2.parts_by_bounding_boxes(m2_intersection_parts[:n_parts_damaged]):
+                    part.damage()
+        self._collision_check_models.clear()

@@ -44,11 +44,11 @@ class Hud(object):
         model.observe(lambda: self.remove_model(model) if not model.is_alive else None, "alive")
         if isinstance(model, ShipModel):
             self._views[model] = self._view_factory.manufacture(model, view_class=ShipHudView)
-        if not self.own_model:
-            self.own_model = model
-            self.own_model.observe(lambda: self.set_target_model(self.own_model.target), "target")
-        if not self.target_model:
-            self.set_target_model(model)
+            if not self.own_model:
+                self.own_model = model
+                self.own_model.observe(lambda: self.set_target_model(self.own_model.target), "target")
+            if not self.target_model:
+                self.set_target_model(model)
 
     def remove_model(self, model):
         try:

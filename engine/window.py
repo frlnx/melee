@@ -166,6 +166,10 @@ class Window(pyglet.window.Window):
                 view.draw_transparent()
         glDisable(GL_LIGHTING)
 
+    @property
+    def views_in_range(self):
+        return [view for view in self.views if view.distance_to(self.camera_view) < 100.]
+
     def draw_menu(self):
         self._set_up_flat_ortho_projection()
         self._menu.draw()
