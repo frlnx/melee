@@ -1,4 +1,4 @@
-from engine.engine import Engine
+from engine.client import Engine
 from engine.network.update_protocol import UpdateProtocol
 
 
@@ -28,3 +28,7 @@ class UpdateServerProtocol(UpdateProtocol):
             if ignore and ignore == address:
                 continue
             self.transport.write(ser, address)
+
+    @property
+    def models_to_update(self):
+        return super(UpdateServerProtocol, self).models_to_update()

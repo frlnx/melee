@@ -1,6 +1,8 @@
-from twisted.internet.protocol import DatagramProtocol
-from engine.engine import Engine
 import pickle
+
+from twisted.internet.protocol import DatagramProtocol
+
+from engine.engine import Engine
 
 
 class UpdateProtocol(DatagramProtocol):
@@ -10,9 +12,13 @@ class UpdateProtocol(DatagramProtocol):
 
     def update(self, _):
         data = []
-        for model in self.engine.models.values():
+        for model in self.models_to_update:
             data.append(model.data_dict)
         self.send(data)
+
+    @property
+    def models_to_update(self):
+        return self.engine.models.values()
 
     def datagramReceived(self, datagram, addr):
         frame = self.deserialize(datagram)
@@ -28,22 +34,3 @@ class UpdateProtocol(DatagramProtocol):
         return pickle.loads(m)
 
 
-class UpdateClientProtocol(UpdateProtocol):
-
-    def __init__(self, engine, host, port):
-        super().__init__(engine)
-        self.host = host
-        self.port = port
-
-    def startProtocol(self):
-        self.transport.connect(self.host, self.port)
-
-    def start(self):
-        self.engine.my_model.observe(self.client_movement)
-
-    def client_movement(self):
-        self.send([self.engine.my_model.data_dict])
-
-    def send(self, data):
-        ser = self.serialize(data)
-        self.transport.write(ser)

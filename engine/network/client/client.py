@@ -1,7 +1,7 @@
-from engine.network.factories import EventClientFactory
-from engine.network.update_protocol import UpdateClientProtocol
-from engine.pigtwisted import install
 from engine.client import ClientEngine
+from engine.network.client.update_protocol import UpdateClientProtocol
+from engine.network.factories import EventClientFactory
+from engine.pigtwisted import install
 
 
 class NetworkClient(object):
@@ -10,6 +10,8 @@ class NetworkClient(object):
         event_loop = engine._event_loop
         install(event_loop)
         from twisted.internet import reactor
+        self.connection = None
+        self.listener = None
         self.engine = engine
         self.engine.bind_connect(self.connect)
         self.reactor = reactor
@@ -19,8 +21,10 @@ class NetworkClient(object):
     def connect(self, host, port=8000):
         update_protocol = UpdateClientProtocol(self.engine, host, port+1)
         factory = EventClientFactory(self.engine, update_protocol)
-        self.reactor.connectTCP(host, port, factory)
-        self.reactor.listenUDP(port+2, update_protocol)
+        self.connection = self.reactor.connectTCP(host, port, factory)
+        self.listener = self.reactor.listenUDP(port + 2, update_protocol)
 
     def disconnect(self):
-        print("I would but I don't know how!")
+        self.connection.disconnect()
+        self.listener.stopListening()
+        print("Disconnected")

@@ -2,9 +2,10 @@
 
 from engine.client import ClientEngine
 from engine.input_handlers import Keyboard, GamePad
-from engine.network.client import NetworkClient
-from engine.window import Window
+from engine.network.client.client import NetworkClient
 from engine.pigtwisted import TwistedEventLoop
+from engine.window import Window
+
 
 def main():
     try:
@@ -18,6 +19,7 @@ def main():
     event_loop = TwistedEventLoop()
     engine = ClientEngine(event_loop=event_loop, input_handler=gamepad, window=window)
     NetworkClient(engine)
+
 
 if __name__ == '__main__':
     main()

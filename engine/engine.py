@@ -121,16 +121,12 @@ class Engine(object):
         return x, y, z
 
     def spawn_with_callback(self, model: BaseModel):
+        self.spawn(model)
         self._new_model_callback(model)
-        self.models[model.uuid] = model
-        controller = self.controller_factory.manufacture(model)
-        self._controllers[model.uuid] = controller
-        if isinstance(model, ShipModel):
-            self.spawn_ship(controller)
 
     def spawn(self, model: BaseModel):
-        controller = self.controller_factory.manufacture(model)
         self.models[model.uuid] = model
+        controller = self.controller_factory.manufacture(model)
         self._controllers[model.uuid] = controller
         if isinstance(model, ShipModel):
             self.spawn_ship(controller)
