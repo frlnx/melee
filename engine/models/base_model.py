@@ -111,7 +111,6 @@ class BaseModel(PositionalModel):
         self._alive = True
         self._exploding = False
         self._explosion_time = 0.0
-        self._collisions_to_solve = set()
 
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         return {self}
@@ -136,10 +135,6 @@ class BaseModel(PositionalModel):
         other_intersections.reverse()
         return own_intersections, other_intersections
 
-    @property
-    def collisions_to_solve(self) -> Set[MutableForce]:
-        return self._collisions_to_solve
-
     def energy_on_impact_relative_to(self, interception_vector):
         return self.mass * interception_vector.distance
 
@@ -148,8 +143,7 @@ class BaseModel(PositionalModel):
 
     def __getstate__(self):
         d = {k: val for k, val in self.__dict__.items()}
-        d['_action_observers'] = set()
-        d['_collisions_to_solve'] = set()
+        d['_action_observers'] = defaultdict(set)
         return d
 
     def explode(self):
@@ -194,7 +188,6 @@ class BaseModel(PositionalModel):
     def run(self, dt):
         half_of_acceleration = self.acceleration * dt / 2
         half_of_torque = self.torque * dt / 2
-        self.reset_collisions()
         self.movement.translate(half_of_acceleration)
         self.spin.translate(half_of_torque)
         self.translate(*(self.movement * dt))
@@ -364,9 +357,6 @@ class BaseModel(PositionalModel):
         self.mutate_force_to_local(force)
         self._movement += force.forces
         self._spin += (0, force.delta_yaw, 0)
-
-    def reset_collisions(self):
-        self._collisions_to_solve.clear()
 
     @property
     def spin(self):
