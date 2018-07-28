@@ -1,6 +1,6 @@
 from engine.client import ClientEngine
 from engine.network.client.update_protocol import UpdateClientProtocol
-from engine.network.factories import EventClientFactory
+from engine.network.client.factories import EventClientFactory
 from engine.pigtwisted import install
 
 

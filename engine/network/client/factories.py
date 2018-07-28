@@ -1,7 +1,7 @@
 from twisted.internet.protocol import ClientFactory
 
 from engine.engine import Engine
-from engine.network.client_protocol import ClientProtocol
+from engine.network.client.event_protocol import ClientProtocol
 
 
 class EventClientFactory(ClientFactory):

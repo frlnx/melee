@@ -1,5 +1,5 @@
-from engine.network.broadcast_protocol import BroadcastProtocol
-from engine.network.client_protocol import ClientProtocol
+from engine.network.server.event_protocol import BroadcastProtocol
+from engine.network.client.event_protocol import ClientProtocol
 from io import BytesIO
 
 

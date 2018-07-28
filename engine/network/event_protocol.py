@@ -11,9 +11,11 @@ class EventProtocol(Int32StringReceiver):
 
     def __init__(self, engine):
         self.engine = engine
+        self.username = None
         self._latency = 0
         self.commands = {
             "handshake": self.handshake,
+            "register_own_ship": self.register_own_ship,
             "ping": self.ping,
             "pong": self.pong,
             "spawn": self.spawn_model,
@@ -27,8 +29,6 @@ class EventProtocol(Int32StringReceiver):
     def connectionMade(self):
         self.send({"command": "handshake", "versions": {"protocol": self.version}})
         self.initiate_ping(None)
-        for model in self.engine.models.values():
-            self.send_spawn_model(model)
 
     @staticmethod
     def serialize(d: dict) -> bytes:

@@ -1,6 +1,6 @@
 from twisted.internet.protocol import ServerFactory
 
-from engine.network.broadcast_protocol import BroadcastProtocol
+from engine.network.server.event_protocol import BroadcastProtocol
 
 
 class BroadcastServerFactory(ServerFactory):

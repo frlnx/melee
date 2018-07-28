@@ -1,6 +1,7 @@
 import random
 import time
 from itertools import combinations
+from collections import defaultdict
 from typing import Callable, ValuesView
 
 from twisted.internet.task import LoopingCall
@@ -19,6 +20,7 @@ class Engine(object):
     version = (1, 0, 0)
 
     def __init__(self, event_loop):
+        self._observers = defaultdict(set)
         self._event_loop = event_loop
         self.smf = ShipModelFactory()
         self.amf = AsteroidModelFactory()
@@ -33,6 +35,30 @@ class Engine(object):
         self.models = {}
         self._time_spent = 0
         self._scheduled_taks = {}
+        self._players = {}
+
+
+    def observe(self, func: Callable, action: str):
+        self._observers[action].add(func)
+
+    def unobserve(self, func, action):
+        self._observers[action].remove(func)
+
+    def callback(self, action):
+        for func in self._observers[action]:
+            func()
+
+    def register_player(self, callsign, ship_uuid):
+        self._players[ship_uuid] = callsign
+        self.callback("players")
+
+    def deregister_player(self, ship_uuid):
+        del self._players[ship_uuid]
+        self.callback("players")
+
+    @property
+    def players(self):
+        return [{"callsign": callsign, "ship_uuid": ship_uuid} for ship_uuid, callsign in self._players.items()]
 
     def schedule(self, func: Callable):
         self.schedule_interval(func, 1 / self.fps)

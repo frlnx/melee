@@ -43,6 +43,10 @@ class BaseView(object):
         if model.is_exploding:
             self.explode()
 
+    @property
+    def model(self):
+        return self._model
+
     def explode(self):
         explosion = ExplosionDrawable()
         schedule(explosion.timer)

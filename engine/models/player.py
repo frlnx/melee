@@ -1,5 +1,5 @@
 from engine.models.ship import ShipModel
-from engine.network.broadcast_protocol import BroadcastProtocol
+from engine.network.server.event_protocol import BroadcastProtocol
 from engine.network.server.update_protocol import UpdateServerProtocol
 
 

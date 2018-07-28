@@ -107,9 +107,11 @@ class ClientEngine(Engine):
         self.spawn_self()
         self.connect_func(host, port)
 
+    def start_network(self):
+        self.window.close_menu()
+
     def start_local(self):
         self.spawn_self()
-        self.window.spawn(self.my_model)
 
         m2 = self.smf.manufacture("ship", position=self.random_position())
         self._new_model_callback(m2)
@@ -122,6 +124,8 @@ class ClientEngine(Engine):
         self._controllers[self.my_model.uuid] = self.my_controller
         self.propagate_target(self.my_model)
         self._new_model_callback(self.my_model)
+        self.window.spawn(self.my_model)
+        self.window.set_camera_on(self.my_model.uuid)
 
     def bind_stop(self, func):
         self._stop_func = func

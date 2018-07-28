@@ -24,11 +24,8 @@ class Window(pyglet.window.Window):
             self.mesh_factory = pickle.load(f)
         self.view_factory = DynamicViewFactory(self.mesh_factory)
         self.hud = Hud(self.view_factory)
-        self.views = set()
         self.new_views = set()
         self.del_views = set()
-        self.my_model = None
-        self.my_view = None
         self._menu = None
         self._exit = False
         self.backdrop = self.mesh_factory.manufacture("backdrop")
@@ -36,9 +33,15 @@ class Window(pyglet.window.Window):
         self.input_handler = input_handler
         self.debris = []
         self.on_draw = self._on_draw_menu
-
+        self._models_by_uuid = {}
+        self._views_by_uuid = {}
+        self._camera_following = None
         if input_handler:
             input_handler.push_handlers(self)
+
+    @property
+    def views(self):
+        return self._views_by_uuid.values()
 
     def to_cfloat_array(self, *floats):
         return self._to_cfloat_array(*floats)
@@ -54,16 +57,30 @@ class Window(pyglet.window.Window):
         return float(self.width) / self.height
 
     def spawn(self, model):
+        if model.uuid in self._models_by_uuid:
+            print(f"Got {model.uuid} already!")
+        self._models_by_uuid[model.uuid] = model
         view = self.view_factory.manufacture(model)
         self.hud.add_model(model)
         #  self.spawn_sound.play()
         self.new_views.add(view)
-        if self.my_model is None:
-            self.my_model = model
-            self.my_view = view
-            for i in range(100):
-                self.debris.append(Debris(randrange(-40, 40), randrange(-4, 4), randrange(-40, 40),
-                                          random(), model.movement))
+        if not self._camera_following:
+            self.set_camera_on(model.uuid)
+
+    def set_camera_on(self, uuid):
+        self._camera_following = uuid
+        self.debris.clear()
+        for i in range(100):
+            self.debris.append(Debris(randrange(-40, 40), randrange(-4, 4), randrange(-40, 40),
+                                      random(), self.camera_model.movement))
+
+    @property
+    def camera_model(self):
+        return self._models_by_uuid[self._camera_following]
+
+    @property
+    def camera_view(self):
+        return self._views_by_uuid[self._camera_following]
 
     def del_view(self, view: BaseView):
         self.del_views.add(view)
@@ -102,13 +119,13 @@ class Window(pyglet.window.Window):
         self.draw_menu()
 
     def _on_draw_game(self):
+        self.integrate_new_views()
         self.set_up_perspective()
-        self.my_view.align_camera()
+        self.camera_view.align_camera()
         self.backdrop.draw()
         self.draw_debris()
-        self.my_view.center_camera()
+        self.camera_view.center_camera()
         self.draw_space()
-        self.integrate_new_views()
         self.remove_views()
         self.draw_hud()
 
@@ -165,9 +182,12 @@ class Window(pyglet.window.Window):
         glLoadIdentity()
 
     def integrate_new_views(self):
-        self.views.update(self.new_views)
+        for view in self.new_views:
+            self._views_by_uuid[view.model.uuid] = view
         self.new_views.clear()
 
     def remove_views(self):
-        self.views = self.views - self.del_views
+        for view in self.del_views:
+            del self._views_by_uuid[view.model.uuid]
+            del self._models_by_uuid[view.model.uuid]
         self.del_views.clear()
