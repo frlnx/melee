@@ -19,4 +19,4 @@ class Explosion(object):
             animator(dt)
 
     def expire(self):
-        del self.animators
+        self.animators = []

@@ -106,7 +106,6 @@ class Engine(object):
     def stop_game(self):
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
-        self._controllers = dict()
         self.models = {}
 
     def spawn_asteroids(self, n, area=200):
@@ -150,17 +149,10 @@ class Engine(object):
     def decay(self, uuid):
         model = self.models[uuid]
         model.set_alive(False)
-        self.remove_controller_by_uuid(uuid)
         self.remove_model_by_uuid(uuid)
         self._spacial_index.clear_model_from_2d_space_index(model)
         if model in self._collision_check_models:
             self._collision_check_models.remove(model)
-
-    def remove_controller_by_uuid(self, uuid):
-        try:
-            del self._controllers[uuid]
-        except KeyError:
-            pass
 
     def remove_model_by_uuid(self, uuid):
         try:

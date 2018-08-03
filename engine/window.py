@@ -156,19 +156,20 @@ class Window(pyglet.window.Window):
         glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(0.1, 0.1, 0.1, 1.0))
         glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 0.3, 1, 0))
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(3.0, 3.0, 3.0, 1.0))
-        for view in self.views:
+        views = self.views_in_range
+        for view in views:
             if view.is_alive:
                 view.draw()
             else:
                 self.del_view(view)
-        for view in self.views:
+        for view in views:
             if view.is_alive:
                 view.draw_transparent()
         glDisable(GL_LIGHTING)
 
     @property
     def views_in_range(self):
-        return [view for view in self.views if view.distance_to(self.camera_view) < 100.]
+        return [view for view in self.views if view.distance_to(self.camera_view) < 200.]
 
     def draw_menu(self):
         self._set_up_flat_ortho_projection()

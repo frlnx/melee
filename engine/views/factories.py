@@ -61,7 +61,7 @@ class ViewFactory(object):
             return None
         return self.mesh_factory.manufacture(model.mesh_name)
 
-    def _spheroid(self, model, **config):
+    def _spheroid(self, model: BaseModel, **config):
         faces = []
         material = config['material']()
         bb = model.bounding_box
@@ -89,7 +89,7 @@ class ViewFactory(object):
             faces.append(face)
             vertices = [(middle_x1, 10, middle_y1),
                         (middle_x2, 10, middle_y2),
-                        (bb.x, 15, bb.y)]
+                        (0, 15, 0)]
             texture_coords = [(texture_x1, 1), (texture_x2, 1), (0.5, 0)]
             face = OpenGLTexturedFace(vertices, texture_coords, vertices, material)
             faces.append(face)

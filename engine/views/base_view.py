@@ -190,9 +190,7 @@ class BaseView(object):
         pass
 
     def _draw_global(self):
-        if self._model.__class__.__name__ == 'AsteroidModel':
-            for q in self._model.bounding_box.quadrants:
-                self._draw_quadrant(*q)
+        pass
 
     def _light_on(self):
         glEnable(GL_LIGHTING)
