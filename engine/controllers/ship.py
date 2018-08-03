@@ -62,7 +62,6 @@ class ShipController(BaseController):
         return self._sub_controllers
 
     def update(self, dt):
-        super().update(dt)
         for sub_controller in self._sub_controllers:
             sub_controller.update(dt)
         if self._gamepad:

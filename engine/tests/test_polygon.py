@@ -28,7 +28,7 @@ class TestPolygonIntersection(object):
     def test_polygons_intersect(self):
         assert self.intersects
 
-    def test_intersection_is_at_origo(self):
+    def _test_intersection_is_at_origo(self):
         assert round(self.x, 2) == 0
         assert round(self.y, 2) == 0
 

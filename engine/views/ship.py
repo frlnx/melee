@@ -45,16 +45,15 @@ class ShipView(BaseView):
         n_boxes_to_draw = 10
         n_points_to_use = n_boxes_to_draw * 4
         n_coords = n_points_to_use * 3
-        try:
-            draw(n_points_to_use, GL_QUADS, ('v3f', self.fuel_gage_v3f[:n_coords]),
-                 ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
-        except AssertionError:
-            print(self.fuel_gage_v3f)
+        draw(n_points_to_use, GL_QUADS, ('v3f', self.fuel_gage_v3f[:n_coords]),
+             ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
 
     def _draw_global(self):
         self._draw_bbox(self._model.bounding_box)
         for bbox in self._model.bounding_box._polygons:
             self._draw_bbox(bbox, color=(255, 55, 25, 255))
+        for q in self._model.bounding_box.quadrants:
+            self._draw_quadrant(*q)
 
     def center_camera(self):
         glTranslated(*-self.position)

@@ -1,7 +1,7 @@
 from engine.views.wavefront_parsers import ObjectParser
 
 
-with open("objects/testobj.obj", 'r') as f:
+with open("objects/cockpit.obj", 'r') as f:
     object_file_data = f.readlines()
 
 

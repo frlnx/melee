@@ -9,6 +9,7 @@ from engine.network.server.update_protocol import UpdateServerProtocol
 
 def main():
     engine = ServerEngine(reactor)
+    engine.schedule(engine.update)
     update_protocol = UpdateServerProtocol(engine)
     factory = BroadcastServerFactory(engine, update_protocol)
     reactor.listenTCP(8000, factory)

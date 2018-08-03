@@ -2,9 +2,10 @@ from typing import Callable
 
 import pyglet
 
+from engine.controllers.factories import ControllerFactory
 from engine.engine import Engine
 from engine.input_handlers import Keyboard
-from engine.models.base_model import BaseModel
+from engine.models import BaseModel, ShipModel
 from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfigMenu
 from engine.window import Window
 
@@ -16,6 +17,7 @@ class ClientEngine(Engine):
         super().__init__(event_loop)
         self.my_model = self.smf.manufacture("ship", position=self.random_position())
         self.models[self.my_model.uuid] = self.my_model
+        self.controller_factory = ControllerFactory()
         self.my_controller = None
 
         if window is None:
@@ -115,18 +117,16 @@ class ClientEngine(Engine):
     def start_local(self):
         self.spawn_self()
 
-        m2 = self.smf.manufacture("ship", position=self.random_position())
+        m2 = self.smf.manufacture("ship", position=self.random_position(), spin=(0, 90, 0))
         self._new_model_callback(m2)
         self.spawn(m2)
 
         self.spawn_asteroids(10)
+        self.schedule(self.update)
 
     def spawn_self(self):
         self.my_controller = self.controller_factory.manufacture(self.my_model, input_handler=self.input_handler)
-        self._controllers[self.my_model.uuid] = self.my_controller
-        self.propagate_target(self.my_model)
-        self._new_model_callback(self.my_model)
-        self.window.spawn(self.my_model)
+        self.spawn(self.my_model)
         self.window.set_camera_on(self.my_model.uuid)
 
     def bind_stop(self, func):
@@ -138,10 +138,11 @@ class ClientEngine(Engine):
     def spawn(self, model: BaseModel):
         super(ClientEngine, self).spawn(model)
         self.window.spawn(model)
+        if isinstance(model, ShipModel):
+            self.spawn_ship(model)
 
-    def spawn_ship(self, controller):
-        super(ClientEngine, self).spawn_ship(controller)
-        self.propagate_target(controller._model)
+    def spawn_ship(self, model):
+        self.propagate_target(model)
 
     def decay(self, uuid):
         model = self.models[uuid]
@@ -153,5 +154,6 @@ class ClientEngine(Engine):
         #self.my_controller.register_target(ship)
 
     def update(self, dt):
+        self.my_controller.update(dt)
         super(ClientEngine, self).update(dt)
         self.window.update_view_timers(dt)

@@ -23,7 +23,7 @@ class CompositeModel(BaseModel):
         self._own_spawns = []
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
-            part.observe(self.rebuild, "explode")
+            part.observe(self.prune_dead_parts_from_bounding_box, "explode")
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -77,7 +77,7 @@ class CompositeModel(BaseModel):
         self._parts[(x, z)] = part
         self._part_by_uuid[part.uuid] = part
         part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
-        part.observe(self.rebuild, "explode")
+        part.observe(self.prune_dead_parts_from_bounding_box, "explode")
         self.rebuild()
 
     def remove_part(self, part_model):
@@ -86,8 +86,10 @@ class CompositeModel(BaseModel):
             del self._parts[coords]
         if part_model.uuid in self._part_by_uuid:
             del self._part_by_uuid[part_model.uuid]
-            part_model.unobserve(self.rebuild, "explode")
-        self.rebuild()
+            part_model.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
+        self.prune_dead_parts_from_bounding_box()
+        if not self.parts:
+            self.set_alive(False)
 
     def rebuild(self):
         if len(self.parts_of_bbox) > 0:
@@ -99,19 +101,29 @@ class CompositeModel(BaseModel):
             self.set_alive(False)
 
     def _build_bounding_box(self, ship_parts: list) -> MultiPolygon:
-        bboxes = []
+        bboxes = set()
         for part in ship_parts:
             bbox = part.bounding_box.__copy__()
             bbox.part_id = part.uuid
             bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
             bbox.freeze()
             bbox.clear_movement()
-            bboxes.append(bbox)
+            bboxes.add(bbox)
         bounding_box = MultiPolygon(bboxes)
         bounding_box.freeze()
         bounding_box.set_position_rotation(self.position.x, self.position.z, self.rotation.yaw)
         bounding_box.clear_movement()
         return bounding_box
+
+    def prune_dead_parts_from_bounding_box(self):
+        if len(self.parts_of_bbox) > 0:
+            part_uuids = {part.uuid for part in self.parts if not part.is_alive or part.is_exploding}
+            self.bounding_box.remove_polygons(part_uuids)
+            self._calculate_mass()
+            self._calculate_inertia()
+            self._callback("rebuild")
+        else:
+            self.set_alive(False)
 
     def _calculate_mass(self):
         self._mass = sum([part.mass for part in self.parts_of_bbox])

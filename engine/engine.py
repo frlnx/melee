@@ -1,16 +1,14 @@
 import random
 import time
-from itertools import combinations
 from collections import defaultdict
-from typing import Callable, ValuesView
+from typing import Callable
 
 from twisted.internet.task import LoopingCall
 
-from engine.controllers.factories import ControllerFactory
 from engine.models.base_model import BaseModel
 from engine.models.factories import ShipModelFactory, AsteroidModelFactory
-from engine.models.ship import ShipModel
 from engine.physics.force import MutableOffsets, MutableForce
+from engine.physics.spacial_index import SpacialIndex
 
 
 class Engine(object):
@@ -24,20 +22,16 @@ class Engine(object):
         self._event_loop = event_loop
         self.smf = ShipModelFactory()
         self.amf = AsteroidModelFactory()
-        self.controller_factory = ControllerFactory()
         self.has_exit = True
-        self.schedule(self.update)
         self.rnd = random.seed()
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
-        self._controllers = dict()
-        self.ships = set()
         self.models = {}
         self._time_spent = 0
         self._scheduled_taks = {}
         self._players = {}
         self._collision_check_models = set()
-
+        self._spacial_index = SpacialIndex()
 
     def observe(self, func: Callable, action: str):
         self._observers[action].add(func)
@@ -76,13 +70,6 @@ class Engine(object):
         func(dt)
         self._scheduled_taks[func_name] = now
 
-    @property
-    def controllers(self) -> ValuesView["engine.controllers.BaseController"]:
-        return self._controllers.values()
-
-    def controller_by_uuid(self, uuid) -> "engine.controllers.BaseController":
-        return self._controllers[uuid]
-
     def update_model(self, frames):
         for frame in frames:
             try:
@@ -120,7 +107,6 @@ class Engine(object):
         self._new_model_callbacks = set()
         self._dead_model_callbacks = set()
         self._controllers = dict()
-        self.ships = set()
         self.models = {}
 
     def spawn_asteroids(self, n, area=200):
@@ -154,22 +140,21 @@ class Engine(object):
     def spawn(self, model: BaseModel):
         self.models[model.uuid] = model
         model.observe(lambda: self._add_to_collision_checks(model))
-        controller = self.controller_factory.manufacture(model)
-        self._controllers[model.uuid] = controller
-        if isinstance(model, ShipModel):
-            self.spawn_ship(controller)
+        bbox = model.bounding_box
+        bbox.observe(lambda: self._spacial_index.reindex_spacial_position(model), "quadrants")
+        self._spacial_index.init_model_into_2d_space_index(model)
 
-    def _add_to_collision_checks(self, model):
+    def _add_to_collision_checks(self, model: BaseModel):
         self._collision_check_models.add(model)
-
-    def spawn_ship(self, controller):
-        self.ships.add(controller)
 
     def decay(self, uuid):
         model = self.models[uuid]
         model.set_alive(False)
         self.remove_controller_by_uuid(uuid)
         self.remove_model_by_uuid(uuid)
+        self._spacial_index.clear_model_from_2d_space_index(model)
+        if model in self._collision_check_models:
+            self._collision_check_models.remove(model)
 
     def remove_controller_by_uuid(self, uuid):
         try:
@@ -183,51 +168,47 @@ class Engine(object):
         except KeyError:
             pass
 
-    def decay_with_callback(self, controller):
-        self.decay(controller._model.uuid)
-        self._dead_model_callback(controller._model)
+    def decay_with_callback(self, model):
+        self.decay(model.uuid)
+        self._dead_model_callback(model)
 
     def update(self, dt):
         spawns = []
         decays = []
-        for controller in self.controllers:
-            controller.update(dt)
-            new_spawns = controller.spawns
+        for model in self.models.values():
+            model.run(dt)
+            new_spawns = model.spawns
             spawns += new_spawns
-            if not controller.is_alive:
-                decays.append(controller)
-        for decaying_controller in decays:
-            self.decay_with_callback(decaying_controller)
+            if not model.is_alive:
+                decays.append(model)
+        for decaying_model in decays:
+            self.decay_with_callback(decaying_model)
         self.register_collisions()
         for model in spawns:
             self.spawn_with_callback(model)
 
     def register_collisions(self):
-        for m1 in self._collision_check_models:
-            for m2 in self.models.values():
-                if m1 == m2:
-                    continue
-
-        #for m1, m2 in combinations(self.models.values(), 2):
-                assert isinstance(m1, BaseModel)
-                assert isinstance(m2, BaseModel)
-                m1_intersection_parts, m2_intersection_parts = m1.intersected_polygons(m2)
-                if not m1_intersection_parts and not m2_intersection_parts:
-                    continue
-                intersects, x, y = m1.intersection_point(m2)
-                if intersects:
-                    m1_vector = m2.movement - m1.movement
-                    m2_vector = -m1_vector
-                    combined_mass = m1.mass + m2.mass
-                    m1_mass_quota = m2.mass / combined_mass
-                    m2_mass_quota = m1.mass / combined_mass
-                    m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
-                    m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
-                    m1.add_collision(m1_force)
-                    m2.add_collision(m2_force)
-                n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
-                for part in m1.parts_by_bounding_boxes(m1_intersection_parts[:n_parts_damaged]):
-                    part.damage()
-                for part in m2.parts_by_bounding_boxes(m2_intersection_parts[:n_parts_damaged]):
-                    part.damage()
+        pairs = self._spacial_index.all_pairs_deduplicated(self._collision_check_models)
+        for m1, m2 in pairs:
+            assert isinstance(m1, BaseModel)
+            assert isinstance(m2, BaseModel)
+            m1_intersection_parts, m2_intersection_parts = m1.intersected_polygons(m2)
+            if not m1_intersection_parts and not m2_intersection_parts:
+                continue
+            intersects, x, y = m1.intersection_point(m2)
+            if intersects:
+                m1_vector = m2.movement - m1.movement
+                m2_vector = -m1_vector
+                combined_mass = m1.mass + m2.mass
+                m1_mass_quota = m2.mass / combined_mass
+                m2_mass_quota = m1.mass / combined_mass
+                m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
+                m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
+                m1.add_collision(m1_force)
+                m2.add_collision(m2_force)
+            n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
+            for part in m1.parts_by_bounding_boxes(m1_intersection_parts[:n_parts_damaged]):
+                part.damage()
+            for part in m2.parts_by_bounding_boxes(m2_intersection_parts[:n_parts_damaged]):
+                part.damage()
         self._collision_check_models.clear()

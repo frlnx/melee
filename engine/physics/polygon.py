@@ -1,7 +1,8 @@
+from collections import defaultdict
 from functools import reduce
 from itertools import compress, product, chain
-from math import radians, atan2, degrees
-from typing import List, Iterator
+from math import radians, atan2, degrees, floor, ceil
+from typing import List, Iterator, Set
 from uuid import uuid4
 
 from engine.physics.line import Line
@@ -19,7 +20,6 @@ class BasePolygon(object):
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
         self._moving_points = [(l.x1, l.y1) for l in self.lines]
-        self._moving_shape = None
 
     def __hash__(self):
         return self.part_id.__hash__()
@@ -66,9 +66,11 @@ class BasePolygon(object):
         smallest_y = min(y_es)
         smallest_y_index = y_es.index(smallest_y)
         starting_point = points[smallest_y_index]
-        point_string = [starting_point]
+        point_string = []
         last_angle = 0
-        while True:
+        min_angle_point = starting_point
+        while min_angle_point not in point_string:
+            point_string.append(min_angle_point)
             last_point = point_string[-1]
             eval_points = list(points)
             eval_points.remove(last_point)
@@ -76,12 +78,10 @@ class BasePolygon(object):
             delta_angles = [cls.delta_angle(a, last_angle) % 360 for a in angles]
             min_angle = min(delta_angles)
             min_angle_point = eval_points[delta_angles.index(min_angle)]
-            if min_angle_point in point_string:
-                hull = point_string[point_string.index(min_angle_point):]
-                hull.reverse()
-                return hull
-            point_string.append(min_angle_point)
             last_angle += min_angle
+        hull = point_string[point_string.index(min_angle_point):]
+        hull.reverse()
+        return hull
 
     @classmethod
     def delta_angle(cls, angle, reference_angle):
@@ -98,9 +98,6 @@ class BasePolygon(object):
             angles.append(angle)
         return angles
 
-    def _default_shape_function(self):
-        return self._shape
-
     def set_position_rotation(self, x, y, yaw_degrees):
         self.x = x
         self.y = y
@@ -110,10 +107,8 @@ class BasePolygon(object):
             self._moving_points.append((line.x1, line.y1))
             if line.set_position_rotation(x, y, radians(yaw_degrees)):
                 self._moving_points.append((line.x1, line.y1))
-        self._moving_shape = None
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
-        #  self.shape = self.make_shape
 
     def clear_movement(self):
         self._moving_points = [(l.x1, l.y1) for l in self.lines]
@@ -148,22 +143,22 @@ class BasePolygon(object):
 
     @property
     def moving_left(self):
-        self._moving_left = self._moving_left or min([x for x, y in self._moving_points])
+        self._moving_left = self._moving_left or min(x for x, y in self._moving_points)
         return self._moving_left
 
     @property
     def moving_right(self):
-        self._moving_right = self._moving_right or max([x for x, y in self._moving_points])
+        self._moving_right = self._moving_right or max(x for x, y in self._moving_points)
         return self._moving_right
 
     @property
     def moving_top(self):
-        self._moving_top = self._moving_top or max([y for x, y in self._moving_points])
+        self._moving_top = self._moving_top or max(y for x, y in self._moving_points)
         return self._moving_top
 
     @property
     def moving_bottom(self):
-        self._moving_bottom = self._moving_bottom or min([y for x, y in self._moving_points])
+        self._moving_bottom = self._moving_bottom or min(y for x, y in self._moving_points)
         return self._moving_bottom
 
     def __repr__(self):
@@ -198,56 +193,6 @@ class Polygon(BasePolygon):
         if self.moving_bottom > other.moving_top:
             return False
         return True
-
-    def _intersection_polygon(self, other: "Polygon"):
-        if not self.movement_box_intersects(other):
-            return None
-
-
-
-
-        primary_iter = iter(self.lines)
-        secondary_iter = iter(other.lines)
-        points = []
-
-        intersects = False
-        x, y = None, None
-        for l1 in primary_iter:
-            for l2 in secondary_iter:
-                intersects, x, y = l1.intersection_point(l2)
-                if intersects:
-                    break
-            if intersects:
-                break
-        if not intersects:
-            return None
-        points.append((x, y))
-        primary_iter, secondary_iter = secondary_iter, primary_iter
-
-        points = set()
-        intersects = False
-        for l1, l2 in product(self.lines, other.lines):
-            line_intersects, point_x, point_y = l1.intersection_point(l2)
-            if line_intersects:
-                intersects = True
-                points.add((point_x, point_y))
-        own_break_lines = [Line([l.x1, l.y1, other.left - 1, other.bottom - 1]) for l in self.lines]
-        own_break_lines += [Line([l.x2, l.y2, other.left - 1, other.bottom - 1]) for l in self.lines]
-        other_break_lines = [Line([l.x1, l.y1, self.left - 1, self.bottom - 1]) for l in other.lines]
-        other_break_lines += [Line([l.x2, l.y2, self.left - 1, self.bottom - 1]) for l in other.lines]
-        for l1, l2 in product(self.lines, other_break_lines):
-            line_intersects, point_x, point_y = l1.intersection_point(l2)
-            if line_intersects:
-                intersects = True
-                points.add((point_x, point_y))
-
-        for l1, l2 in product(own_break_lines, other.lines):
-            line_intersects, point_x, point_y = l1.intersection_point(l2)
-            if line_intersects:
-                intersects = True
-                points.add((point_x, point_y))
-
-        return
 
     def intersects(self, other):
         if not self.movement_box_intersects(other):
@@ -313,12 +258,55 @@ class PolygonPart(Polygon):
 
 class MultiPolygon(Polygon):
 
-    def __init__(self, polygons: List[PolygonPart]):
+    def __init__(self, polygons: Set[PolygonPart]):
         points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons]))
         hull = self.convex_hull(points)
         lines = self.coords_to_lines(hull)
         super().__init__(lines)
         self._polygons = polygons
+        self._quadrants = set()
+        self._observers = defaultdict(set)
+        self._part_id_index = {p.part_id: p for p in self._polygons}
+
+    @property
+    def quadrants(self) -> set:
+        self._quadrants = self._quadrants or set(product(
+            range(int(floor(self.moving_left / 30)), int(ceil(self.moving_right / 30))),
+            range(int(floor(self.moving_bottom / 30)), int(ceil(self.moving_top / 30)))
+        ))
+        return self._quadrants
+
+    def remove_polygons(self, uuids):
+        self._remove_polygons({self._part_id_index[uuid] for uuid in uuids})
+
+    def _remove_polygons(self, polygons):
+        if not polygons & self._polygons:
+            return
+        self._polygons -= polygons
+        self.rebuild_hull()
+
+    def rebuild_hull(self):
+        x, y, rotation = self.x, self.y, self.rotation
+        self.set_position_rotation(0, 0, 0)
+        points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in self._polygons]))
+        hull = self.convex_hull(points)
+        lines = self.coords_to_lines(hull)
+        #self.freeze()
+        self._lines = lines
+        self.set_position_rotation(x, y, rotation)
+
+    def observe(self, func, action):
+        self._observers[action].add(func)
+
+    def unobserve(self, func, action):
+        try:
+            self._observers[action].remove(func)
+        except KeyError:
+            pass
+
+    def callback(self, action):
+        for callback in self._observers[action]:
+            callback()
 
     def __iter__(self) -> Iterator[Polygon]:
         return self._polygons.__iter__()
@@ -329,6 +317,7 @@ class MultiPolygon(Polygon):
     def intersected_polygons(self, other: "MultiPolygon"):
         own_intersections = set()
         other_intersections = set()
+
         if len(self) == 0 or len(other) == 0 or not self.intersects(other):
             return own_intersections, other_intersections
 
@@ -341,7 +330,7 @@ class MultiPolygon(Polygon):
     @classmethod
     def manufacture(cls, coords, x=0, y=0, rotation=0):
         lines = cls.coords_to_lines(coords)
-        polygon = MultiPolygon([PolygonPart(lines)])
+        polygon = MultiPolygon({PolygonPart(lines)})
         polygon.set_position_rotation(x, y, rotation)
         polygon.clear_movement()
         return polygon
@@ -350,6 +339,11 @@ class MultiPolygon(Polygon):
         super(MultiPolygon, self).set_position_rotation(x, y, yaw_degrees)
         for polygon in self._polygons:
             polygon.set_position_rotation(x, y, yaw_degrees)
+        self.reset_quadrants()
+
+    def reset_quadrants(self):
+        self._quadrants = set()
+        self.callback("quadrants")
 
 
 class TemporalPolygon(Polygon):

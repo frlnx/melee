@@ -1,6 +1,6 @@
 from collections import defaultdict
 from math import cos, sin, radians
-from typing import Callable, Set
+from typing import Callable
 from uuid import uuid4
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
@@ -16,6 +16,10 @@ class PositionalModel(object):
         self._action_observers = defaultdict(set)
         self._material_observers = set()
         self.material_value = 0.0
+
+    @property
+    def spawns(self):
+        return []
 
     @property
     def name(self):
@@ -111,6 +115,15 @@ class BaseModel(PositionalModel):
         self._alive = True
         self._exploding = False
         self._explosion_time = 0.0
+
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
+    def __hash__(self):
+        return self.uuid.__hash__()
+
+    def __gt__(self, other):
+        return self.uuid > other.uuid
 
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         return {self}

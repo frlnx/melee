@@ -170,11 +170,29 @@ class BaseView(object):
         c4B = ('c4B', color * n_points)
         draw(n_points, GL_LINES, v3f, c4B)
 
+    @staticmethod
+    def _draw_quadrant(x, y, color: Tuple[int, int, int, int]=None):
+        color = color or (255, 255, 255, 255)
+        v3f = [x * 30, -11, y * 30,
+               (x + 1) * 30, -11, y * 30,
+               (x + 1) * 30, -11, y * 30,
+               (x + 1) * 30, -11, (y + 1) * 30,
+               (x + 1) * 30, -11, (y + 1) * 30,
+               x * 30, -11, (y + 1) * 30,
+               x * 30, -11, (y + 1) * 30,
+               x * 30, -11, y * 30]
+        n_points = int(len(v3f) / 3)
+        v3f = ('v3f', v3f)
+        c4B = ('c4B', color * n_points)
+        draw(n_points, GL_LINES, v3f, c4B)
+
     def _draw_local(self):
         pass
 
     def _draw_global(self):
-        pass
+        if self._model.__class__.__name__ == 'AsteroidModel':
+            for q in self._model.bounding_box.quadrants:
+                self._draw_quadrant(*q)
 
     def _light_on(self):
         glEnable(GL_LIGHTING)

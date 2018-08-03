@@ -18,6 +18,3 @@ class BaseController(object):
 
     def add_sub_controller(self, sub_controller):
         self._sub_controllers.add(sub_controller)
-
-    def update(self, dt):
-        self._model.run(dt)
