@@ -1,9 +1,12 @@
 from itertools import chain
 
-from engine.models.factories import ShipModelFactory
+import pytest
+
+from engine.models.factories import ShipModelFactory, AsteroidModelFactory
 from engine.physics.line import Line
 
 factory = ShipModelFactory()
+amf = AsteroidModelFactory()
 
 
 class TestLine(object):
@@ -55,3 +58,40 @@ class TestBoundingBox(object):
         assert bb_xes != list(chain(*[[line.x1, line.x2] for line in self.ship1.bounding_box.lines]))
         assert [round(x - 10, 1) for x in bb_xes] == [round(x, 1) for x in moved_coords]
         assert bb_yes == list(chain(*[[line.y1, line.y2] for line in self.ship1.bounding_box.lines]))
+
+
+class TestAsteroidShipCollision(object):
+
+    def setup(self):
+        self.asteroid = amf.manufacture(position=[-50, 0, 0])
+        self.ship = factory.manufacture("ship", position=[10, 0, 0])
+
+    def test_asteroid_has_no_movement(self):
+        assert all(p[0] < 0 for p in self.asteroid.bounding_box._moving_points)
+        assert self.asteroid.bounding_box.moving_right < 0
+        for bb in self.asteroid.bounding_box:
+            assert all(p[0] < 0 for p in bb._moving_points)
+            assert bb.moving_right < 0
+
+    def test_collision(self):
+        self.ship.set_position(-50, 0, 0)
+        self.ship.update_bounding_box()
+        my_parts, asteroid_parts = self.ship.intersected_polygons(self.asteroid)
+        assert 0 < len(my_parts)
+        assert 1 == len(asteroid_parts)
+
+
+test_data = [
+    (
+        amf.manufacture(position=(-50, 0, 0), rotation=(0, d, 0)),
+        factory.manufacture("ship", position=(50, 0, 0))
+    ) for d in range(0, 360, 10)]
+
+
+@pytest.mark.parametrize("asteroid,ship", test_data)
+def test_collision_360(asteroid, ship):
+    ship.set_position(-50, 0, 0)
+    ship.update_bounding_box()
+    my_parts, asteroid_parts = ship.intersected_polygons(asteroid)
+    assert 0 < len(my_parts)
+    assert 1 == len(asteroid_parts)

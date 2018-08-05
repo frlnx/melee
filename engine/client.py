@@ -117,17 +117,20 @@ class ClientEngine(Engine):
     def start_local(self):
         self.spawn_self()
 
-        m2 = self.smf.manufacture("ship", position=self.random_position(), spin=(0, 90, 0))
-        self._new_model_callback(m2)
-        self.spawn(m2)
+        #m2 = self.smf.manufacture("ship", position=self.random_position(), spin=(0, 90, 0))
+        #self._new_model_callback(m2)
+        #self.spawn(m2)
 
-        self.spawn_asteroids(200, area=2000)
+        self.spawn_asteroids(10, area=100)
         self.schedule(self.update)
 
     def spawn_self(self):
         self.my_controller = self.controller_factory.manufacture(self.my_model, input_handler=self.input_handler)
         self.spawn(self.my_model)
         self.window.set_camera_on(self.my_model.uuid)
+
+    def respawn(self):
+        self.my_model.set_parts(self.smf.manufacture("ship").parts)
 
     def bind_stop(self, func):
         self._stop_func = func

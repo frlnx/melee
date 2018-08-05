@@ -1,6 +1,6 @@
 import ctypes
 from itertools import chain
-from typing import Tuple
+from typing import Tuple, Callable
 
 from pyglet.clock import schedule, schedule_once, unschedule
 from pyglet.gl import GL_LIGHTING, GL_LIGHT0, GL_AMBIENT, \
@@ -15,8 +15,12 @@ from .opengl_drawables import ExplosionDrawable
 
 
 class BaseView(object):
-    _to_cfloat_array = ctypes.c_float * 4
-    _to_cfloat_three_array = ctypes.c_float * 3
+    # noinspection PyTypeChecker
+    _to_cfloat_array: Callable = ctypes.c_float * 4
+    # noinspection PyTypeChecker
+    _to_cfloat_three_array: Callable = ctypes.c_float * 3
+    # noinspection PyTypeChecker
+    _to_cfloat_sixteen_array: Callable = GLfloat * 16
 
     def __init__(self, model: BaseModel, mesh=None):
         self._model = model
@@ -27,7 +31,7 @@ class BaseView(object):
         self._light_direction = self.to_cfloat_array(0, 0.3, 1, 0)
         self._ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
         self._base_ambience = (0.1, 0.1, 0.1, 0.1)
-        self._model_view_matrix = (GLfloat * 16)()
+        self._model_view_matrix = self._to_cfloat_sixteen_array()
         self._model.observe(self.update)
         self._model.observe(self.explode, "explode")
         self._model.observe(self.alive_callback, "alive")
@@ -104,7 +108,7 @@ class BaseView(object):
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
-        sub_view._model.observe(lambda: self.remove_sub_view(sub_view), "alive")
+        sub_view.model.observe(lambda: self.remove_sub_view(sub_view), "alive")
 
     def remove_sub_view(self, sub_view):
         try:
@@ -167,8 +171,8 @@ class BaseView(object):
         v3f = list(chain(*v3f))
         n_points = int(len(v3f) / 3)
         v3f = ('v3f', v3f)
-        c4B = ('c4B', color * n_points)
-        draw(n_points, GL_LINES, v3f, c4B)
+        c4b = ('c4B', color * n_points)
+        draw(n_points, GL_LINES, v3f, c4b)
 
     @staticmethod
     def _draw_quadrant(x, y, color: Tuple[int, int, int, int]=None):
@@ -183,20 +187,19 @@ class BaseView(object):
                x * 30, -11, y * 30]
         n_points = int(len(v3f) / 3)
         v3f = ('v3f', v3f)
-        c4B = ('c4B', color * n_points)
-        draw(n_points, GL_LINES, v3f, c4B)
+        c4b = ('c4B', color * n_points)
+        draw(n_points, GL_LINES, v3f, c4b)
 
     def _draw_local(self):
         pass
 
     def _draw_global(self):
-        pass
+        self._draw_bbox(self._model.bounding_box, color=(40, 80, 128, 255))
 
     def _light_on(self):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightfv(GL_LIGHT0, GL_AMBIENT, self._ambience)
-        #lLightfv(GL_LIGHT0, GL_POSITION, self._light_direction)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self._diffuse)
 
     @staticmethod
@@ -230,7 +233,8 @@ class BaseView(object):
     def _draw_nothing(self):
         pass
 
-    def tear_down_matrix(self):
+    @staticmethod
+    def tear_down_matrix():
         glPopMatrix()
 
     def align_camera(self):

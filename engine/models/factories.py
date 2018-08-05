@@ -191,16 +191,16 @@ class AsteroidModelFactory(object):
         pass
 
     @staticmethod
-    def manufacture(position):
+    def manufacture(position, rotation=None):
         position = MutableOffsets(*position)
-        rotation = MutableDegrees(0, 0, 0)
+        rotation = rotation or (0, 0, 0)
+        rotation = MutableDegrees(*rotation)
         movement = MutableOffsets(0, 0, 0)
         spin = MutableDegrees(0, 0, 0)
         acceleration = MutableOffsets(0, 0, 0)
         torque = MutableDegrees(0, 0, 0)
-        coords = [(sin(radians(d)), cos(radians(d))) for d in range(0, 360, 18)]
+        coords = [(-sin(radians(d)), cos(radians(d))) for d in range(0, 360, 18)]
         distances = [abs(normalvariate(25, 5)) for _ in coords]
         coords = [(x * d, y * d) for (x, y), d in zip(coords, distances)]
         bounding_box = MultiPolygon.manufacture(coords=coords, x=position.x, y=position.z, rotation=rotation.yaw)
-        bounding_box.clear_movement()
         return AsteroidModel(position, rotation, movement, spin, acceleration, torque, bounding_box)

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import reduce
-from itertools import compress, product, chain
+from itertools import product, chain
 from math import radians, atan2, degrees, floor, ceil
 from typing import List, Iterator, Set
 from uuid import uuid4
@@ -20,6 +20,22 @@ class BasePolygon(object):
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
         self._moving_points = [(l.x1, l.y1) for l in self.lines]
+        self._moving_polygon = None
+        self._observers = defaultdict(set)
+        self._quadrants = set()
+
+    def observe(self, func, action):
+        self._observers[action].add(func)
+
+    def unobserve(self, func, action):
+        try:
+            self._observers[action].remove(func)
+        except KeyError:
+            pass
+
+    def callback(self, action):
+        for callback in self._observers[action]:
+            callback()
 
     def __hash__(self):
         return self.part_id.__hash__()
@@ -50,8 +66,11 @@ class BasePolygon(object):
 
     @property
     def moving_polygon(self) -> "Polygon":
+        if self._moving_polygon:
+            return self._moving_polygon
         point_string = self.convex_hull(self._moving_points)
-        return Polygon.manufacture(coords=point_string)
+        self._moving_polygon = Polygon.manufacture(coords=point_string)
+        return self._moving_polygon
 
     @property
     def moving_lines(self):
@@ -109,10 +128,12 @@ class BasePolygon(object):
                 self._moving_points.append((line.x1, line.y1))
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
+        self._moving_polygon = None
 
     def clear_movement(self):
         self._moving_points = [(l.x1, l.y1) for l in self.lines]
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
+        self._moving_polygon = None
 
     def freeze(self):
         for line in self.lines:
@@ -161,6 +182,18 @@ class BasePolygon(object):
         self._moving_bottom = self._moving_bottom or min(y for x, y in self._moving_points)
         return self._moving_bottom
 
+    @property
+    def quadrants(self) -> set:
+        self._quadrants = self._quadrants or set(product(
+            range(int(floor(self.moving_left / 30)), int(ceil(self.moving_right / 30))),
+            range(int(floor(self.moving_bottom / 30)), int(ceil(self.moving_top / 30)))
+        ))
+        return self._quadrants
+
+    def reset_quadrants(self):
+        self._quadrants = set()
+        self.callback("quadrants")
+
     def __repr__(self):
         return f"{self.part_id} {len(self.lines)}-sided at {self.x}, {self.y}"
 
@@ -202,7 +235,7 @@ class Polygon(BasePolygon):
                 intersects, x, y = l1.intersection_point(l2)
                 if intersects:
                     return True
-        except AttributeError:
+        except AttributeError as e:
             for l1 in self.moving_lines:
                 intersects, x, y = l1.intersection_point(other)
                 if intersects:
@@ -233,6 +266,23 @@ class Polygon(BasePolygon):
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines], self.x, self.y, self.rotation)
 
+    def intersected_polygons(self, other: "Polygon"):
+        intersections = set()
+
+        if len(other) == 0 or not self.intersects(other):
+            return set(), intersections
+
+        for p in other:
+            if self.intersects(p):
+                intersections.add(p)
+        return set(), intersections
+
+    def __iter__(self) -> Iterator["Polygon"]:
+        return [self].__iter__()
+
+    def __len__(self):
+        return 1
+
 
 class PolygonPart(Polygon):
 
@@ -256,7 +306,11 @@ class PolygonPart(Polygon):
         super(PolygonPart, self).freeze()
 
 
-class MultiPolygon(Polygon):
+class ConvexHull(Polygon):
+    pass
+
+
+class MultiPolygon(ConvexHull):
 
     def __init__(self, polygons: Set[PolygonPart]):
         points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons]))
@@ -264,17 +318,12 @@ class MultiPolygon(Polygon):
         lines = self.coords_to_lines(hull)
         super().__init__(lines)
         self._polygons = polygons
-        self._quadrants = set()
-        self._observers = defaultdict(set)
         self._part_id_index = {p.part_id: p for p in self._polygons}
 
-    @property
-    def quadrants(self) -> set:
-        self._quadrants = self._quadrants or set(product(
-            range(int(floor(self.moving_left / 30)), int(ceil(self.moving_right / 30))),
-            range(int(floor(self.moving_bottom / 30)), int(ceil(self.moving_top / 30)))
-        ))
-        return self._quadrants
+    def clear_movement(self):
+        super(MultiPolygon, self).clear_movement()
+        for p in self:
+            p.clear_movement()
 
     def remove_polygons(self, uuids):
         self._remove_polygons({self._part_id_index[uuid] for uuid in uuids})
@@ -294,19 +343,6 @@ class MultiPolygon(Polygon):
         #self.freeze()
         self._lines = lines
         self.set_position_rotation(x, y, rotation)
-
-    def observe(self, func, action):
-        self._observers[action].add(func)
-
-    def unobserve(self, func, action):
-        try:
-            self._observers[action].remove(func)
-        except KeyError:
-            pass
-
-    def callback(self, action):
-        for callback in self._observers[action]:
-            callback()
 
     def __iter__(self) -> Iterator[Polygon]:
         return self._polygons.__iter__()
@@ -340,30 +376,3 @@ class MultiPolygon(Polygon):
         for polygon in self._polygons:
             polygon.set_position_rotation(x, y, yaw_degrees)
         self.reset_quadrants()
-
-    def reset_quadrants(self):
-        self._quadrants = set()
-        self.callback("quadrants")
-
-
-class TemporalPolygon(Polygon):
-
-    def __init__(self, lines: List[Line], closed=True, line_mask=None):
-        super().__init__(lines, closed=closed)
-        self._line_mask = line_mask or [False] * len(lines)
-
-    def enable_percent_lines(self, p: float):
-        n = int(round(len(self._lines) * p))
-        self._line_mask = [True] * n + [False] * (len(self._lines) - n)
-
-    def set_line_mask(self, line_mask):
-        self._line_mask = line_mask
-
-    @property
-    def lines(self) -> List[Line]:
-        return list(compress(self.lines, self._line_mask))
-
-    def intersection_point(self, other: "Polygon"):
-        if sum(self._line_mask) == 0:
-            return False, None, None
-        return super(TemporalPolygon, self).intersection_point(other)

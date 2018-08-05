@@ -9,6 +9,8 @@ from engine.physics.polygon import MultiPolygon
 
 class PositionalModel(object):
 
+    destructable = True
+
     def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, name=None):
         self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
         self._mesh_name = name
@@ -108,7 +110,7 @@ class BaseModel(PositionalModel):
         try:
             bb_width = (self._bounding_box.right - self._bounding_box.left)
             bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-            self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
+            self.inertia = self.mass / 12 * (bb_width ** 2 + bb_height ** 2)
         except AttributeError:
             self.inertia = 1
         self.bounding_box_update_needed = False
@@ -143,13 +145,12 @@ class BaseModel(PositionalModel):
         def order_by_direction(part):
             x, y = part.centroid()
             return x * sin(r) + y * cos(r)
-        own_intersections = sorted(own_intersections, key=order_by_direction)
-        other_intersections = sorted(other_intersections, key=order_by_direction)
-        other_intersections.reverse()
+        if self.destructable:
+            own_intersections = sorted(own_intersections, key=order_by_direction)
+        if other.destructable:
+            other_intersections = sorted(other_intersections, key=order_by_direction)
+            other_intersections.reverse()
         return own_intersections, other_intersections
-
-    def energy_on_impact_relative_to(self, interception_vector):
-        return self.mass * interception_vector.distance
 
     def __repr__(self):
         return "{} {}".format(self.__class__.__name__, self.uuid)

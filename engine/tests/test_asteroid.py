@@ -3,6 +3,7 @@ from engine.models.factories import AsteroidModelFactory
 
 amf = AsteroidModelFactory()
 
+
 class TestAsteroid(object):
 
     def setup(self):

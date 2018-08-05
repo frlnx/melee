@@ -132,7 +132,6 @@ class Line(BaseLine):
         common_denominator = self._common_denominator_with(other)
 
         if self.parallel_to(other):
-            print("Lines are parallel")
             return False, float('nan'), float('nan')
 
         k_x = other.dxa * (self.y1 - other.y1) - other.dya * (self.x1 - other.x1)

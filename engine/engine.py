@@ -198,9 +198,12 @@ class Engine(object):
                 m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
                 m1.add_collision(m1_force)
                 m2.add_collision(m2_force)
-            n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
-            for part in m1.parts_by_bounding_boxes(m1_intersection_parts[:n_parts_damaged]):
+            if m1.destructable and m2.destructable:
+                n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
+                m1_intersection_parts = m1_intersection_parts[:n_parts_damaged]
+                m2_intersection_parts = m2_intersection_parts[:n_parts_damaged]
+            for part in m1.parts_by_bounding_boxes(m1_intersection_parts):
                 part.damage()
-            for part in m2.parts_by_bounding_boxes(m2_intersection_parts[:n_parts_damaged]):
+            for part in m2.parts_by_bounding_boxes(m2_intersection_parts):
                 part.damage()
         self._collision_check_models.clear()
