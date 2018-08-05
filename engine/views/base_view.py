@@ -194,7 +194,7 @@ class BaseView(object):
         pass
 
     def _draw_global(self):
-        self._draw_bbox(self._model.bounding_box, color=(40, 80, 128, 255))
+        pass
 
     def _light_on(self):
         glEnable(GL_LIGHTING)

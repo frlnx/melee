@@ -49,11 +49,7 @@ class ShipView(BaseView):
              ('c4f', green_color_box * n_filled_boxes + red_color_box * n_unfilled_boxes))
 
     def _draw_global(self):
-        self._draw_bbox(self._model.bounding_box)
-        for bbox in self._model.bounding_box._polygons:
-            self._draw_bbox(bbox, color=(255, 55, 25, 255))
-        for q in self._model.bounding_box.quadrants:
-            self._draw_quadrant(*q)
+        pass
 
     def center_camera(self):
         glTranslated(*-self.position)

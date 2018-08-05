@@ -16,6 +16,7 @@ from engine.views.hud import Hud
 
 
 class Window(pyglet.window.Window):
+    # noinspection PyTypeChecker
     _to_cfloat_array: Callable = ctypes.c_float * 4
 
     def __init__(self, input_handler=None):
@@ -110,15 +111,13 @@ class Window(pyglet.window.Window):
         self._menu = None
         self.on_draw = self._on_draw_game
 
-    def on_draw(self):
-        pass
-
     def _on_draw_menu(self):
         self.set_up_perspective()
         self.backdrop.draw()
         self.draw_menu()
 
     def _on_draw_game(self):
+
         self.integrate_new_views()
         self.set_up_perspective()
         self.camera_view.align_camera()
