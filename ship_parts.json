@@ -50,7 +50,9 @@
         "power generation": 150
       }
     ],
-    "needs_connection_to": ["fuel tank"]
+    "connectability": [
+      {"name": "fuel tank", "distance": 1.7, "required": true}
+    ]
   },
   {
     "name": "engine",
@@ -68,7 +70,9 @@
     "material_affected": "Fire_front",
     "material_mode": "diffuse",
     "material_channels": "a",
-    "needs_connection_to": ["fuel tank"]
+    "connectability": [
+      {"name": "fuel tank", "distance": 1.7, "required": true}
+    ]
   },
   {
     "name": "shield",
@@ -80,9 +84,12 @@
       {
         "name": "active",
         "power required": 100,
-        "shield_arc_distance": 10
+        "shield_charge_amount": 10.0
       }
     ],
-    "needs_connection_to": ["shield", "generator"]
+    "connectability": [
+      {"name": "shield", "distance": 5, "connection_type": "shield", "required": true, "structural": false},
+      {"name": "generator", "distance": 1.7, "required": true}
+    ]
   }
 ]

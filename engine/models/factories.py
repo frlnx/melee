@@ -105,7 +105,7 @@ class ShipPartModelFactory(object):
                                                 x=x, y=y, rotation=yaw)
         config['bounding_box'] = bounding_box
         config['states'] = {t['name']: t for t in config.get('states', [{"name": "idle"}])}
-        config['needs_connection_to'] = set(config.get('needs_connection_to', []))
+        config['connectability'] = config.get('connectability', [])
         model_class = model_class or self.model_map.get(name, ShipPartModel)
         part = model_class(**config)
         return part

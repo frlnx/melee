@@ -24,7 +24,8 @@ class ShipPartModel(BaseModel):
         self.material_channels = part_spec.get('material_channels')
         self.max_fuel_stored = part_spec.get('fuel_storage')
         self._fuel_stored = part_spec.get('fuel_storage')
-        self.needs_connection_to: set = part_spec['needs_connection_to']
+        self._connectability = part_spec.get('connectability', {})
+        self.needs_connection_to: set = {c['name'] for c in self._connectability if c.get('required')}
         self.material_value = 0
         self.input_value = 0
         self._spawn = None
@@ -214,6 +215,6 @@ class ShipPartModel(BaseModel):
                               acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
                               bounding_box=self.bounding_box.__copy__(), states=self._states.copy(),
                               keyboard=self.keyboard, mouse=self.mouse.copy(), axis=self.axis, button=self.button,
-                              needs_connection_to=self.needs_connection_to.copy(), mesh_name=self.mesh_name,
+                              connectability=self._connectability.copy(), mesh_name=self.mesh_name,
                               material_affected=self.material_affected, material_channels=self.material_channels,
                               material_mode=self.material_mode, fuel_storage=self.max_fuel_stored)
