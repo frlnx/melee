@@ -44,11 +44,32 @@ class ShipPartModel(BaseModel):
         return self._working
 
     def update_working_status(self):
-        working = self.needs_fulfilled and self.is_alive and not self.is_exploding and self.fuel_stored != 0
+        working = (self.needs_fulfilled and
+                   self.is_alive and
+                   not self.is_exploding and
+                   self.fuel_stored != 0 and
+                   self.has_route_to_cockpit)
         updated = self._working != working
         self._working = working
         if updated:
             self._callback("working")
+
+    @property
+    def has_route_to_cockpit(self):
+        checked = set()
+        queue = set(self.connected_parts)
+        queue.add(self)
+        while queue:
+            new_parts = set()
+            for part in queue:
+                if part.name == 'cockpit':
+                    return True
+                new_parts |= set(part.connected_parts)
+            checked |= queue
+            queue.clear()
+            new_parts -= checked
+            queue = new_parts
+        return False
 
     @property
     def _connected_fuel_tanks(self):
@@ -73,6 +94,23 @@ class ShipPartModel(BaseModel):
     def needs_fulfilled(self):
         names_of_connected_parts = set([part.name for part in self.connected_parts if part.working])
         return len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
+
+    def can_connect_to(self, other_part: "ShipPartModel"):
+        return self._can_connect_to(other_part) or other_part._can_connect_to(self)
+
+    def _can_connect_to(self, other_part: "ShipPartModel"):
+        distance = self._local_distance_to(other_part)
+        for config in self._connectability:
+            if config['name'] == other_part.name and distance <= config.get('distance', 1.7):
+                return config.get('can_connect', True)
+        if distance <= 1.7:
+            return True
+        else:
+            return False
+
+    def _local_distance_to(self, other_part: "ShipPartModel"):
+        distance = (self.position - other_part.position).distance
+        return distance
 
     def connect(self, other_part: "ShipPartModel"):
         self._connect(other_part)

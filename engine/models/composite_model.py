@@ -13,7 +13,7 @@ class CompositeModel(BaseModel):
                  acceleration: MutableOffsets, torque: MutableDegrees):
         self._parts = {(part.x, part.z): part for part in parts}
         self._part_by_uuid = {part.uuid: part for part in parts}
-        self._rebuild_connections()
+        self.rebuild_connections()
         self._position = position
         self._rotation = rotation
         bounding_box = self._build_bounding_box(self.parts_of_bbox)
@@ -70,7 +70,7 @@ class CompositeModel(BaseModel):
             part.observe(self.rebuild, "explode")
             self._part_by_uuid[part.uuid] = part
         self.rebuild()
-        self._rebuild_connections()
+        self.rebuild_connections()
 
     def add_part(self, part):
         x, z = part.x, part.z
@@ -133,12 +133,11 @@ class CompositeModel(BaseModel):
         bb_height = (self._bounding_box.top - self._bounding_box.bottom)
         self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
 
-    def _rebuild_connections(self):
+    def rebuild_connections(self):
         for part in self.parts:
             part.disconnect_all()
         for part1, part2 in combinations(self.parts, 2):
-            distance = (part1.position - part2.position).distance
-            if distance < 1.7:
+            if part1.can_connect_to(part2):
                 part1.connect(part2)
             else:
                 part1.disconnect(part2)

@@ -1,7 +1,6 @@
 import ctypes
 import json
 from functools import partial
-from itertools import combinations
 from math import hypot, atan2, degrees
 from typing import Callable
 
@@ -477,12 +476,7 @@ class Drydock(ShipConfiguration):
             item.drag(*self._screen_to_model(x, y))
 
     def _update_connections(self):
-        for item1, item2 in combinations(self.items, 2):
-            distance = hypot(item1.x - item2.x, item1.y - item2.y)
-            if distance < 1.7:
-                item1.connect(item2)
-            else:
-                item1.disconnect(item2)
+        self.ship.rebuild_connections()
 
     def _legal_placement(self, trial_item):
         for item in self.items:
