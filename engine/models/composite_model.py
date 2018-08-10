@@ -1,9 +1,9 @@
-from itertools import combinations
 from functools import partial
+from itertools import combinations
 from typing import Set
 
-from engine.models.connection import Connection, ShieldConnection
 from engine.models.base_model import BaseModel
+from engine.models.connection import Connection, ShieldConnection
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import MultiPolygon
@@ -148,7 +148,8 @@ class CompositeModel(BaseModel):
 
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
-        return (intersected_bboxes - {part.bounding_box for part in ignored_parts})
+        ignored_bboxes = {part.bounding_box for part in ignored_parts}
+        return len(intersected_bboxes - ignored_bboxes) == 0
 
     @property
     def parts_of_bbox(self):

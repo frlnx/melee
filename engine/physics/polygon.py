@@ -11,6 +11,8 @@ from engine.physics.line import Line
 class BasePolygon(object):
 
     def __init__(self, lines: List[Line], part_id=None):
+        if len(lines) == 0:
+            raise AttributeError("Need at least one point")
         self.part_id = part_id or uuid4().hex
         self._lines = lines
         self.rotation = 0

@@ -1,9 +1,10 @@
 from itertools import product
-from typing import List, Callable
 from math import *
-from .ship_part import ShipPartModel
+from typing import List, Callable
+
 from engine.physics.line import Line
 from engine.physics.polygon import Polygon
+from .ship_part import ShipPartModel
 
 
 class Connection(object):
@@ -13,10 +14,15 @@ class Connection(object):
         self.validate_connection_function = validate_connection_function
         self._connect()
         self._polygon: Polygon = self.build_polygon()
+        for part in self._ship_parts:
+            part.observe(self.update_polygon)
+
+    def update_polygon(self):
+        self._polygon = self.build_polygon()
 
     def build_polygon(self):
         lines = []
-        for i, part in enumerate(self._ship_parts[:-2]):
+        for i, part in enumerate(self._ship_parts[:-1]):
             next_part = self._ship_parts[i + 1]
             lines.append(Line([(part.position.x, part.position.z), (next_part.position.x, next_part.position.z)]))
         polygon = Polygon(lines)
@@ -28,20 +34,21 @@ class Connection(object):
         return False
 
     def _connect(self):
-        for i, part in enumerate(self._ship_parts[:-2]):
+        for i, part in enumerate(self._ship_parts[:-1]):
             next_part = self._ship_parts[i + 1]
             part.connect(next_part)
 
     @property
     def distance(self):
         distance = 0
-        for i, part in enumerate(self._ship_parts[:-2]):
+        for i, part in enumerate(self._ship_parts[:-1]):
             next_part = self._ship_parts[i + 1]
             distance += (part.position - next_part.position).distance
         return distance
     
     def _disconnect(self, part: ShipPartModel):
         self._ship_parts.remove(part)
+        part.unobserve(self.update_polygon)
         for other_part in self._ship_parts:
             part.disconnect(other_part)
     
