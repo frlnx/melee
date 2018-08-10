@@ -24,7 +24,8 @@ class ShipPartModel(BaseModel):
         self.material_channels = part_spec.get('material_channels')
         self.max_fuel_stored = part_spec.get('fuel_storage')
         self._fuel_stored = part_spec.get('fuel_storage')
-        self._connectability = part_spec.get('connectability', {})
+        self._connectability = part_spec.get('connectability', set())
+        self.connection_configs = {config['name']: config for config in self._connectability}
         self.needs_connection_to: set = {c['name'] for c in self._connectability if c.get('required')}
         self.material_value = 0
         self.input_value = 0
@@ -100,13 +101,9 @@ class ShipPartModel(BaseModel):
 
     def _can_connect_to(self, other_part: "ShipPartModel"):
         distance = self._local_distance_to(other_part)
-        for config in self._connectability:
-            if config['name'] == other_part.name and distance <= config.get('distance', 1.7):
-                return config.get('can_connect', True)
-        if distance <= 1.7:
-            return True
-        else:
-            return False
+        config = self.connection_configs.get(other_part.name, {})
+        if distance <= config.get('distance', 1.7):
+            return config.get('can_connect', True)
 
     def _local_distance_to(self, other_part: "ShipPartModel"):
         distance = (self.position - other_part.position).distance

@@ -1,6 +1,8 @@
 from itertools import combinations
+from functools import partial
 from typing import Set
 
+from engine.models.connection import Connection, ShieldConnection
 from engine.models.base_model import BaseModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -12,11 +14,12 @@ class CompositeModel(BaseModel):
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
                  acceleration: MutableOffsets, torque: MutableDegrees):
         self._part_by_uuid = {part.uuid: part for part in parts}
-        self.rebuild_connections()
+        self._connections = set()
         self._position = position
         self._rotation = rotation
-        bounding_box = self._build_bounding_box(self.parts_of_bbox)
-        super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
+        self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
+        self.rebuild_connections()
+        super().__init__(position, rotation, movement, spin, acceleration, torque, self.bounding_box)
         self._calculate_mass()
         self._calculate_inertia()
         self._own_spawns = []
@@ -128,13 +131,24 @@ class CompositeModel(BaseModel):
     def rebuild_connections(self):
         for part in self.parts:
             part.disconnect_all()
+        self._connections.clear()
         for part1, part2 in combinations(self.parts, 2):
             if part1.can_connect_to(part2):
-                part1.connect(part2)
-            else:
-                part1.disconnect(part2)
+                connection = self._make_connection(part1, part2)
+                self._connections.add(connection)
         for part in self.parts:
             part.update_working_status()
+
+    def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):
+        config = part1.connection_configs.get(part2.name, {})
+        connection_class = {"ShieldConnection": ShieldConnection}.get(config.get('connection_class'), Connection)
+        func = partial(self._validation_function, {part1, part2})
+        connection = connection_class(part1, part2, validate_connection_function=func)
+        return connection
+
+    def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
+        _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
+        return (intersected_bboxes - {part.bounding_box for part in ignored_parts})
 
     @property
     def parts_of_bbox(self):

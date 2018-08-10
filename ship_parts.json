@@ -88,7 +88,7 @@
       }
     ],
     "connectability": [
-      {"name": "shield", "distance": 5, "connection_type": "shield", "required": true, "structural": false},
+      {"name": "shield", "distance": 5, "connection_class": "ShieldConnection", "required": true, "structural": false},
       {"name": "generator", "distance": 1.7, "required": true}
     ]
   }
