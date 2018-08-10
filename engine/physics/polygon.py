@@ -10,10 +10,9 @@ from engine.physics.line import Line
 
 class BasePolygon(object):
 
-    def __init__(self, lines: List[Line], closed=True, part_id=None):
+    def __init__(self, lines: List[Line], part_id=None):
         self.part_id = part_id or uuid4().hex
         self._lines = lines
-        self._shape = None
         self.rotation = 0
         self.x = 0
         self.y = 0
@@ -77,7 +76,7 @@ class BasePolygon(object):
         return self.moving_polygon.lines
 
     @classmethod
-    def convex_hull(cls, points):
+    def convex_hull(cls, points) -> List[tuple]:
         points = list(set(points))
         if len(points) <= 3:
             return points
@@ -235,7 +234,7 @@ class Polygon(BasePolygon):
                 intersects, x, y = l1.intersection_point(l2)
                 if intersects:
                     return True
-        except AttributeError as e:
+        except AttributeError:
             for l1 in self.moving_lines:
                 intersects, x, y = l1.intersection_point(other)
                 if intersects:
@@ -307,7 +306,9 @@ class PolygonPart(Polygon):
 
 
 class ConvexHull(Polygon):
-    pass
+
+    def point_inside(self, x, y):
+        return all(line.on_left_side(x, y) for line in self.moving_lines)
 
 
 class MultiPolygon(ConvexHull):

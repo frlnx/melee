@@ -154,3 +154,13 @@ class Line(BaseLine):
 
     def parallel_to(self, other: "Line"):
         return round(self._common_denominator_with(other), self.precision) == 0
+
+    def on_right_side(self, x, y):
+        return self._position(x, y) > 0
+
+    def on_left_side(self, x, y):
+        return self._position(x, y) < 0
+
+    def _position(self, x, y):
+        position = (self.x2 - self.x1) * (y - self.y1) - (self.y2 - self.y1) * (x - self.x1)
+        return position
