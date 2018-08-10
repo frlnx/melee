@@ -490,10 +490,11 @@ class Drydock(ShipConfiguration):
         if item:
             item.drop()
 
-    def add_item(self, item):
+    def add_item(self, item: DockableItem):
         item.legal_move_func = self._legal_placement
         item.observe(self._update_connections)
         self.items.add(item)
+        self.ship.add_part(item.model)
 
     def highlight_at(self, x, y):
         super(Drydock, self).highlight_at(x, y)
