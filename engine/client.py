@@ -121,7 +121,7 @@ class ClientEngine(Engine):
         #self._new_model_callback(m2)
         #self.spawn(m2)
 
-        self.spawn_asteroids(10, area=100)
+        self.spawn_asteroids(200, area=2000)
         self.schedule(self.update)
 
     def spawn_self(self):

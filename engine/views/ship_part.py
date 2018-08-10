@@ -103,6 +103,15 @@ class ShipPartDrydockView(PartDrydockView):
         self.bbox_n_points = len(self._model.bounding_box.lines) * 2
         self.bbox_c4f = ('c4f', [1., 1., 1., 1.] * self.bbox_n_points)
 
+    #    self.font_size = 20
+    #    half_font_size = int(self.font_size / 2)
+    #    self.infobox = Label(self.model.uuid.hex[:2], font_name='Courier New', font_size=self.font_size, y=-half_font_size)
+    #    self.model.observe(self.update_debug_text, "connect")
+    #    self.model.observe(self.update_debug_text, "disconnect")
+
+    #def update_debug_text(self):
+    #    self.infobox.text = self.model.uuid.hex[:2] + "\n" + "\n".join(p.uuid.hex[:2] for p in self.model._connected_parts)
+
     def highlight_circle(self):
         self.circle_c4B = self.circle_c4B_highlight
 
@@ -111,6 +120,12 @@ class ShipPartDrydockView(PartDrydockView):
 
     def _draw_local(self):
         super(PartDrydockView, self)._draw_local()
+        #glPushMatrix()
+        #glRotatef(-self.yaw, 0, 1, 0)
+        #glRotatef(-90, 1, 0, 0)
+        #glScalef(0.025, 0.025, 0.025)
+        #self.infobox.draw()
+        #glPopMatrix()
         glRotatef(90, 1, 0, 0)
         draw(self.circle_n_points, GL_LINES, self.circle_v2f, self.circle_c4B)
 

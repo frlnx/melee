@@ -11,7 +11,6 @@ class CompositeModel(BaseModel):
     def __init__(self, parts: Set[BaseModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
                  acceleration: MutableOffsets, torque: MutableDegrees):
-        self._parts = {(part.x, part.z): part for part in parts}
         self._part_by_uuid = {part.uuid: part for part in parts}
         self.rebuild_connections()
         self._position = position
@@ -37,13 +36,13 @@ class CompositeModel(BaseModel):
         return parts
 
     def part_at(self, x, z) -> ShipPartModel:
-        for part in self._parts.values():
+        for part in self.parts:
             if part.bounding_box.point_inside(x, z):
                 return part
 
     @property
     def parts(self) -> Set[ShipPartModel]:
-        return set(self._parts.values())
+        return set(self._part_by_uuid.values())
 
     def add_own_spawn(self, model: BaseModel):
         self._own_spawns.append(model)
@@ -61,9 +60,7 @@ class CompositeModel(BaseModel):
         for removed_part in self.parts:
             removed_part.disconnect_all()
             removed_part.remove_all_observers()
-        self._parts.clear()
         self._part_by_uuid.clear()
-        self._parts = {(part.x, part.z): part for part in parts}
         self._part_by_uuid = {part.uuid: part for part in parts}
         for part in self.parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
@@ -73,17 +70,12 @@ class CompositeModel(BaseModel):
         self.rebuild_connections()
 
     def add_part(self, part):
-        x, z = part.x, part.z
-        self._parts[(x, z)] = part
         self._part_by_uuid[part.uuid] = part
         part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
         part.observe(self.prune_dead_parts_from_bounding_box, "explode")
         self.rebuild()
 
     def remove_part(self, part_model):
-        coords = (part_model.x, part_model.z)
-        if coords in self._parts:
-            del self._parts[coords]
         if part_model.uuid in self._part_by_uuid:
             del self._part_by_uuid[part_model.uuid]
             part_model.unobserve(self.prune_dead_parts_from_bounding_box, "explode")

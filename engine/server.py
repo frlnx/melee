@@ -8,4 +8,4 @@ class ServerEngine(Engine):
         self.on_enter()
 
     def on_enter(self):
-        self.spawn_asteroids(200, area=2000)
+        self.spawn_asteroids(20, area=2000)
