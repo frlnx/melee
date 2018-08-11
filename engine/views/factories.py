@@ -5,8 +5,8 @@ from engine.models import *
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 from engine.views.base_view import BaseView
-from engine.views.ship import ShipView
 from engine.views.connection import ConnectionView
+from engine.views.ship import ShipView
 from engine.views.ship_part import ShipPartView
 from .opengl_mesh import OpenGLTexturedFace, OpenGLTexturedMaterial, OpenGLMesh, OpenGLFace, OpenGLMaterial
 
@@ -115,6 +115,7 @@ class ViewFactory(object):
                 face = OpenGLFace(vertices, normals, material)
                 faces.append(face)
         mesh = OpenGLMesh(faces, [], name="Shield", group="Shields")
+        mesh.set_double_sided(True)
         return mesh
 
     def manufacture(self, model: BaseModel) -> BaseView:

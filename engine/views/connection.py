@@ -1,6 +1,5 @@
-from .base_view import BaseView
 from engine.models.part_connection import PartConnectionModel
-from pyglet.gl import glRotatef
+from .base_view import BaseView
 
 
 class ConnectionView(BaseView):
@@ -9,7 +8,7 @@ class ConnectionView(BaseView):
 
     def __init__(self, model: PartConnectionModel, mesh=None):
         super().__init__(model, mesh=mesh)
-        self._draw = self._draw_stuff
+        self._draw_local = self._draw_stuff
 
     def _draw_stuff(self):
         #glRotatef(90, 1, 0, 0)

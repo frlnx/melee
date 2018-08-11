@@ -4,8 +4,8 @@ from typing import List, Callable
 
 from engine.physics.line import Line
 from engine.physics.polygon import Polygon
-from .ship_part import ShipPartModel
 from .base_model import PositionalModel
+from .ship_part import ShipPartModel
 
 
 class PartConnectionModel(PositionalModel):
@@ -68,7 +68,7 @@ class ShieldConnectionModel(PartConnectionModel):
 
     def build_polygon(self):
         arc: Polygon = None
-        for i, part in enumerate(self._ship_parts[:-2]):
+        for i, part in enumerate(self._ship_parts[:-1]):
             next_part = self._ship_parts[i + 1]
             step_arc = self._build_arc(part, next_part)
             arc = arc and Polygon(arc.lines + step_arc.lines) or step_arc
@@ -79,12 +79,12 @@ class ShieldConnectionModel(PartConnectionModel):
         end_point = part2.position.x, part2.position.z
         straight_line = Line([start_point, end_point])
         c_x, c_y = straight_line.centroid
-        for swell in range(0, 100, 10):
+        for swell in range(0, 100, 20):
             swell /= 100
             radius = straight_line.length / 2
             for sign in [1, -1]:
                 x_factor = swell * radius * sign
-                coords = [(sin(radians(d)) * x_factor, cos(radians(d)) * radius) for d in range(0, 180, 18)]
+                coords = [(sin(radians(d)) * x_factor, cos(radians(d)) * radius) for d in range(0, 180, 36)]
                 arc = Polygon.manufacture(coords, x=c_x, y=c_y, rotation=straight_line.rotation)
                 if self.validate_connection_function(arc):
                     return arc
