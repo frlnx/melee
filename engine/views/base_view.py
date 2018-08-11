@@ -9,7 +9,7 @@ from pyglet.gl import glDisable, glLoadIdentity, glRotatef, glTranslatef, glScal
     glPopMatrix, glPushMatrix, glEnable, glLightfv, glMultMatrixf, glTranslated, GLfloat, glGetFloatv
 from pyglet.graphics import draw, GL_LINES
 
-from engine.models.base_model import BaseModel
+from engine.models.base_model import PositionalModel
 from .opengl_animations import Explosion
 from .opengl_drawables import ExplosionDrawable
 
@@ -22,9 +22,8 @@ class BaseView(object):
     # noinspection PyTypeChecker
     _to_cfloat_sixteen_array: Callable = GLfloat * 16
 
-    def __init__(self, model: BaseModel, mesh=None):
+    def __init__(self, model: PositionalModel, mesh=None):
         self._model = model
-        self._sub_views = set()
         self._mesh_scale = self.to_cfloat_array(1., 1., 1.)
         self._diffuse = self.to_cfloat_array(3., 3., 3., 1.)
         self._base_diffuse = (3., 3., 3., 1.)
@@ -91,7 +90,7 @@ class BaseView(object):
         self._mesh_scale = self.to_cfloat_array(scale, scale, scale)
         self.update()
 
-    def set_model(self, model: BaseModel):
+    def set_model(self, model: PositionalModel):
         self._model.unobserve(self.update)
         self._model = model
         self._model.observe(self.update)
@@ -105,16 +104,6 @@ class BaseView(object):
         else:
             self._draw = self._draw_nothing
             self._draw_transparent = self._draw_nothing
-
-    def add_sub_view(self, sub_view):
-        self._sub_views.add(sub_view)
-        sub_view.model.observe(lambda: self.remove_sub_view(sub_view), "alive")
-
-    def remove_sub_view(self, sub_view):
-        try:
-            self._sub_views.remove(sub_view)
-        except KeyError:
-            pass
 
     def update(self):
         glPushMatrix()
@@ -145,7 +134,6 @@ class BaseView(object):
 
     def draw(self):
         self.set_up_matrix()
-        self.draw_sub_views()
         self._light_on()
         self._draw()
         self._light_off()
@@ -155,7 +143,6 @@ class BaseView(object):
 
     def draw_transparent(self):
         self.set_up_matrix()
-        self.draw_transparent_sub_views()
         self._light_on()
         self._draw_transparent()
         self._light_off()
@@ -210,14 +197,6 @@ class BaseView(object):
         glPushMatrix()
         glMultMatrixf(self._model_view_matrix)
 
-    def draw_sub_views(self):
-        for subview in self._sub_views:
-            subview.draw()
-
-    def draw_transparent_sub_views(self):
-        for subview in self._sub_views:
-            subview.draw_transparent()
-
     def _draw(self):
         self._mesh.draw()
 
@@ -247,12 +226,6 @@ class BaseView(object):
         x, y, z = self.position
         glTranslated(-x, -y - 23, -z)
 
-    def clear_sub_views(self):
-        self._sub_views.clear()
-
     def update_view_timer(self, dt):
         if self._mesh:
             self._mesh.timer(dt)
-        if self._sub_views:
-            for sub_view in self._sub_views:
-                sub_view.update_view_timer(dt)

@@ -11,6 +11,9 @@ from engine.views.base_view import BaseView
 class ShipView(BaseView):
     def __init__(self, model: ShipModel, mesh=None):
         super().__init__(model, mesh=mesh)
+        self._draw = self._draw_sub_views
+        self._draw_transparent = self._draw_transparent_sub_views
+        self._sub_views = set()
         self._model = model
         self.fuel_gage_v3f: list = None
         self.rebuild_callback()
@@ -53,3 +56,29 @@ class ShipView(BaseView):
 
     def center_camera(self):
         glTranslated(*-self.position)
+
+    def add_sub_view(self, sub_view):
+        self._sub_views.add(sub_view)
+        sub_view.model.observe(lambda: self.remove_sub_view(sub_view), "alive")
+
+    def remove_sub_view(self, sub_view):
+        try:
+            self._sub_views.remove(sub_view)
+        except KeyError:
+            pass
+
+    def _draw_sub_views(self):
+        for subview in self._sub_views:
+            subview.draw()
+
+    def _draw_transparent_sub_views(self):
+        for subview in self._sub_views:
+            subview.draw_transparent()
+
+    def clear_sub_views(self):
+        self._sub_views.clear()
+
+    def update_view_timer(self, dt):
+        super(ShipView, self).update_view_timer(dt)
+        for sub_view in self._sub_views:
+            sub_view.update_view_timer(dt)

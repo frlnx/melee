@@ -6,8 +6,9 @@ from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 from engine.views.base_view import BaseView
 from engine.views.ship import ShipView
+from engine.views.connection import ConnectionView
 from engine.views.ship_part import ShipPartView
-from .opengl_mesh import OpenGLTexturedFace, OpenGLTexturedMaterial, OpenGLMesh, OpenGLFace
+from .opengl_mesh import OpenGLTexturedFace, OpenGLTexturedMaterial, OpenGLMesh, OpenGLFace, OpenGLMaterial
 
 
 class ViewFactory(object):
@@ -17,9 +18,9 @@ class ViewFactory(object):
         AsteroidModel: {"method": "_spheroid",
                         "material": partial(OpenGLTexturedMaterial, texture_file_name="asteroid.png",
                                             diffuse=(0.7, 0.7, 0.7), name="Rock Surface")},
-        #ShieldModel: {"method": "_hexagon_fence",
-        #              "material": partial(OpenGLMaterial, diffuse=(0, 0, 0), emissive=(.54, .81, .94),
-        #                                  alpha=.5, name="Shield")}
+        ShieldConnectionModel: {"method": "_hexagon_fence",
+                                "material": partial(OpenGLMaterial, diffuse=(0, 0, 0), emissive=(.54, .81, .94),
+                                                    alpha=.5, name="Shield")}
     }
 
     def __init__(self, mesh_factory, view_class=BaseView):
@@ -127,6 +128,8 @@ class ViewFactory(object):
 class DynamicViewFactory(ViewFactory):
     model_view_map = {
         PositionalModel: BaseView,
+        PartConnectionModel: ConnectionView,
+        ShieldConnectionModel: ConnectionView,
         BaseModel: BaseView,
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
@@ -142,10 +145,13 @@ class DynamicViewFactory(ViewFactory):
             self.rebuild_subviews(view, model)
         return view
 
-    def rebuild_subviews(self, ship_view: BaseView, model: CompositeModel):
+    def rebuild_subviews(self, ship_view: ShipView, model: CompositeModel):
         ship_view.clear_sub_views()
         for part in model.parts:
             if part.is_alive:
                 sub_view = self.manufacture(part)
                 ship_view.add_sub_view(sub_view)
                 part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")
+        for connection in model._connections:
+            sub_view = self.manufacture(connection)
+            ship_view.add_sub_view(sub_view)

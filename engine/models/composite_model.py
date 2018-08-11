@@ -3,14 +3,14 @@ from itertools import combinations
 from typing import Set
 
 from engine.models.base_model import BaseModel
-from engine.models.connection import Connection, ShieldConnection
+from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import MultiPolygon
 
 
 class CompositeModel(BaseModel):
-    def __init__(self, parts: Set[BaseModel], position: MutableOffsets,
+    def __init__(self, parts: Set[ShipPartModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
                  acceleration: MutableOffsets, torque: MutableDegrees):
         self._part_by_uuid = {part.uuid: part for part in parts}
@@ -140,16 +140,18 @@ class CompositeModel(BaseModel):
             part.update_working_status()
 
     def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):
+        class_map = {"ShieldConnection": ShieldConnectionModel}
         config = part1.connection_configs.get(part2.name, {})
-        connection_class = {"ShieldConnection": ShieldConnection}.get(config.get('connection_class'), Connection)
+        connection_class = class_map.get(config.get('connection_class'), PartConnectionModel)
         func = partial(self._validation_function, {part1, part2})
         connection = connection_class(part1, part2, validate_connection_function=func)
         return connection
 
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
-        ignored_bboxes = {part.bounding_box for part in ignored_parts}
-        return len(intersected_bboxes - ignored_bboxes) == 0
+        ignored_uuids = {part.uuid for part in ignored_parts}
+        intersected_uuids = {bbox.part_id for bbox in intersected_bboxes}
+        return len(intersected_uuids - ignored_uuids) == 0
 
     @property
     def parts_of_bbox(self):

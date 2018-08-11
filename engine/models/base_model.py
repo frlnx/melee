@@ -20,6 +20,10 @@ class PositionalModel(object):
         self.material_value = 0.0
 
     @property
+    def is_alive(self):
+        return True
+
+    @property
     def spawns(self):
         return []
 
@@ -43,6 +47,7 @@ class PositionalModel(object):
         except KeyError:
             pass
 
+    @property
     def is_exploding(self):
         return False
 

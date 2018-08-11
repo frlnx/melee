@@ -126,20 +126,21 @@ class ShipPartDrydockView(PartDrydockView):
         #glScalef(0.025, 0.025, 0.025)
         #self.infobox.draw()
         #glPopMatrix()
+        #self._draw_bbox(self.model.bounding_box)
         glRotatef(90, 1, 0, 0)
         draw(self.circle_n_points, GL_LINES, self.circle_v2f, self.circle_c4B)
 
     def _draw_global(self):
         super(PartDrydockView, self)._draw_global()
-        glPushMatrix()
-        glRotatef(90, 1, 0, 0)
-        draw(self.bbox_n_points, GL_LINES, self.bbox_v2f, self.bbox_c4f)
+        #glPushMatrix()
+        #glRotatef(90, 1, 0, 0)
+        #draw(self.bbox_n_points, GL_LINES, self.bbox_v2f, self.bbox_c4f)
 
-        lines = [(self._model.x, self._model.z, part.x, part.z) for part in self._model.connected_parts]
-        connections_v2f = ('v2f', list(chain(*lines)))
-        n_points = len(lines) * 2
-        draw(n_points, GL_LINES, connections_v2f, ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
-        glPopMatrix()
+        #lines = [(self._model.x, self._model.z, part.x, part.z) for part in self._model.connected_parts]
+        #connections_v2f = ('v2f', list(chain(*lines)))
+        #n_points = len(lines) * 2
+        #draw(n_points, GL_LINES, connections_v2f, ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
+        #glPopMatrix()
 
     def update(self):
         super(PartDrydockView, self).update()

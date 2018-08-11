@@ -4,3 +4,4 @@ from engine.models.composite_model import CompositeModel
 from engine.models.projectiles import PlasmaModel
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
+from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel

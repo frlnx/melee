@@ -5,20 +5,27 @@ from typing import List, Callable
 from engine.physics.line import Line
 from engine.physics.polygon import Polygon
 from .ship_part import ShipPartModel
+from .base_model import PositionalModel
 
 
-class Connection(object):
+class PartConnectionModel(PositionalModel):
     
-    def __init__(self, *ship_parts, validate_connection_function: Callable=None):
+    def __init__(self, *ship_parts, validate_connection_function: Callable = None):
+        super().__init__()
         self._ship_parts: List[ShipPartModel] = ship_parts
         self.validate_connection_function = validate_connection_function
         self._connect()
         self._polygon: Polygon = self.build_polygon()
-        for part in self._ship_parts:
-            part.observe(self.update_polygon)
+        #for part in self._ship_parts:
+        #    part.observe(self.update_polygon)
 
     def update_polygon(self):
         self._polygon = self.build_polygon()
+        self._callback()
+
+    @property
+    def bounding_box(self):
+        return self._polygon
 
     def build_polygon(self):
         lines = []
@@ -57,7 +64,7 @@ class Connection(object):
             p1.disconnect(p2)
 
 
-class ShieldConnection(Connection):
+class ShieldConnectionModel(PartConnectionModel):
 
     def build_polygon(self):
         arc: Polygon = None

@@ -336,10 +336,13 @@ class ShipPartDisplay(ShipBuildMenuComponent):
         glRotatef(90, 1, 0, 0)
         glTranslatef(self.x_offset, -100, -self.y_offset)
         glScalef(*self.gl_scale_f)
-        for item in self.highlightables:
-            item.draw()
+        self._draw()
         glDisable(GL_LIGHTING)
         glPopMatrix()
+
+    def _draw(self):
+        for item in self.highlightables:
+            item.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
         pass
@@ -457,6 +460,13 @@ class Drydock(ShipConfiguration):
         for item in self.items:
             item.legal_move_func = self._legal_placement
             item.observe(self._update_connections)
+        self.connections = [view_factory.manufacture(c) for c in ship._connections]
+
+    def _draw(self):
+        super(Drydock, self)._draw()
+        for connection in self.connections:
+            connection.draw()
+            connection.draw_transparent()
 
     def save_all(self):
         super(Drydock, self).save_all()
