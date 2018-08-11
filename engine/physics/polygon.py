@@ -61,6 +61,15 @@ class BasePolygon(object):
         polygon.clear_movement()
         return polygon
 
+    @classmethod
+    def manufacture_open(cls, coords, x=0, y=0, rotation=0):
+        lines = cls.coords_to_lines(coords)
+        lines.pop(0)
+        polygon = cls(lines)
+        polygon.set_position_rotation(x, y, rotation)
+        polygon.clear_movement()
+        return polygon
+
     @property
     def lines(self) -> List[Line]:
         return self._lines
@@ -270,7 +279,7 @@ class Polygon(BasePolygon):
     def intersected_polygons(self, other: "Polygon"):
         intersections = set()
 
-        if len(other) == 0 or not self.intersects(other):
+        if len(other) == 0 or not self.intersects(other) and not other.point_inside(*self.centroid()):
             return set(), intersections
 
         for p in other:

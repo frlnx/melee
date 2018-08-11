@@ -1,4 +1,4 @@
-from itertools import product
+from itertools import combinations
 from math import *
 from typing import List, Callable
 
@@ -10,18 +10,29 @@ from .ship_part import ShipPartModel
 
 class PartConnectionModel(PositionalModel):
     
-    def __init__(self, *ship_parts, validate_connection_function: Callable = None):
+    def __init__(self, *ship_parts, validate_connection_function: Callable):
         super().__init__()
         self._ship_parts: List[ShipPartModel] = ship_parts
         self.validate_connection_function = validate_connection_function
         self._connect()
         self._polygon: Polygon = self.build_polygon()
-        #for part in self._ship_parts:
-        #    part.observe(self.update_polygon)
+        for part in self._ship_parts:
+            part.observe(self.update_polygon)
 
     def update_polygon(self):
-        self._polygon = self.build_polygon()
+        try:
+            self._polygon = self.build_polygon()
+        except AttributeError:
+            self._disconnect_all()
         self._callback()
+
+    @property
+    def is_alive(self):
+        return self.is_valid
+
+    @property
+    def is_valid(self):
+        return self.validate_connection_function(self._polygon)
 
     @property
     def bounding_box(self):
@@ -58,10 +69,16 @@ class PartConnectionModel(PositionalModel):
         part.unobserve(self.update_polygon)
         for other_part in self._ship_parts:
             part.disconnect(other_part)
-    
+        self._callback("disconnect")
+        if len(self._ship_parts) <= 1:
+            self._callback("broken")
+
     def _disconnect_all(self):
-        for p1, p2 in product(self._ship_parts):
+        assert len(self._ship_parts) > 1
+        for p1, p2 in combinations(self._ship_parts, 2):
             p1.disconnect(p2)
+        self._callback("disconnect")
+        self._callback("broken")
 
 
 class ShieldConnectionModel(PartConnectionModel):
@@ -79,14 +96,14 @@ class ShieldConnectionModel(PartConnectionModel):
         end_point = part2.position.x, part2.position.z
         straight_line = Line([start_point, end_point])
         c_x, c_y = straight_line.centroid
-        for swell in range(0, 100, 20):
+        for swell in range(0, 101, 20):
             swell /= 100
             radius = straight_line.length / 2
             for sign in [1, -1]:
                 x_factor = swell * radius * sign
-                coords = [(sin(radians(d)) * x_factor, cos(radians(d)) * radius) for d in range(0, 180, 36)]
-                arc = Polygon.manufacture(coords, x=c_x, y=c_y, rotation=straight_line.rotation)
+                coords = [(sin(radians(d)) * x_factor, cos(radians(d)) * radius) for d in range(0, 181, 36)]
+                arc = Polygon.manufacture_open(coords, x=c_x, y=c_y, rotation=straight_line.degrees)
+                arc.freeze()
                 if self.validate_connection_function(arc):
                     return arc
         raise AttributeError(f'{part1} and {part2} have no valid arc')
-

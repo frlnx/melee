@@ -67,6 +67,10 @@ class BaseLine(object):
         return atan2(-self.dx, self.dy)
 
     @property
+    def degrees(self):
+        return degrees(self.radii)
+
+    @property
     def dx(self):
         return self.x1 - self.x2
 

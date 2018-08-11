@@ -102,6 +102,7 @@ class ShipPartDrydockView(PartDrydockView):
         self.bbox_v2f = ('v2f', list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self._model.bounding_box.lines])))
         self.bbox_n_points = len(self._model.bounding_box.lines) * 2
         self.bbox_c4f = ('c4f', [1., 1., 1., 1.] * self.bbox_n_points)
+        self._show_circle = False
 
     #    self.font_size = 20
     #    half_font_size = int(self.font_size / 2)
@@ -114,9 +115,14 @@ class ShipPartDrydockView(PartDrydockView):
 
     def highlight_circle(self):
         self.circle_c4B = self.circle_c4B_highlight
+        self._show_circle = True
 
     def lowlight_circle(self):
         self.circle_c4B = self.circle_c4B_lowlight
+        self._show_circle = True
+
+    def hide_circle(self):
+        self._show_circle = False
 
     def _draw_local(self):
         super(PartDrydockView, self)._draw_local()
@@ -127,8 +133,9 @@ class ShipPartDrydockView(PartDrydockView):
         #self.infobox.draw()
         #glPopMatrix()
         #self._draw_bbox(self.model.bounding_box)
-        glRotatef(90, 1, 0, 0)
-        draw(self.circle_n_points, GL_LINES, self.circle_v2f, self.circle_c4B)
+        if self._show_circle:
+            glRotatef(90, 1, 0, 0)
+            draw(self.circle_n_points, GL_LINES, self.circle_v2f, self.circle_c4B)
 
     def _draw_global(self):
         super(PartDrydockView, self)._draw_global()

@@ -37,10 +37,8 @@ class DrydockElement(object):
         self._highlight = state
         if state:
             self._view.set_diffuse_multipliers(2., 2., 2., 1.)
-            self._view.set_mesh_scale(0.5)
         else:
             self._view.set_diffuse_multipliers(1., 1., 1., 1.)
-            self._view.set_mesh_scale(0.25)
 
     @property
     def x(self):
@@ -169,8 +167,10 @@ class DockableItem(DrydockItem):
         self._highlight_circle = circle
         if circle:
             self._view.highlight_circle()
-        else:
+        elif part:
             self._view.lowlight_circle()
+        else:
+            self._view.hide_circle()
 
     def connect(self, other_part: "DrydockItem"):
         super(DockableItem, self).connect(other_part)
@@ -275,7 +275,7 @@ class ShipPartDisplay(ShipBuildMenuComponent):
     default_part_view_class = ShipPartView
     default_item_class = DrydockItem
 
-    def __init__(self, items: set, left, right, bottom, top, x, y, scale=100):
+    def __init__(self, items: set, left, right, bottom, top, x, y, scale=25):
         super().__init__(left, right, bottom, top, x, y)
         self.scale = scale
         self.gl_scale_f = [scale] * 3
@@ -386,7 +386,7 @@ class ShipConfiguration(ShipPartDisplay):
     def item_from_model(self, model, view_class=None):
         view_class = view_class or self.default_part_view_class
         view: ShipPartDrydockView = self.view_factory.manufacture(model, view_class=view_class)
-        view.set_mesh_scale(0.25)
+        view.set_mesh_scale(1.0)
         item = self.default_item_class(model, view)
         return item
 
@@ -453,14 +453,16 @@ class Drydock(ShipConfiguration):
     default_item_class = DockableItem
 
     def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
+        self.view_factory = view_factory
         self.original_model = ship
         ship = ship.copy()
+        ship.set_position_and_rotation(0, 0, 0, 0, 0, 0)
         super().__init__(left, right, bottom, top, ship, view_factory)
-        self._update_connections()
+        self.connections = {view_factory.manufacture(c) for c in ship._connections}
         for item in self.items:
             item.legal_move_func = self._legal_placement
-            item.observe(self._update_connections)
-        self.connections = [view_factory.manufacture(c) for c in ship._connections]
+            item.observe(lambda: self._update_connections_for(item.model))
+        #self.ship.observe(self._add_connection, "connect")
 
     def _draw(self):
         super(Drydock, self)._draw()
@@ -485,8 +487,20 @@ class Drydock(ShipConfiguration):
                 self.add_item(item)
             item.drag(*self._screen_to_model(x, y))
 
-    def _update_connections(self):
-        self.ship.rebuild_connections()
+    def remove_invalid_connections(self):
+        self.ship.disconnect_invalid_connections()
+        removable_connections = set()
+        for view in self.connections:
+            if not view.is_alive:
+                removable_connections.add(view)
+        self.connections -= removable_connections
+
+    def _update_connections_for(self, model: ShipPartModel):
+        self.remove_invalid_connections()
+        old_connections = self.ship._connections.copy()
+        self.ship.rebuild_connections_for(model)
+        new_connections = self.ship._connections - old_connections
+        self.connections += {self.view_factory.manufacture(c) for c in new_connections}
 
     def _legal_placement(self, trial_item):
         for item in self.items:
@@ -503,6 +517,7 @@ class Drydock(ShipConfiguration):
     def add_item(self, item: DockableItem):
         item.legal_move_func = self._legal_placement
         item.observe(self._update_connections)
+        item._view.set_mesh_scale(1.0)
         self.items.add(item)
         self.ship.add_part(item.model)
 
@@ -531,7 +546,7 @@ class PartStore(ShipPartDisplay):
         new_items = set()
         for i, part_name in enumerate(self.part_factory.ship_parts):
             x = 0
-            y = -i - 1
+            y = -(i * 3) - 1
             model = PositionalModel(x=x, z=y, name=part_name)
             item = self.item_spawn_from_model(model)
             new_items.add(item)
@@ -545,7 +560,7 @@ class PartStore(ShipPartDisplay):
 
     def item_spawn_from_model(self, model):
         view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
-        view.set_mesh_scale(0.25)
+        view.set_mesh_scale(1)
         spawn_func = partial(self.item_from_name, model.name, view_class=ShipPartDrydockView,
                              position=model.position)
         return ItemSpawn(model, view, spawn_func=spawn_func)

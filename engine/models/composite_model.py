@@ -14,7 +14,7 @@ class CompositeModel(BaseModel):
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
                  acceleration: MutableOffsets, torque: MutableDegrees):
         self._part_by_uuid = {part.uuid: part for part in parts}
-        self._connections = set()
+        self._connections: Set[PartConnectionModel] = set()
         self._position = position
         self._rotation = rotation
         self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
@@ -64,8 +64,7 @@ class CompositeModel(BaseModel):
             removed_part.disconnect_all()
             removed_part.remove_all_observers()
         self._part_by_uuid.clear()
-        self._part_by_uuid = {part.uuid: part for part in parts}
-        for part in self.parts:
+        for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
             part.observe(self.rebuild, "explode")
             self._part_by_uuid[part.uuid] = part
@@ -135,9 +134,33 @@ class CompositeModel(BaseModel):
         for part1, part2 in combinations(self.parts, 2):
             if part1.can_connect_to(part2):
                 connection = self._make_connection(part1, part2)
-                self._connections.add(connection)
+                self._add_connection(connection)
         for part in self.parts:
             part.update_working_status()
+
+    def rebuild_connections_for(self, model: ShipPartModel):
+        for part in self.parts:
+            if part == model:
+                continue
+            if model.can_connect_to(part):
+                connection = self._make_connection(model, part)
+                self._add_connection(connection)
+
+    def disconnect_invalid_connections(self):
+        for connection in self._connections:
+            if not connection.is_valid:
+                connection._disconnect_all()
+                self._remove_connection(connection)
+
+    def _add_connection(self, connection: PartConnectionModel):
+        self._connections.add(connection)
+
+    def _remove_connection(self, connection: PartConnectionModel):
+        try:
+            self._connections.remove(connection)
+            connection.remove_all_observers()
+        except KeyError:
+            pass
 
     def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):
         class_map = {"ShieldConnection": ShieldConnectionModel}
