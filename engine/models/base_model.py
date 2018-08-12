@@ -16,6 +16,7 @@ class PositionalModel(object):
         self._mesh_name = name
         self._name = name
         self._action_observers = defaultdict(set)
+        self._remove_observers = defaultdict(set)
         self._material_observers = set()
         self.material_value = 0.0
 
@@ -38,14 +39,17 @@ class PositionalModel(object):
         self._action_observers[action].add(func)
 
     def _callback(self, action=None):
+        self._prune_removed_observers(action)
         for observer in self._action_observers[action]:
             observer()
 
     def unobserve(self, func: Callable, action=None):
-        try:
-            self._action_observers[action].remove(func)
-        except KeyError:
-            pass
+        self._remove_observers[action].add(func)
+
+    def _prune_removed_observers(self, action):
+        self._action_observers[action] -= self._remove_observers[action]
+        self._remove_observers[action].clear()
+
 
     @property
     def is_exploding(self):

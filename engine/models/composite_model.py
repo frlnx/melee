@@ -165,7 +165,7 @@ class CompositeModel(BaseModel):
     def _remove_connection(self, connection: PartConnectionModel):
         try:
             self._connections.remove(connection)
-            connection.remove_all_observers()
+            #connection.remove_all_observers()
         except KeyError as e:
             pass
 
@@ -184,6 +184,8 @@ class CompositeModel(BaseModel):
         return connection
 
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
+        if not polygon:
+            return False
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
         intersected_uuids = {bbox.part_id for bbox in intersected_bboxes}

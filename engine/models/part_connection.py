@@ -1,4 +1,3 @@
-from itertools import combinations
 from math import *
 from typing import List, Callable
 
@@ -24,9 +23,7 @@ class PartConnectionModel(PositionalModel):
             part.observe(self.update_polygon)
 
     def _pairwise(self):
-        for i, part in enumerate(self._ship_parts[:-1]):
-            next_part = self._ship_parts[i + 1]
-            yield
+        return zip(self._ship_parts[:-1], self._ship_parts[1:])
 
     def __eq__(self, other: "PartConnectionModel"):
         return self._ship_parts.__eq__(other._ship_parts)
@@ -61,8 +58,7 @@ class PartConnectionModel(PositionalModel):
 
     def build_polygon(self):
         lines = []
-        for i, part in enumerate(self._ship_parts[:-1]):
-            next_part = self._ship_parts[i + 1]
+        for part, next_part in self._pairwise():
             lines.append(Line([(part.position.x, part.position.z), (next_part.position.x, next_part.position.z)]))
         polygon = Polygon(lines)
         if self.validate_connection_function(polygon):
@@ -73,15 +69,13 @@ class PartConnectionModel(PositionalModel):
         return False
 
     def _connect(self):
-        for i, part in enumerate(self._ship_parts[:-1]):
-            next_part = self._ship_parts[i + 1]
+        for part, next_part in self._pairwise():
             part.connect(next_part)
 
     @property
     def distance(self):
         distance = 0
-        for i, part in enumerate(self._ship_parts[:-1]):
-            next_part = self._ship_parts[i + 1]
+        for part, next_part in self._pairwise():
             distance += (part.position - next_part.position).distance
         return distance
 
@@ -114,8 +108,7 @@ class ShieldConnectionModel(PartConnectionModel):
 
     def build_polygon(self):
         arc: Polygon = None
-        for i, part in enumerate(self._ship_parts[:-1]):
-            next_part = self._ship_parts[i + 1]
+        for part, next_part in self._pairwise():
             step_arc = self._build_arc(part, next_part)
             arc = arc and Polygon(arc.lines + step_arc.lines) or step_arc
         return arc
@@ -125,7 +118,7 @@ class ShieldConnectionModel(PartConnectionModel):
         end_point = part2.position.x, part2.position.z
         straight_line = Line([start_point, end_point])
         c_x, c_y = straight_line.centroid
-        for swell in range(40, 81, 20):
+        for swell in range(0, 81, 20):
             swell /= 100
             radius = straight_line.length / 2
             for sign in [1, -1]:
