@@ -27,6 +27,7 @@ class TestDryDockSave(object):
     def test_nothing_observes_no_old_parts(self):
         for part in self.original_parts:
             for signal in ["working", "explode", "alive"]:
+                part._prune_removed_observers(signal)
                 assert not part._action_observers[signal]
 
     def test_ship_observes_new_parts(self):
