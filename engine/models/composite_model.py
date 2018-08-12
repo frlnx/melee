@@ -132,24 +132,31 @@ class CompositeModel(BaseModel):
             part.disconnect_all()
         self._connections.clear()
         for part1, part2 in combinations(self.parts, 2):
-            if part1.can_connect_to(part2):
-                connection = self._make_connection(part1, part2)
-                self._add_connection(connection)
+            self._try_to_connect(part1, part2)
         for part in self.parts:
             part.update_working_status()
 
     def rebuild_connections_for(self, model: ShipPartModel):
         for part in self.parts:
-            if part == model:
-                continue
-            if model.can_connect_to(part):
-                connection = self._make_connection(model, part)
-                self._add_connection(connection)
+            self._try_to_connect(model, part)
+
+    def _try_to_connect(self, part1, part2):
+        if part1 == part2:
+            return False
+        if not part1.can_connect_to(part2):
+            return False
+        try:
+            connection = self._make_connection(part1, part2)
+        except AttributeError:
+            return False
+        else:
+            self._add_connection(connection)
+        return True
 
     def disconnect_invalid_connections(self):
         for connection in self._connections:
-            if not connection.is_valid:
-                connection._disconnect_all()
+            if not connection.is_alive:
+                connection.disconnect_all()
                 self._remove_connection(connection)
 
     def _add_connection(self, connection: PartConnectionModel):

@@ -476,7 +476,12 @@ class Drydock(ShipConfiguration):
         self.original_model.rebuild()
 
     def reset(self):
-        self._items = set()
+        for item in self.items.copy():
+            if item.model.name == "cockpit":
+                continue
+            item.model.set_alive(False)
+            self.remove_item(item)
+        self.remove_invalid_connections()
 
     def drag(self, item, x, y, snap=False):
         if snap:
@@ -500,7 +505,10 @@ class Drydock(ShipConfiguration):
         old_connections = self.ship._connections.copy()
         self.ship.rebuild_connections_for(model)
         new_connections = self.ship._connections - old_connections
-        self.connections += {self.view_factory.manufacture(c) for c in new_connections}
+        self.connections |= {self.view_factory.manufacture(c) for c in new_connections}
+        lost_connections = old_connections - self.ship._connections
+        views_to_remove = {v for v in self.connections if v.model in lost_connections}
+        self.connections -= views_to_remove
 
     def _legal_placement(self, trial_item):
         for item in self.items:
@@ -516,10 +524,14 @@ class Drydock(ShipConfiguration):
 
     def add_item(self, item: DockableItem):
         item.legal_move_func = self._legal_placement
-        item.observe(self._update_connections)
+        item.observe(lambda: self._update_connections_for(item.model))
         item._view.set_mesh_scale(1.0)
         self.items.add(item)
         self.ship.add_part(item.model)
+
+    def remove_item(self, item: DockableItem):
+        self.items.remove(item)
+        self.ship.remove_part(item.model)
 
     def highlight_at(self, x, y):
         super(Drydock, self).highlight_at(x, y)

@@ -1,8 +1,5 @@
 from engine.models.part_connection import PartConnectionModel
 from .base_view import BaseView
-from pyglet.gl import GL_LINES, glRotatef, glPopMatrix, glPushMatrix, glScalef
-from pyglet.graphics import draw
-from itertools import chain
 
 
 class ConnectionView(BaseView):
