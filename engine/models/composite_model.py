@@ -144,22 +144,20 @@ class CompositeModel(BaseModel):
         if part1 == part2:
             return False
         if not part1.can_connect_to(part2):
-            print(f"Can't connect {part1} {part2}")
             return False
         try:
             connection = self._make_connection(part1, part2)
         except AttributeError as e:
-            print(e)
             return False
         else:
             self._add_connection(connection)
-        return True
+            return True
 
     def disconnect_invalid_connections(self):
         for connection in self._connections.copy():
             if not connection.is_alive:
-                connection.disconnect_all()
                 self._remove_connection(connection)
+                connection.disconnect_all()
 
     def _add_connection(self, connection: PartConnectionModel):
         self._connections.add(connection)
@@ -168,7 +166,7 @@ class CompositeModel(BaseModel):
         try:
             self._connections.remove(connection)
             connection.remove_all_observers()
-        except KeyError:
+        except KeyError as e:
             pass
 
     def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):
@@ -176,7 +174,13 @@ class CompositeModel(BaseModel):
         config = part1.connection_configs.get(part2.name, {})
         connection_class = class_map.get(config.get('connection_class'), PartConnectionModel)
         func = partial(self._validation_function, {part1, part2})
-        connection = connection_class(part1, part2, validate_connection_function=func)
+        connection = connection_class(part1, part2,
+                                      validate_connection_function=func,
+                                      max_distance=config.get('distance', 1.7))
+        if connection.is_valid:
+            connection.observe(lambda: self._remove_connection(connection), "broken")
+        else:
+            raise AttributeError("Too far")
         return connection
 
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):

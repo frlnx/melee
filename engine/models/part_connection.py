@@ -19,6 +19,7 @@ class PartConnectionModel(PositionalModel):
         self.validate_connection_function = validate_connection_function
         self._connect()
         self._polygon: Polygon = self.build_polygon()
+        self.uuid = self.generate_uuid()
         for part in self._ship_parts:
             part.observe(self.update_polygon)
 
@@ -31,7 +32,10 @@ class PartConnectionModel(PositionalModel):
         return self._ship_parts.__eq__(other._ship_parts)
 
     def __hash__(self):
-        return "|".join(part.uuid.hex for part in self._ship_parts).__hash__()
+        return self.uuid.__hash__()
+
+    def generate_uuid(self):
+        return "|".join(part.uuid.hex for part in self._ship_parts)
 
     def update_polygon(self):
         if self.distance > self._max_distance:
@@ -39,7 +43,7 @@ class PartConnectionModel(PositionalModel):
         else:
             try:
                 self._polygon = self.build_polygon()
-            except AttributeError:
+            except AttributeError as e:
                 self.disconnect_all()
         self._callback()
 
@@ -80,22 +84,28 @@ class PartConnectionModel(PositionalModel):
             next_part = self._ship_parts[i + 1]
             distance += (part.position - next_part.position).distance
         return distance
-    
+
+    def disconnect_all(self):
+        for part in self._ship_parts:
+            self._disconnect(part)
+        self.uuid = self.generate_uuid()
+        if len(self._ship_parts) <= 1:
+            self._callback("broken")
+
+    def disconnect(self, part):
+        self._disconnect(part)
+        self.uuid = self.generate_uuid()
+        if len(self._ship_parts) <= 1:
+            self._callback("broken")
+
     def _disconnect(self, part: ShipPartModel):
         self._ship_parts.remove(part)
         part.unobserve(self.update_polygon)
         for other_part in self._ship_parts:
             part.disconnect(other_part)
-        self._callback("disconnect")
-        if len(self._ship_parts) <= 1:
-            self._callback("broken")
 
-    def disconnect_all(self):
-        assert len(self._ship_parts) > 1
-        for p1, p2 in combinations(self._ship_parts, 2):
-            p1.disconnect(p2)
-        self._callback("disconnect")
-        self._callback("broken")
+    def __repr__(self):
+        return str(self._ship_parts)
 
 
 class ShieldConnectionModel(PartConnectionModel):

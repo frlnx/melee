@@ -501,8 +501,8 @@ class Drydock(ShipConfiguration):
         self.connections -= removable_connections
 
     def _update_connections_for(self, model: ShipPartModel):
-        self.remove_invalid_connections()
         old_connections = self.ship._connections.copy()
+        self.remove_invalid_connections()
         self.ship.rebuild_connections_for(model)
         new_connections = self.ship._connections - old_connections
         self.connections |= {self.view_factory.manufacture(c) for c in new_connections}
