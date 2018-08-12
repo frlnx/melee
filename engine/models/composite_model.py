@@ -144,17 +144,19 @@ class CompositeModel(BaseModel):
         if part1 == part2:
             return False
         if not part1.can_connect_to(part2):
+            print(f"Can't connect {part1} {part2}")
             return False
         try:
             connection = self._make_connection(part1, part2)
-        except AttributeError:
+        except AttributeError as e:
+            print(e)
             return False
         else:
             self._add_connection(connection)
         return True
 
     def disconnect_invalid_connections(self):
-        for connection in self._connections:
+        for connection in self._connections.copy():
             if not connection.is_alive:
                 connection.disconnect_all()
                 self._remove_connection(connection)

@@ -10,28 +10,37 @@ from .ship_part import ShipPartModel
 
 class PartConnectionModel(PositionalModel):
     
-    def __init__(self, *ship_parts, validate_connection_function: Callable):
-        super().__init__()
-        self._ship_parts: List[ShipPartModel] = ship_parts
+    def __init__(self, *ship_parts, validate_connection_function: Callable, max_distance=1.7):
+        self._ship_parts: List[ShipPartModel] = list(ship_parts)
         if self._ship_parts[0].uuid > self._ship_parts[-1].uuid:
             self._ship_parts.reverse()
+        super().__init__()
+        self._max_distance = max_distance
         self.validate_connection_function = validate_connection_function
         self._connect()
         self._polygon: Polygon = self.build_polygon()
         for part in self._ship_parts:
             part.observe(self.update_polygon)
 
+    def _pairwise(self):
+        for i, part in enumerate(self._ship_parts[:-1]):
+            next_part = self._ship_parts[i + 1]
+            yield
+
     def __eq__(self, other: "PartConnectionModel"):
         return self._ship_parts.__eq__(other._ship_parts)
 
     def __hash__(self):
-        return self._ship_parts.__hash__()
+        return "|".join(part.uuid.hex for part in self._ship_parts).__hash__()
 
     def update_polygon(self):
-        try:
-            self._polygon = self.build_polygon()
-        except AttributeError:
+        if self.distance > self._max_distance:
             self.disconnect_all()
+        else:
+            try:
+                self._polygon = self.build_polygon()
+            except AttributeError:
+                self.disconnect_all()
         self._callback()
 
     @property
@@ -40,7 +49,7 @@ class PartConnectionModel(PositionalModel):
 
     @property
     def is_valid(self):
-        return self.validate_connection_function(self._polygon)
+        return self.validate_connection_function(self._polygon) and self.distance <= self._max_distance
 
     @property
     def bounding_box(self):
