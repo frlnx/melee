@@ -147,7 +147,7 @@ class CompositeModel(BaseModel):
             return False
         try:
             connection = self._make_connection(part1, part2)
-        except AttributeError as e:
+        except AttributeError:
             return False
         else:
             self._add_connection(connection)
@@ -165,8 +165,8 @@ class CompositeModel(BaseModel):
     def _remove_connection(self, connection: PartConnectionModel):
         try:
             self._connections.remove(connection)
-            #connection.remove_all_observers()
-        except KeyError as e:
+            connection.remove_all_observers()
+        except KeyError:
             pass
 
     def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):

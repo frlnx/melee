@@ -56,7 +56,7 @@ class PositionalModel(object):
         return False
 
     def remove_all_observers(self):
-        self._action_observers.clear()
+        self._remove_observers = self._action_observers
 
     def set_material_value(self, value):
         self.material_value = value
