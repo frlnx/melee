@@ -19,7 +19,7 @@ class ViewFactory(object):
                         "material": partial(OpenGLTexturedMaterial, texture_file_name="asteroid.png",
                                             diffuse=(0.7, 0.7, 0.7), name="Rock Surface")},
         ShieldConnectionModel: {"method": "_hexagon_fence",
-                                "material": partial(OpenGLMaterial, diffuse=(0, 0, 0), emissive=(.54, .81, .94),
+                                "material": partial(OpenGLMaterial, diffuse=(.54, .81, .94), ambient=(.54, .81, .94),
                                                     alpha=.5, name="Shield")}
     }
 
@@ -48,7 +48,6 @@ class ViewFactory(object):
         if model.mesh_name is not None:
             view.set_mesh(self._mesh_for_model(model))
         view.set_model(model)
-        print(len(self.pre_factorized_views), " views left")
         return view
 
     def _mesh_for_model(self, model):
@@ -110,6 +109,13 @@ class ViewFactory(object):
                           (c_x, -1, c_z), (line.x2, -half_length, line.y2), (line.x2, half_length, line.y2)]
             coords1 = hex_points[-1]
             for coords2 in hex_points:
+                vertices = [(c_x, c_y, c_z), coords1, coords2]
+                coords1 = coords2
+                face = OpenGLFace(vertices, normals, material)
+                faces.append(face)
+            normals = [(-cos(r), 0, -sin(r))] * 3
+            coords1 = hex_points[0]
+            for coords2 in reversed(hex_points):
                 vertices = [(c_x, c_y, c_z), coords1, coords2]
                 coords1 = coords2
                 face = OpenGLFace(vertices, normals, material)

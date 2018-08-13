@@ -1,5 +1,5 @@
-from math import cos, sin, radians
 from itertools import chain
+from math import cos, sin, radians
 
 
 class OpenGLFactory(object):
@@ -46,6 +46,20 @@ class OpenGLFactory(object):
             shape += bottom
             shape += lp2
         return shape
+
+    @classmethod
+    def _render_pipe(cls, axis='x', circle_start=0, circle_stop=360, circle_n_points=8, start=-1, stop=1):
+        circle = cls._render_circle(axis, circle_start, circle_stop, circle_n_points, axial_coordinate=start)
+        circle += cls._render_circle(axis, circle_start, circle_stop, circle_n_points, axial_coordinate=stop)
+        return circle
+
+    @staticmethod
+    def _render_circle(axis='x', start=0, stop=360, n_points=8, axial_coordinate=0):
+        step = int((stop - start) / n_points)
+        circle = [[cos(radians(d)), sin(radians(d))] for d in range(start, stop, step)]
+        coordinate_order = 'xyz'
+        return list(chain(
+            *[(axial_coordinate if axis == co else coords.pop() for co in coordinate_order) for coords in circle]))
 
 
 shape_factory = OpenGLFactory()

@@ -41,6 +41,7 @@ class Drawable(object):
 class OpenGLMesh(WaveFrontObject):
 
     def __init__(self, faces: List['OpenGLFace'], textured_faces: List['OpenGLTexturedFace'], name=None, group=None):
+        assert len(faces) + len(textured_faces) > 0
         super().__init__(faces, textured_faces, name, group)
         self.materials = {face.material.name: face.material for face in chain(faces, textured_faces)}
         self.drawables = set()
@@ -147,7 +148,7 @@ class OpenGLMesh(WaveFrontObject):
         glPopClientAttrib()
 
     def __repr__(self):
-        return f'Mesh {self.name}'
+        return f'Mesh "{self.name}"\n{self.drawables}\n{self.transparent_drawables}'
 
 
 class OpenGLFace(Face):

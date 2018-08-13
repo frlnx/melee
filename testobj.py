@@ -1,13 +1,15 @@
 import ctypes
+from math import *
 from os import path
 
 import pyglet
 from pyglet.gl import *
 from pyglet.window import Window, key
 
+from engine.physics.polygon import Polygon
 from engine.views.opengl_animations import Explosion
 from engine.views.opengl_drawables import ExplosionDrawable
-from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
+from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh, OpenGLMaterial, OpenGLFace
 
 
 class TestWindow(Window):
@@ -65,15 +67,42 @@ class TestWindow(Window):
             explode_animation = Explosion(self.obj.all_faces)
             self.obj.add_animation(explode_animation.animate)
             self.obj.set_double_sided(True)
-            #for material in self.obj.materials.values():
-            #    material.ambient = (10., 10., 10.)
-            #self.obj.add_transmutation(extinguish)
 
 
 if __name__ == "__main__":
+    def _hexagon_fence(polygon):
+        faces = []
+        material = OpenGLMaterial(diffuse=(.54, .81, .94), ambient=(.54, .81, .94), alpha=.5, name="Shield")
+        for line in polygon.lines:
+            c_x, c_z = line.centroid
+            c_y = 0
+            half_length = line.length / 2
+            r = line.radii + radians(90)
+            normals = [(cos(r), 0, sin(r))] * 3
+            hex_points = [(c_x, 1, c_z), (line.x1, half_length, line.y1), (line.x1, -half_length, line.y1),
+                          (c_x, -1, c_z), (line.x2, -half_length, line.y2), (line.x2, half_length, line.y2)]
+            coords1 = hex_points[-1]
+            for coords2 in hex_points:
+                vertices = [(c_x, c_y, c_z), coords1, coords2]
+                coords1 = coords2
+                face = OpenGLFace(vertices, normals, material)
+                faces.append(face)
+            normals = [(-cos(r), 0, -sin(r))] * 3
+            coords1 = hex_points[0]
+            for coords2 in reversed(hex_points):
+                vertices = [(c_x, c_y, c_z), coords1, coords2]
+                coords1 = coords2
+                face = OpenGLFace(vertices, normals, material)
+                faces.append(face)
+        mesh = OpenGLMesh(faces, [], name="Shield", group="Shields")
+        mesh.set_double_sided(True)
+        return mesh
+
     print(GL_MAX_LIGHTS, GL_LIGHT0)
-    op = OpenGLWaveFrontParser(object_class=OpenGLMesh)
-    with open(path.join("objects", "cockpit.obj"), 'r') as f:
-        obj = op.parse(f.readlines())
+    #op = OpenGLWaveFrontParser(object_class=OpenGLMesh)
+    #with open(path.join("objects", "cockpit.obj"), 'r') as f:
+    #    obj = op.parse(f.readlines())
+    polygon = Polygon.manufacture_open([(0, 0), (1, 1), (1, 2.5), (2.5, 3), (3, 4.5)])
+    obj = _hexagon_fence(polygon)
     win = TestWindow(obj)
     pyglet.app.run()
