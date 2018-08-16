@@ -1,9 +1,9 @@
 from functools import partial
-from itertools import combinations
+from itertools import combinations, chain
 from typing import Set
 
 from engine.models.base_model import BaseModel
-from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel
+from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel, PartConnectionError
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import MultiPolygon
@@ -26,6 +26,8 @@ class CompositeModel(BaseModel):
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
             part.observe(self.prune_dead_parts_from_bounding_box, "explode")
+            part.observe(self.rebuild)
+            part.observe(lambda: self.rebuild_connections_for(part))
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -65,22 +67,26 @@ class CompositeModel(BaseModel):
             removed_part.remove_all_observers()
         self._part_by_uuid.clear()
         for part in parts:
-            part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
-            part.observe(self.rebuild, "explode")
-            self._part_by_uuid[part.uuid] = part
+            self._add_part(part)
         self.rebuild()
         self.rebuild_connections()
 
     def add_part(self, part):
+        self._add_part(part)
+        self.rebuild()
+
+    def _add_part(self, part):
         self._part_by_uuid[part.uuid] = part
         part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
         part.observe(self.prune_dead_parts_from_bounding_box, "explode")
-        self.rebuild()
+        part.observe(self.rebuild)
+        part.observe(lambda: self.rebuild_connections_for(part))
 
     def remove_part(self, part_model):
         if part_model.uuid in self._part_by_uuid:
             del self._part_by_uuid[part_model.uuid]
             part_model.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
+            part_model.unobserve(self.rebuild)
         self.prune_dead_parts_from_bounding_box()
         if not self.parts:
             self.set_alive(False)
@@ -99,7 +105,7 @@ class CompositeModel(BaseModel):
         for part in ship_parts:
             bbox = part.bounding_box.__copy__()
             bbox.part_id = part.uuid
-            bbox.set_position_rotation(part.x, part.z, part.rotation.yaw)
+            bbox.set_position_rotation(part.x, part.z, part.yaw)
             bbox.freeze()
             bbox.clear_movement()
             bboxes.add(bbox)
@@ -133,6 +139,7 @@ class CompositeModel(BaseModel):
         self._connections.clear()
         for part1, part2 in combinations(self.parts, 2):
             self._try_to_connect(part1, part2)
+        print(f'made {len(self._connections)} connections')
         for part in self.parts:
             part.update_working_status()
 
@@ -147,7 +154,8 @@ class CompositeModel(BaseModel):
             return False
         try:
             connection = self._make_connection(part1, part2)
-        except AttributeError:
+        except PartConnectionError as e:
+            print(e)
             return False
         else:
             self._add_connection(connection)
@@ -180,7 +188,7 @@ class CompositeModel(BaseModel):
         if connection.is_valid:
             connection.observe(lambda: self._remove_connection(connection), "broken")
         else:
-            raise AttributeError("Too far")
+            raise PartConnectionError("Too far")
         return connection
 
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
@@ -188,12 +196,12 @@ class CompositeModel(BaseModel):
             return False
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
-        intersected_uuids = {bbox.part_id for bbox in intersected_bboxes}
+        intersected_uuids = {bbox.part_id for bbox in intersected_bboxes if bbox != polygon}
         return len(intersected_uuids - ignored_uuids) == 0
 
     @property
     def parts_of_bbox(self):
-        return [part for part in self.parts if part.is_alive and not part.is_exploding]
+        return [part for part in chain(self.parts, self._connections) if part.is_alive and not part.is_exploding]
 
     @property
     def acceleration(self):

@@ -97,13 +97,14 @@ class ShipPartModel(BaseModel):
         return len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
 
     def can_connect_to(self, other_part: "ShipPartModel"):
-        return self._can_connect_to(other_part) or other_part._can_connect_to(self)
+        return self._can_connect_to(other_part) and other_part._can_connect_to(self)
 
     def _can_connect_to(self, other_part: "ShipPartModel"):
         distance = self._local_distance_to(other_part)
         config = self.connection_configs.get(other_part.name, {})
         if distance <= config.get('distance', 1.7):
             return config.get('can_connect', True)
+        return False
 
     def _local_distance_to(self, other_part: "ShipPartModel"):
         distance = (self.position - other_part.position).distance

@@ -18,7 +18,7 @@ class TestBoundingBox(object):
         ship.update_bounding_box()
 
     def test_bounding_box_width_is_5(self):
-        assert 5.4 == round(self.target.right - self.target.left, 1)
+        assert 7.4 == round(self.target.right - self.target.left, 1)
 
     def _test_bounding_box_height_is_3(self):
         assert self.target.top - self.target.bottom == 2

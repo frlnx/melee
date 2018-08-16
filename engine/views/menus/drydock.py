@@ -16,6 +16,7 @@ from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
 from engine.views.factories import DynamicViewFactory
 from engine.views.menus.base import MenuComponent
+from engine.views.ship import ShipView
 from engine.views.ship_part import ShipPartDrydockView, NewPartDrydockView, ShipPartView, \
     ShipPartConfigurationView
 
@@ -51,9 +52,6 @@ class DrydockElement(object):
     @property
     def yaw(self):
         return self.model.yaw
-
-    def draw(self):
-        self._view.draw()
 
     def on_mouse_motion(self, x, y, dx, dy):
         pass
@@ -341,8 +339,7 @@ class ShipPartDisplay(ShipBuildMenuComponent):
         glPopMatrix()
 
     def _draw(self):
-        for item in self.highlightables:
-            item.draw()
+        pass
 
     def on_mouse_press(self, x, y, button, modifiers):
         pass
@@ -368,13 +365,20 @@ class ShipConfiguration(ShipPartDisplay):
     def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
         self.view_factory = view_factory
+        self.ship_view: ShipView = view_factory.manufacture(ship, sub_view_class=self.default_part_view_class)
         items = set()
-        for part in ship.parts:
-            item = self.item_from_model(part, view_class=self.default_part_view_class)
+        for part_model in ship.parts:
+            view = self.ship_view.get_sub_view(part_model.uuid)
+            item = self.default_item_class(part_model, view)
             items.add(item)
         x = (right - left) / 2 + left
         y = (top - bottom) / 2 + bottom
         super().__init__(items, left, right, bottom, top, x, y)
+
+    def _draw(self):
+        super(ShipConfiguration, self)._draw()
+        self.ship_view.draw()
+        self.ship_view.draw_transparent()
 
     def reset(self):
         pass
@@ -382,13 +386,6 @@ class ShipConfiguration(ShipPartDisplay):
     def set_highlighted_item(self, item):
         super(ShipConfiguration, self).set_highlighted_item(item)
         self._highlighted_item.set_highlight(True, False)
-
-    def item_from_model(self, model, view_class=None):
-        view_class = view_class or self.default_part_view_class
-        view: ShipPartDrydockView = self.view_factory.manufacture(model, view_class=view_class)
-        view.set_mesh_scale(1.0)
-        item = self.default_item_class(model, view)
-        return item
 
     def save_all(self):
         part_data = [
@@ -458,17 +455,8 @@ class Drydock(ShipConfiguration):
         ship = ship.copy()
         ship.set_position_and_rotation(0, 0, 0, 0, 0, 0)
         super().__init__(left, right, bottom, top, ship, view_factory)
-        self.connections = {view_factory.manufacture(c) for c in ship._connections}
         for item in self.items:
             item.legal_move_func = self._legal_placement
-            item.observe(lambda: self._update_connections_for(item.model))
-        #self.ship.observe(self._add_connection, "connect")
-
-    def _draw(self):
-        super(Drydock, self)._draw()
-        for connection in self.connections:
-            connection.draw()
-            connection.draw_transparent()
 
     def save_all(self):
         super(Drydock, self).save_all()
@@ -481,7 +469,6 @@ class Drydock(ShipConfiguration):
                 continue
             item.model.set_alive(False)
             self.remove_item(item)
-        self.remove_invalid_connections()
 
     def drag(self, item, x, y, snap=False):
         if snap:
@@ -491,24 +478,6 @@ class Drydock(ShipConfiguration):
             if item not in self.items:
                 self.add_item(item)
             item.drag(*self._screen_to_model(x, y))
-
-    def remove_invalid_connections(self):
-        self.ship.disconnect_invalid_connections()
-        removable_connections = set()
-        for view in self.connections:
-            if not view.is_alive:
-                removable_connections.add(view)
-        self.connections -= removable_connections
-
-    def _update_connections_for(self, model: ShipPartModel):
-        old_connections = self.ship._connections.copy()
-        self.remove_invalid_connections()
-        self.ship.rebuild_connections_for(model)
-        new_connections = self.ship._connections - old_connections
-        self.connections |= {self.view_factory.manufacture(c) for c in new_connections}
-        lost_connections = old_connections - self.ship._connections
-        views_to_remove = {v for v in self.connections if v.model in lost_connections}
-        self.connections -= views_to_remove
 
     def _legal_placement(self, trial_item):
         for item in self.items:
@@ -524,7 +493,6 @@ class Drydock(ShipConfiguration):
 
     def add_item(self, item: DockableItem):
         item.legal_move_func = self._legal_placement
-        item.observe(lambda: self._update_connections_for(item.model))
         item._view.set_mesh_scale(1.0)
         self.items.add(item)
         self.ship.add_part(item.model)

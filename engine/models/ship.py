@@ -12,7 +12,7 @@ class ShipModel(CompositeModel):
         super().__init__(parts, position, rotation, movement, spin, acceleration, torque)
         self.ship_id = ship_id
         self._target: ShipModel = None
-        self.shields = []
+        self._valid_targets: Set[ShipModel] = set()
         self._fuel_parts = [part for part in parts if part.max_fuel_stored]
         self._max_fuel = sum([part.max_fuel_stored for part in self._fuel_parts])
 
@@ -25,6 +25,12 @@ class ShipModel(CompositeModel):
     def set_target(self, target: "ShipModel"):
         self._target = target
         self._callback("target")
+
+    def __getstate__(self):
+        state = super(ShipModel, self).__getstate__()
+        state['_valid_targets'] = set()
+        state['_target'] = self.target and self.target.uuid or None
+        return state
 
     @property
     def target(self) -> "ShipModel":

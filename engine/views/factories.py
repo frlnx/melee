@@ -144,21 +144,23 @@ class DynamicViewFactory(ViewFactory):
         AsteroidModel: BaseView
     }
 
-    def manufacture(self, model: PositionalModel, view_class=None):
+    def manufacture(self, model: PositionalModel, view_class=None, sub_view_class=None):
         view_class = view_class or self.model_view_map[model.__class__]
         mesh = self._mesh_for_model(model)
         view = view_class(model, mesh=mesh)
         if hasattr(model, 'parts') and isinstance(model, CompositeModel):
-            self.rebuild_subviews(view, model)
+            self.rebuild_subviews(view, model, view_class=sub_view_class)
         return view
 
-    def rebuild_subviews(self, ship_view: ShipView, model: CompositeModel):
+    def rebuild_subviews(self, ship_view: ShipView, model: CompositeModel, view_class):
         ship_view.clear_sub_views()
         for part in model.parts:
             if part.is_alive:
-                sub_view = self.manufacture(part)
+                sub_view = self.manufacture(part, view_class=view_class)
                 ship_view.add_sub_view(sub_view)
                 part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")
-        for connection in model._connections:
-            sub_view = self.manufacture(connection)
-            ship_view.add_sub_view(sub_view)
+        for part in model._connections:
+            if part.is_alive:
+                sub_view = self.manufacture(part, view_class=ConnectionView)
+                ship_view.add_sub_view(sub_view)
+                part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")

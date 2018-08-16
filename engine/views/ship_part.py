@@ -104,15 +104,6 @@ class ShipPartDrydockView(PartDrydockView):
         self.bbox_c4f = ('c4f', [1., 1., 1., 1.] * self.bbox_n_points)
         self._show_circle = False
 
-    #    self.font_size = 20
-    #    half_font_size = int(self.font_size / 2)
-    #    self.infobox = Label(self.model.uuid.hex[:2], font_name='Courier New', font_size=self.font_size, y=-half_font_size)
-    #    self.model.observe(self.update_debug_text, "connect")
-    #    self.model.observe(self.update_debug_text, "disconnect")
-
-    #def update_debug_text(self):
-    #    self.infobox.text = self.model.uuid.hex[:2] + "\n" + "\n".join(p.uuid.hex[:2] for p in self.model._connected_parts)
-
     def highlight_circle(self):
         self.circle_c4B = self.circle_c4B_highlight
         self._show_circle = True
@@ -126,32 +117,9 @@ class ShipPartDrydockView(PartDrydockView):
 
     def _draw_local(self):
         super(PartDrydockView, self)._draw_local()
-        #glPushMatrix()
-        #glRotatef(-self.yaw, 0, 1, 0)
-        #glRotatef(-90, 1, 0, 0)
-        #glScalef(0.025, 0.025, 0.025)
-        #self.infobox.draw()
-        #glPopMatrix()
-        #self._draw_bbox(self.model.bounding_box)
         if self._show_circle:
             glRotatef(90, 1, 0, 0)
             draw(self.circle_n_points, GL_LINES, self.circle_v2f, self.circle_c4B)
-
-    def _draw_global(self):
-        super(PartDrydockView, self)._draw_global()
-        #glPushMatrix()
-        #glRotatef(90, 1, 0, 0)
-        #draw(self.bbox_n_points, GL_LINES, self.bbox_v2f, self.bbox_c4f)
-
-        #lines = [(self._model.x, self._model.z, part.x, part.z) for part in self._model.connected_parts]
-        #connections_v2f = ('v2f', list(chain(*lines)))
-        #n_points = len(lines) * 2
-        #draw(n_points, GL_LINES, connections_v2f, ('c4f', [0.5, 0.7, 1.0, 1.0] * n_points))
-        #glPopMatrix()
-
-    def update(self):
-        super(PartDrydockView, self).update()
-        self.bbox_v2f = ('v2f', list(chain(*[(l.x1, l.y1, l.x2, l.y2) for l in self._model.bounding_box.lines])))
 
     def set_effect_value(self, effect_value):
         super(ShipPartDrydockView, self).set_effect_value(effect_value)

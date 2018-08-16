@@ -9,6 +9,14 @@ class ConnectionView(BaseView):
     def __init__(self, model: PartConnectionModel, mesh=None):
         super().__init__(model, mesh=mesh)
 
+    def draw(self):
+        if self.is_alive:
+            super(ConnectionView, self).draw()
+
+    def draw_transparent(self):
+        if self.is_alive:
+            super(ConnectionView, self).draw_transparent()
+
     def _draw_local(self):
         super(ConnectionView, self)._draw_local()
         self._draw_bbox(self.model.bounding_box, color=(40, 70, 200, 255))

@@ -7,8 +7,14 @@ from .base_model import PositionalModel
 from .ship_part import ShipPartModel
 
 
+class PartConnectionError(AttributeError):
+    pass
+
+
 class PartConnectionModel(PositionalModel):
-    
+
+    mass = 0
+
     def __init__(self, *ship_parts, validate_connection_function: Callable, max_distance=1.7):
         self._ship_parts: List[ShipPartModel] = list(ship_parts)
         if self._ship_parts[0].uuid > self._ship_parts[-1].uuid:
@@ -21,6 +27,8 @@ class PartConnectionModel(PositionalModel):
         self.uuid = self.generate_uuid()
         for part in self._ship_parts:
             part.observe(self.update_polygon)
+            part.observe(lambda: self._callback("alive"), "alive")
+            part.observe(lambda: self._callback("alive"), "explode")
 
     def _pairwise(self):
         return zip(self._ship_parts[:-1], self._ship_parts[1:])
@@ -40,13 +48,18 @@ class PartConnectionModel(PositionalModel):
         else:
             try:
                 self._polygon = self.build_polygon()
-            except AttributeError as e:
+            except PartConnectionError as e:
                 self.disconnect_all()
         self._callback()
 
     @property
     def is_alive(self):
-        return self.is_valid and sum(1 for p in self._ship_parts if p.is_alive) > 1
+        #  TODO: Scenario middle node of three is dead, the connection is not alive
+        return self.is_valid and self._n_parts_alive > 1
+
+    @property
+    def _n_parts_alive(self):
+        return sum(1 for p in self._ship_parts if p.is_alive and not p.is_exploding)
 
     @property
     def is_valid(self):
@@ -57,13 +70,16 @@ class PartConnectionModel(PositionalModel):
         return self._polygon
 
     def build_polygon(self):
+        if self._n_parts_alive <= 1:
+            self._callback("broken")
+            raise PartConnectionError("Not enough parts")
         lines = []
         for part, next_part in self._pairwise():
             lines.append(Line([(part.position.x, part.position.z), (next_part.position.x, next_part.position.z)]))
         polygon = Polygon(lines)
         if self.validate_connection_function(polygon):
             return polygon
-        raise AttributeError(f"can't connect {self._ship_parts}")
+        raise PartConnectionError(f"can't connect {self._ship_parts}")
 
     def validate_connection_function(self, polygon: Polygon):
         return False
@@ -83,13 +99,13 @@ class PartConnectionModel(PositionalModel):
         for part in self._ship_parts:
             self._disconnect(part)
         self.uuid = self.generate_uuid()
-        if len(self._ship_parts) <= 1:
+        if self._n_parts_alive <= 1:
             self._callback("broken")
 
     def disconnect(self, part):
         self._disconnect(part)
         self.uuid = self.generate_uuid()
-        if len(self._ship_parts) <= 1:
+        if self._n_parts_alive <= 1:
             self._callback("broken")
 
     def _disconnect(self, part: ShipPartModel):
@@ -105,6 +121,8 @@ class PartConnectionModel(PositionalModel):
 class ShieldConnectionModel(PartConnectionModel):
 
     base_arc = [(sin(radians(d)), cos(radians(d))) for d in range(0, 181, 36)]
+
+    mass = 0
 
     def build_polygon(self):
         arc: Polygon = None
@@ -128,4 +146,4 @@ class ShieldConnectionModel(PartConnectionModel):
                 arc.freeze()
                 if self.validate_connection_function(arc):
                     return arc
-        raise AttributeError(f'{part1} and {part2} have no valid arc')
+        raise PartConnectionError(f'{part1} and {part2} have no valid arc')

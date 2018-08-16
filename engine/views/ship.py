@@ -14,10 +14,14 @@ class ShipView(BaseView):
         self._draw = self._draw_sub_views
         self._draw_transparent = self._draw_transparent_sub_views
         self._sub_views = set()
+        self._sub_view_indexed = {}
         self._model = model
         self.fuel_gage_v3f: list = None
         self.rebuild_callback()
         model.observe(self.rebuild_callback, "rebuild")
+
+    def get_sub_view(self, uuid):
+        return self._sub_view_indexed[uuid]
 
     def rebuild_callback(self):
         coords = []
@@ -38,7 +42,7 @@ class ShipView(BaseView):
         super().align_camera()
 
     def _draw_local(self):
-        self._draw_fuel_gauge()
+        super(ShipView, self)._draw_local()
 
     def _draw_fuel_gauge(self):
         n_filled_boxes = int(ceil(self._model.fuel_percentage * 10))
@@ -60,6 +64,7 @@ class ShipView(BaseView):
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
         sub_view.model.observe(lambda: self.remove_sub_view(sub_view), "alive")
+        self._sub_view_indexed[sub_view.model.uuid] = sub_view
 
     def remove_sub_view(self, sub_view):
         try:

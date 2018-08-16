@@ -40,7 +40,7 @@ class PositionalModel(object):
 
     def _callback(self, action=None):
         self._prune_removed_observers(action)
-        for observer in self._action_observers[action]:
+        for observer in self._action_observers[action].copy():
             observer()
 
     def unobserve(self, func: Callable, action=None):
@@ -49,7 +49,6 @@ class PositionalModel(object):
     def _prune_removed_observers(self, action):
         self._action_observers[action] -= self._remove_observers[action]
         self._remove_observers[action].clear()
-
 
     @property
     def is_exploding(self):
@@ -69,6 +68,10 @@ class PositionalModel(object):
     @property
     def position(self):
         return self.x, self.y, self.z
+
+    @property
+    def rotation(self):
+        return self.pitch, self.yaw, self.roll
 
     @property
     def x(self):

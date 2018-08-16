@@ -279,8 +279,8 @@ class Polygon(BasePolygon):
     def intersected_polygons(self, other: "Polygon"):
         intersections = set()
 
-        if len(other) == 0 or not self.intersects(other) and not other.point_inside(*self.centroid()):
-            return set(), intersections
+        #if len(other) == 0 or not self.intersects(other) and not other.point_inside(*self.centroid()):
+        #    return set(), intersections
 
         for p in other:
             if self.intersects(p):
