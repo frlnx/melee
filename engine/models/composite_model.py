@@ -18,16 +18,16 @@ class CompositeModel(BaseModel):
         self._position = position
         self._rotation = rotation
         self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
-        self.rebuild_connections()
         super().__init__(position, rotation, movement, spin, acceleration, torque, self.bounding_box)
+        self.rebuild_connections()
         self._calculate_mass()
         self._calculate_inertia()
         self._own_spawns = []
         for part in parts:
             part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
             part.observe(self.prune_dead_parts_from_bounding_box, "explode")
-            part.observe(self.rebuild)
-            part.observe(lambda: self.rebuild_connections_for(part))
+            part.observe(self.rebuild, "move")
+            part.observe(lambda: self.rebuild_connections_for(part), "move")
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -79,14 +79,14 @@ class CompositeModel(BaseModel):
         self._part_by_uuid[part.uuid] = part
         part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
         part.observe(self.prune_dead_parts_from_bounding_box, "explode")
-        part.observe(self.rebuild)
-        part.observe(lambda: self.rebuild_connections_for(part))
+        part.observe(self.rebuild, "move")
+        part.observe(lambda: self.rebuild_connections_for(part), "move")
 
     def remove_part(self, part_model):
         if part_model.uuid in self._part_by_uuid:
             del self._part_by_uuid[part_model.uuid]
             part_model.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
-            part_model.unobserve(self.rebuild)
+            part_model.unobserve(self.rebuild, "move")
         self.prune_dead_parts_from_bounding_box()
         if not self.parts:
             self.set_alive(False)
@@ -168,12 +168,17 @@ class CompositeModel(BaseModel):
                 connection.disconnect_all()
 
     def _add_connection(self, connection: PartConnectionModel):
-        self._connections.add(connection)
+        if connection not in self._connections:
+            self._connections.add(connection)
+            connection.observe(lambda: self._remove_connection(connection), "broken")
+            connection.observe(lambda: self._remove_connection(connection), "alive")
+            self._callback("connection", added=connection)
 
     def _remove_connection(self, connection: PartConnectionModel):
         try:
             self._connections.remove(connection)
             connection.remove_all_observers()
+            self._callback("disconnect", removed=connection)
         except KeyError:
             pass
 

@@ -31,7 +31,7 @@ class BaseView(object):
         self._ambience = self.to_cfloat_array(0.1, 0.1, 0.1, 0.1)
         self._base_ambience = (0.1, 0.1, 0.1, 0.1)
         self._model_view_matrix = self._to_cfloat_sixteen_array()
-        self._model.observe(self.update)
+        self._model.observe(self.update, "move")
         self._model.observe(self.explode, "explode")
         self._model.observe(self.alive_callback, "alive")
         self.update()
@@ -91,9 +91,9 @@ class BaseView(object):
         self.update()
 
     def set_model(self, model: PositionalModel):
-        self._model.unobserve(self.update)
+        self._model.unobserve(self.update, "move")
         self._model = model
-        self._model.observe(self.update)
+        self._model.observe(self.update, "move")
         self.update()
 
     def set_mesh(self, mesh):

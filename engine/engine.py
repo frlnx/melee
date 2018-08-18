@@ -138,7 +138,7 @@ class Engine(object):
 
     def spawn(self, model: BaseModel):
         self.models[model.uuid] = model
-        model.observe(lambda: self._add_to_collision_checks(model))
+        model.observe(lambda: self._add_to_collision_checks(model), "move")
         bbox = model.bounding_box
         bbox.observe(lambda: self._spacial_index.reindex_spacial_position(model), "quadrants")
         self._spacial_index.init_model_into_2d_space_index(model)

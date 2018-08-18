@@ -180,12 +180,25 @@ class DockableItem(DrydockItem):
 
     def set_xy(self, x, y):
         o_x, o_y = self.x, self.y
-        for new_x, new_y in [(x, y), (x, o_y), (o_x, y)]:
+        if o_x > x:
+            o_x1 = o_x - 1
+        else:
+            o_x1 = o_x + 1
+
+        if o_y > y:
+            o_y1 = o_y - 1
+        else:
+            o_y1 = o_y + 1
+        for new_x, new_y in [(x, y), (x, o_y1), (o_x1, y), (x, o_y), (o_x, y)]:
             self.model.teleport_to(new_x, 0, new_y)
-            if self.legal_move_func(self):
+            if self.is_legal_position:
                 self.update()
                 return
         self.model.teleport_to(o_x, 0, o_y)
+
+    @property
+    def is_legal_position(self):
+        return self.legal_move_func(self)
 
     def set_yaw(self, yaw):
         o_yaw = self.yaw
@@ -491,11 +504,15 @@ class Drydock(ShipConfiguration):
         if item:
             item.drop()
 
+    def add_view_for(self, model):
+        self.ship_view.add_sub_view(self.view_factory.manufacture(model))
+
     def add_item(self, item: DockableItem):
         item.legal_move_func = self._legal_placement
         item._view.set_mesh_scale(1.0)
         self.items.add(item)
         self.ship.add_part(item.model)
+        self.add_view_for(item.model)
 
     def remove_item(self, item: DockableItem):
         self.items.remove(item)
@@ -521,6 +538,11 @@ class PartStore(ShipPartDisplay):
         self.y_offset = y = 0
         self.scale = 100
         super().__init__(self._build_new_items(), left, right, bottom, top, x, y)
+        self.views = [item._view for item in self.items]
+
+    def _draw(self):
+        for item in self.views:
+            item.draw()
 
     def _build_new_items(self):
         new_items = set()

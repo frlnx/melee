@@ -26,7 +26,7 @@ class PartConnectionModel(PositionalModel):
         self._polygon: Polygon = self.build_polygon()
         self.uuid = self.generate_uuid()
         for part in self._ship_parts:
-            part.observe(self.update_polygon)
+            part.observe(self.update_polygon, "move")
             part.observe(lambda: self._callback("alive"), "alive")
             part.observe(lambda: self._callback("alive"), "explode")
 
@@ -50,7 +50,7 @@ class PartConnectionModel(PositionalModel):
                 self._polygon = self.build_polygon()
             except PartConnectionError as e:
                 self.disconnect_all()
-        self._callback()
+        self._callback("move")
 
     @property
     def is_alive(self):
@@ -98,24 +98,23 @@ class PartConnectionModel(PositionalModel):
     def disconnect_all(self):
         for part in self._ship_parts:
             self._disconnect(part)
-        self.uuid = self.generate_uuid()
         if self._n_parts_alive <= 1:
             self._callback("broken")
 
     def disconnect(self, part):
         self._disconnect(part)
-        self.uuid = self.generate_uuid()
         if self._n_parts_alive <= 1:
             self._callback("broken")
+        self.uuid = self.generate_uuid()
 
     def _disconnect(self, part: ShipPartModel):
         self._ship_parts.remove(part)
-        part.unobserve(self.update_polygon)
+        part.unobserve(self.update_polygon, "move")
         for other_part in self._ship_parts:
             part.disconnect(other_part)
 
     def __repr__(self):
-        return str(self._ship_parts)
+        return "PartConnection: " + " -> ".join([part.name for part in self._ship_parts])
 
 
 class ShieldConnectionModel(PartConnectionModel):

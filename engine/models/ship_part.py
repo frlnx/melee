@@ -118,7 +118,7 @@ class ShipPartModel(BaseModel):
         if other_part in self.connected_parts:
             return
         self._connected_parts.add(other_part)
-        self._callback("connect")
+        self._callback("connection")
         if other_part.name in self.needs_connection_to:
             other_part.observe(self.update_working_status, "working")
             other_part.observe(self.update_working_status, "explode")

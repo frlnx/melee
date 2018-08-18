@@ -15,13 +15,19 @@ class ShipView(BaseView):
         self._draw_transparent = self._draw_transparent_sub_views
         self._sub_views = set()
         self._sub_view_indexed = {}
-        self._model = model
+        self._model: ShipModel = model
         self.fuel_gage_v3f: list = None
         self.rebuild_callback()
         model.observe(self.rebuild_callback, "rebuild")
 
+    def rebuild_subviews(self):
+        pass
+
     def get_sub_view(self, uuid):
         return self._sub_view_indexed[uuid]
+
+    def has_sub_view_for(self, uuid):
+        return uuid in self._sub_view_indexed
 
     def rebuild_callback(self):
         coords = []
@@ -29,6 +35,7 @@ class ShipView(BaseView):
         for i in range(10):
             coords += [(x + (i - 5) * 0.3, y, z) for x, y, z in _box_coords]
         self.fuel_gage_v3f = list(chain(*coords))
+        self.rebuild_subviews()
 
     def align_camera(self):
         tx, ty, tz = self._model.target.position
@@ -71,6 +78,10 @@ class ShipView(BaseView):
             self._sub_views.remove(sub_view)
         except KeyError:
             pass
+
+    def remove_sub_view_for_model(self, sub_view_model: "ShipPartModel"):
+        sub_view = self._sub_view_indexed[sub_view_model.uuid]
+        self._sub_views.remove(sub_view)
 
     def _draw_sub_views(self):
         for subview in self._sub_views:

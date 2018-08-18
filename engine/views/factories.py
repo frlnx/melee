@@ -150,17 +150,33 @@ class DynamicViewFactory(ViewFactory):
         view = view_class(model, mesh=mesh)
         if hasattr(model, 'parts') and isinstance(model, CompositeModel):
             self.rebuild_subviews(view, model, view_class=sub_view_class)
+            view.rebuild_subviews = partial(self.rebuild_subviews, view, model, view_class=sub_view_class)
+            model.observe(lambda added: self._connect_callback(view, added), "connection")
+            model.observe(lambda removed: self._disconnect_callback(view, removed), "disconnect")
         return view
 
+    def _connect_callback(self, ship_view: ShipView, added: BaseModel):
+        view = self.manufacture(added, view_class=ConnectionView)
+        ship_view.add_sub_view(view)
+
+    def _disconnect_callback(self, ship_view: ShipView, removed: BaseModel):
+        ship_view.remove_sub_view_for_model(removed)
+
     def rebuild_subviews(self, ship_view: ShipView, model: CompositeModel, view_class):
-        ship_view.clear_sub_views()
         for part in model.parts:
-            if part.is_alive:
+            if part.is_alive and not ship_view.has_sub_view_for(part.uuid):
                 sub_view = self.manufacture(part, view_class=view_class)
                 ship_view.add_sub_view(sub_view)
                 part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")
+            elif not part.is_alive and ship_view.has_sub_view_for(part.uuid):
+                sub_view = ship_view.get_sub_view(part.uuid)
+                ship_view.remove_sub_view(sub_view)
+
         for part in model._connections:
-            if part.is_alive:
+            if part.is_alive and not ship_view.has_sub_view_for(part.uuid):
                 sub_view = self.manufacture(part, view_class=ConnectionView)
                 ship_view.add_sub_view(sub_view)
                 part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")
+            elif not part.is_alive and ship_view.has_sub_view_for(part.uuid):
+                sub_view = ship_view.get_sub_view(part.uuid)
+                ship_view.remove_sub_view(sub_view)

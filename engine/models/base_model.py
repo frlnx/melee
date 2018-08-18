@@ -32,18 +32,18 @@ class PositionalModel(object):
     def name(self):
         return self._name
 
-    def observe(self, func: Callable, action=None):
+    def observe(self, func: Callable, action):
         self._action_observers[action].add(func)
 
-    def _observe_original(self, func: Callable, action=None):
+    def _observe_original(self, func: Callable, action):
         self._action_observers[action].add(func)
 
-    def _callback(self, action=None):
+    def _callback(self, action, **kwargs):
         self._prune_removed_observers(action)
         for observer in self._action_observers[action].copy():
-            observer()
+            observer(**kwargs)
 
-    def unobserve(self, func: Callable, action=None):
+    def unobserve(self, func: Callable, action):
         self._remove_observers[action].add(func)
 
     def _prune_removed_observers(self, action):
@@ -291,7 +291,7 @@ class BaseModel(PositionalModel):
         return self.bounding_box.intersection_point(other_model.bounding_box)
 
     def update(self):
-        self._callback()
+        self._callback("move")
         self.bounding_box_update_needed = True
 
     @property
