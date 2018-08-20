@@ -93,8 +93,12 @@ class ShipPartModel(BaseModel):
 
     @property
     def needs_fulfilled(self):
-        names_of_connected_parts = set([part.name for part in self.connected_parts if part.working])
-        return len(self.needs_connection_to & names_of_connected_parts) == len(self.needs_connection_to)
+        return self.missing_connections == set()
+
+    @property
+    def missing_connections(self):
+        names_of_connected_parts = set(part.name for part in self.connected_parts if part.working)
+        return (self.needs_connection_to & names_of_connected_parts) - self.needs_connection_to
 
     def can_connect_to(self, other_part: "ShipPartModel"):
         return self._can_connect_to(other_part) and other_part._can_connect_to(self)

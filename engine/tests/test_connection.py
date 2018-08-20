@@ -1,7 +1,10 @@
 from unittest.mock import MagicMock
 
+from pytest import raises
+
 from engine.models import ShipModel
-from engine.models.factories import ShipPartModelFactory
+from engine.models.factories import ShipPartModelFactory, ShipModelFactory
+from engine.models.part_connection import PartConnectionError
 from engine.physics.force import MutableDegrees, MutableOffsets
 from engine.tests.fake_view_factory import FakeFactory
 from engine.views.menus.drydock import Drydock, DockableItem
@@ -122,3 +125,160 @@ class TestDrydockReconnection(object):
         assert self.ship_rebuild_callback.called
         assert 1 == len(self.ship._connections)
         assert {self.cockpit} == self.target.connected_parts
+
+
+class TestShieldConnection(object):
+
+    def setup(self):
+        spmf = ShipPartModelFactory()
+        null_offset = MutableOffsets(0, 0, 0)
+        null_rotation = MutableDegrees(0, 0, 0)
+        self.target = spmf.manufacture("shield", position=(10, 0, 0))
+        self.other = spmf.manufacture("shield")
+        parts = {self.other, self.target}
+        self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+
+    def test_inital_state_is_unconnected(self):
+        assert set() == self.ship._connections
+        assert set() == self.target.connected_parts
+
+    def test_moving_part_closer_connects_it(self):
+        self.target.teleport_to(3, 0, 0)
+        assert 1 == len(self.ship._connections)
+        assert {self.other} == self.target.connected_parts
+
+    def test_disconnecting(self):
+        self.target.teleport_to(3, 0, 0)
+        self.target.teleport_to(10, 0, 0)
+        assert set() == self.ship._connections
+        assert set() == self.target.connected_parts
+
+    def test_reconnecting(self):
+        self.target.teleport_to(3, 0, 0)
+        self.target.teleport_to(10, 0, 0)
+        self.target.teleport_to(3, 0, 0)
+        assert 1 == len(self.ship._connections)
+        assert {self.other} == self.target.connected_parts
+
+
+class TestPartConnectionManualDisconnection(object):
+
+    def setup(self):
+        spmf = ShipPartModelFactory()
+        null_offset = MutableOffsets(0, 0, 0)
+        null_rotation = MutableDegrees(0, 0, 0)
+        self.generator = spmf.manufacture("generator", position=(1.5, 0, 0))
+        self.cockpit = spmf.manufacture("cockpit")
+        parts = {self.cockpit, self.generator}
+        self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+        self.target = list(self.ship._connections)[0]
+
+    def test_disconnect_all(self):
+        assert {self.cockpit} == self.generator.connected_parts
+        assert {self.generator} == self.cockpit.connected_parts
+        self.target.disconnect_all()
+        assert set() == self.generator.connected_parts
+        assert set() == self.cockpit.connected_parts
+
+
+class TestShieldConnectionInvalidArc(object):
+
+    def setup(self):
+        spmf = ShipPartModelFactory()
+        null_offset = MutableOffsets(0, 0, 0)
+        null_rotation = MutableDegrees(0, 0, 0)
+        self.shield1 = spmf.manufacture("shield", position=(2, 0, 0))
+        self.obstacles = {spmf.manufacture("generator", position=(0, 0, y)) for y in range(-4, 4)}
+        self.shield2 = spmf.manufacture("shield", position=(-2, 0, 0))
+        parts = self.obstacles | {self.shield1, self.shield2}
+        self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+
+    def test_no_valid_arc(self):
+        with raises(PartConnectionError):
+            self.ship._make_connection(self.shield1, self.shield2)
+
+    def test_shields_have_no_connection(self):
+        assert self.shield2 not in self.shield1.connected_parts
+        assert self.shield1 not in self.shield2.connected_parts
+
+    def test_connection_does_not_exist(self):
+        connections = [c for c in self.ship._connections if set(c._ship_parts) == {self.shield1, self.shield2}]
+        assert not connections
+
+
+class TestShieldConnectionValidArc(object):
+
+    def setup(self):
+        spmf = ShipPartModelFactory()
+        null_offset = MutableOffsets(0, 0, 0)
+        null_rotation = MutableDegrees(0, 0, 0)
+        self.shield1 = spmf.manufacture("shield", position=(2.5, 0, 0))
+        self.obstacles = {spmf.manufacture("generator", position=(0, 0, 0))}
+        self.shield2 = spmf.manufacture("shield", position=(-2.5, 0, 0))
+        parts = self.obstacles | {self.shield1, self.shield2}
+        self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+        self.target = [c for c in self.ship._connections if set(c._ship_parts) == {self.shield1, self.shield2}][0]
+
+    def test_making_connection_does_not_result_in_part_connection_error(self):
+        self.ship._make_connection(self.shield1, self.shield2)
+        assert True
+
+    def test_connections_between_shields_are_present(self):
+        assert self.shield2 in self.shield1.connected_parts
+        assert self.shield1 in self.shield2.connected_parts
+
+    def test_connection_is_not_a_straight_line(self):
+        assert [0] * len(self.target.bounding_box.lines) != [l.y1 for l in self.target.bounding_box.lines]
+
+
+class TestDefaultShip(object):
+
+    def setup(self):
+        self.ship = ShipModelFactory().manufacture("ship")
+        self.targets = self.ship._connections
+
+    def test_ship_has_connections(self):
+        assert self.targets
+
+    def test_connections_are_valid(self):
+        for connection in self.targets:
+            assert connection.is_valid
+
+    def test_connections_valid_after_movement(self):
+        a_part = list(self.ship.parts)[0]
+        a_part.set_position(*[d + 0.001 for d in a_part.position])
+        for connection in self.targets:
+            assert connection.is_valid
+
+
+class TestDrydockShieldReconnectivity(object):
+
+    def setup(self):
+        self.ship = ShipModelFactory().manufacture("ship")
+        self.drydock = Drydock(0, 1000, 0, 1000, self.ship, view_factory=FakeFactory())
+        self.ship = self.drydock.ship
+        self.target_item: DockableItem = [item for item in self.drydock.items if item.model.name == "shield"][0]
+        self.target_item.held = True
+        self.target_item._highlight = True
+        self.target = self.target_item.model
+        self.ship_rebuild_callback = MagicMock()
+        self.ship.observe(self.ship_rebuild_callback, "rebuild")
+        self.target_callback = MagicMock()
+        self.target.observe(self.target_callback, "move")
+        self.connections = list(self.ship._connections)
+
+    def test_ship_has_connections(self):
+        assert self.connections
+
+    def test_connections_are_valid(self):
+        for connection in self.connections:
+            assert connection.is_valid
+
+    def test_connections_valid_after_movement(self):
+        self.target_item.drag(self.target_item.x + 0.01, self.target_item.y)
+        for connection in self.connections:
+            assert connection.is_valid

@@ -81,12 +81,14 @@ class CompositeModel(BaseModel):
         part.observe(self.prune_dead_parts_from_bounding_box, "explode")
         part.observe(self.rebuild, "move")
         part.observe(lambda: self.rebuild_connections_for(part), "move")
+        self._callback("add_part", added=part)
 
     def remove_part(self, part_model):
         if part_model.uuid in self._part_by_uuid:
             del self._part_by_uuid[part_model.uuid]
             part_model.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
             part_model.unobserve(self.rebuild, "move")
+            self._callback("remove_part", removed=part)
         self.prune_dead_parts_from_bounding_box()
         if not self.parts:
             self.set_alive(False)
@@ -139,13 +141,13 @@ class CompositeModel(BaseModel):
         self._connections.clear()
         for part1, part2 in combinations(self.parts, 2):
             self._try_to_connect(part1, part2)
-        print(f'made {len(self._connections)} connections')
         for part in self.parts:
             part.update_working_status()
 
     def rebuild_connections_for(self, model: ShipPartModel):
         for part in self.parts:
-            self._try_to_connect(model, part)
+            if part not in model.connected_parts:
+                self._try_to_connect(model, part)
 
     def _try_to_connect(self, part1, part2):
         if part1 == part2:
@@ -155,11 +157,13 @@ class CompositeModel(BaseModel):
         try:
             connection = self._make_connection(part1, part2)
         except PartConnectionError as e:
-            print(e)
             return False
         else:
-            self._add_connection(connection)
-            return True
+            if connection not in self._connections:
+                self._add_connection(connection)
+                return True
+            else:
+                return False
 
     def disconnect_invalid_connections(self):
         for connection in self._connections.copy():
@@ -168,11 +172,10 @@ class CompositeModel(BaseModel):
                 connection.disconnect_all()
 
     def _add_connection(self, connection: PartConnectionModel):
-        if connection not in self._connections:
-            self._connections.add(connection)
-            connection.observe(lambda: self._remove_connection(connection), "broken")
-            connection.observe(lambda: self._remove_connection(connection), "alive")
-            self._callback("connection", added=connection)
+        self._connections.add(connection)
+        connection.observe(lambda: self._remove_connection(connection), "broken")
+        connection.observe(lambda: self._remove_connection(connection), "alive")
+        self._callback("connection", added=connection)
 
     def _remove_connection(self, connection: PartConnectionModel):
         try:
@@ -193,6 +196,7 @@ class CompositeModel(BaseModel):
         if connection.is_valid:
             connection.observe(lambda: self._remove_connection(connection), "broken")
         else:
+            connection.disconnect_all()
             raise PartConnectionError("Too far")
         return connection
 
@@ -201,8 +205,12 @@ class CompositeModel(BaseModel):
             return False
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
-        intersected_uuids = {bbox.part_id for bbox in intersected_bboxes if bbox != polygon}
-        return len(intersected_uuids - ignored_uuids) == 0
+        intersected_uuids = {bbox.part_id for bbox in intersected_bboxes
+                             if bbox != polygon and bbox.part_id in self._part_by_uuid}
+        intersected_uuids -= ignored_uuids
+        #print(intersected_uuids)
+        #print([self._part_by_uuid[uuid] for uuid in intersected_uuids])
+        return len(intersected_uuids) == 0
 
     @property
     def parts_of_bbox(self):

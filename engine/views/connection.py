@@ -19,4 +19,4 @@ class ConnectionView(BaseView):
 
     def _draw_local(self):
         super(ConnectionView, self)._draw_local()
-        self._draw_bbox(self.model.bounding_box, color=(40, 70, 200, 255))
+        self._draw_bbox(self.model.bounding_box, color=(255, 255, 255, 255))

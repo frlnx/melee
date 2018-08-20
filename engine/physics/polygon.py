@@ -238,19 +238,8 @@ class Polygon(BasePolygon):
         return True
 
     def intersects(self, other):
-        if not self.movement_box_intersects(other):
-            return False
-        try:
-            for l1, l2 in product(self.moving_lines, other.moving_lines):
-                intersects, x, y = l1.intersection_point(l2)
-                if intersects:
-                    return True
-        except AttributeError:
-            for l1 in self.moving_lines:
-                intersects, x, y = l1.intersection_point(other)
-                if intersects:
-                    return True
-        return False
+        intersects, _, _ = self.intersection_point(other)
+        return intersects
 
     def intersection_point(self, other):
         if not self.movement_box_intersects(other):
@@ -270,22 +259,18 @@ class Polygon(BasePolygon):
     def point_inside(self, x, y):
         outside_point = (self.moving_polygon.left - 1, self.moving_polygon.bottom - 1)
         break_line = Line([(x, y), outside_point])
-        n_broken_lines = sum(int(l.intersection_point(break_line)[0]) for l in self.moving_polygon.lines)
+        n_broken_lines = sum(1 for l in self.moving_polygon.lines if l.intersection_point(break_line)[0])
         return n_broken_lines % 2 == 1
 
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines], self.x, self.y, self.rotation)
 
     def intersected_polygons(self, other: "Polygon"):
-        intersections = set()
 
         #if len(other) == 0 or not self.intersects(other) and not other.point_inside(*self.centroid()):
-        #    return set(), intersections
+        #    return set(), set()
 
-        for p in other:
-            if self.intersects(p):
-                intersections.add(p)
-        return set(), intersections
+        return set(), {p for p in other if self.intersects(p)}
 
     def __iter__(self) -> Iterator["Polygon"]:
         return [self].__iter__()

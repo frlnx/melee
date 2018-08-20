@@ -79,8 +79,8 @@ class ShipView(BaseView):
         except KeyError:
             pass
 
-    def remove_sub_view_for_model(self, sub_view_model: "ShipPartModel"):
-        sub_view = self._sub_view_indexed[sub_view_model.uuid]
+    def remove_sub_view_for_model(self, removed: "ShipPartModel"):
+        sub_view = self._sub_view_indexed[removed.uuid]
         self._sub_views.remove(sub_view)
 
     def _draw_sub_views(self):

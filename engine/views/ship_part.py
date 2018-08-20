@@ -25,6 +25,9 @@ class ShipPartView(BaseView):
             self._mesh.update_material(self._model.material_affected, self._model.material_mode,
                                        self._model.material_channels, effect_value)
 
+    def __repr__(self):
+        return f"{self.__class__.__name__} for {self.model.name}"
+
 
 class PartDrydockView(ShipPartView):
 
@@ -104,6 +107,14 @@ class ShipPartDrydockView(PartDrydockView):
         self.bbox_c4f = ('c4f', [1., 1., 1., 1.] * self.bbox_n_points)
         self._show_circle = False
 
+        self.font_size = 60
+        half_font_size = int(self.font_size / 2)
+        self.infobox = Label("", font_name='Courier New', font_size=self.font_size, y=-half_font_size)
+        self.model.observe(self.update_infobox, "working")
+
+    def update_infobox(self):
+        self.infobox.text = "".join(name[0] for name in self.model.missing_connections)
+
     def highlight_circle(self):
         self.circle_c4B = self.circle_c4B_highlight
         self._show_circle = True
@@ -120,6 +131,12 @@ class ShipPartDrydockView(PartDrydockView):
         if self._show_circle:
             glRotatef(90, 1, 0, 0)
             draw(self.circle_n_points, GL_LINES, self.circle_v2f, self.circle_c4B)
+        glPushMatrix()
+        glRotatef(-self.yaw, 0, 1, 0)
+        glRotatef(-90, 1, 0, 0)
+        glScalef(0.025, 0.025, 0.025)
+        self.infobox.draw()
+        glPopMatrix()
 
     def set_effect_value(self, effect_value):
         super(ShipPartDrydockView, self).set_effect_value(effect_value)

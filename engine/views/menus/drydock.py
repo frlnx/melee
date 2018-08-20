@@ -298,6 +298,9 @@ class ShipPartDisplay(ShipBuildMenuComponent):
         return self._highlighted_item
 
     def set_highlighted_item(self, item):
+        if self.highlighted_item == item:
+            return
+        print(item._view)
         if self.highlighted_item:
             self._highlighted_item.set_highlight(False, False)
         self._highlighted_item = item
@@ -378,6 +381,7 @@ class ShipConfiguration(ShipPartDisplay):
     def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
         self.view_factory = view_factory
+        print(self.default_part_view_class)
         self.ship_view: ShipView = view_factory.manufacture(ship, sub_view_class=self.default_part_view_class)
         items = set()
         for part_model in ship.parts:
@@ -512,7 +516,8 @@ class Drydock(ShipConfiguration):
         item._view.set_mesh_scale(1.0)
         self.items.add(item)
         self.ship.add_part(item.model)
-        self.add_view_for(item.model)
+        #self.add_view_for(item.model)
+        self.ship_view.add_sub_view(item._view)
 
     def remove_item(self, item: DockableItem):
         self.items.remove(item)
