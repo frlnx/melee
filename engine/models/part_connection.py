@@ -3,7 +3,7 @@ from typing import List, Callable
 
 from engine.physics.line import Line
 from engine.physics.polygon import Polygon
-from .base_model import PositionalModel
+from .base_model import PositionalModel, RemoveCallbackException
 from .ship_part import ShipPartModel
 
 
@@ -27,8 +27,8 @@ class PartConnectionModel(PositionalModel):
         self._connect()
         for part in self._ship_parts:
             part.observe(self.update_polygon, "move")
-            part.observe(lambda: self._callback("alive"), "alive")
-            part.observe(lambda: self._callback("alive"), "explode")
+            #part.observe(lambda: self._callback("alive"), "alive")
+            #part.observe(lambda: self._callback("alive"), "explode")
 
     def _pairwise(self):
         return zip(self._ship_parts[:-1], self._ship_parts[1:])
@@ -45,12 +45,15 @@ class PartConnectionModel(PositionalModel):
     def update_polygon(self):
         if self.distance > self._max_distance:
             self.disconnect_all()
+            raise RemoveCallbackException()
         else:
             try:
                 self._polygon = self.build_polygon()
-            except PartConnectionError as e:
+            except PartConnectionError:
                 self.disconnect_all()
-        self._callback("move")
+                raise RemoveCallbackException()
+            finally:
+                self._callback("move")
 
     @property
     def is_alive(self):

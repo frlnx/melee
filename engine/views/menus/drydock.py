@@ -381,7 +381,6 @@ class ShipConfiguration(ShipPartDisplay):
     def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
         self.ship = ship
         self.view_factory = view_factory
-        print(self.default_part_view_class)
         self.ship_view: ShipView = view_factory.manufacture(ship, sub_view_class=self.default_part_view_class)
         items = set()
         for part_model in ship.parts:
@@ -423,6 +422,16 @@ class ControlConfiguration(ShipConfiguration):
     default_part_view_class = ShipPartConfigurationView
     default_item_class = ConfigurableItem
     _highlighted_item: ConfigurableItem
+
+    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
+        self.original_model = ship
+        ship = ship.copy()
+        ship.set_position_and_rotation(0, 0, 0, 0, 0, 0)
+        super().__init__(left, right, bottom, top, ship, view_factory)
+
+    def save_all(self):
+        super(ControlConfiguration, self).save_all()
+        self.original_model.set_parts({item.model for item in self.items})
 
     def set_mode(self, mode):
         for item in self.items:
@@ -516,7 +525,6 @@ class Drydock(ShipConfiguration):
         item._view.set_mesh_scale(1.0)
         self.items.add(item)
         self.ship.add_part(item.model)
-        #self.add_view_for(item.model)
         self.ship_view.add_sub_view(item._view)
 
     def remove_item(self, item: DockableItem):

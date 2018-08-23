@@ -20,9 +20,6 @@ class ShipView(BaseView):
         self.rebuild_callback()
         model.observe(self.rebuild_callback, "rebuild")
 
-    def rebuild_subviews(self):
-        pass
-
     def get_sub_view(self, uuid):
         return self._sub_view_indexed[uuid]
 
@@ -35,7 +32,6 @@ class ShipView(BaseView):
         for i in range(10):
             coords += [(x + (i - 5) * 0.3, y, z) for x, y, z in _box_coords]
         self.fuel_gage_v3f = list(chain(*coords))
-        self.rebuild_subviews()
 
     def align_camera(self):
         tx, ty, tz = self._model.target.position
@@ -70,7 +66,7 @@ class ShipView(BaseView):
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
-        sub_view.model.observe(lambda: self.remove_sub_view(sub_view), "alive")
+        sub_view.model.observe_with_self(self.remove_sub_view_for_model, "alive")
         self._sub_view_indexed[sub_view.model.uuid] = sub_view
 
     def remove_sub_view(self, sub_view):
@@ -81,7 +77,7 @@ class ShipView(BaseView):
 
     def remove_sub_view_for_model(self, removed: "ShipPartModel"):
         sub_view = self._sub_view_indexed[removed.uuid]
-        self._sub_views.remove(sub_view)
+        self.remove_sub_view(sub_view)
 
     def _draw_sub_views(self):
         for subview in self._sub_views:

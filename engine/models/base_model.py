@@ -1,10 +1,15 @@
 from collections import defaultdict
+from functools import partial
 from math import cos, sin, radians
 from typing import Callable
 from uuid import uuid4
 
 from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
 from engine.physics.polygon import MultiPolygon
+
+
+class RemoveCallbackException(Exception):
+    pass
 
 
 class PositionalModel(object):
@@ -17,8 +22,13 @@ class PositionalModel(object):
         self._name = name
         self._action_observers = defaultdict(set)
         self._remove_observers = defaultdict(set)
+        self._self_observers = {}
         self._material_observers = set()
         self.material_value = 0.0
+
+    def self_observer(self, func):
+        self._self_observers[func] = self._self_observers.get(func, partial(func, self))
+        return self._self_observers[func]
 
     @property
     def is_alive(self):
@@ -35,16 +45,27 @@ class PositionalModel(object):
     def observe(self, func: Callable, action):
         self._action_observers[action].add(func)
 
+    def observe_with_self(self, func: Callable, action):
+        self._self_observers[func] = self._self_observers.get(func, partial(func, self))
+        self._action_observers[action].add(self._self_observers[func])
+
     def _observe_original(self, func: Callable, action):
         self._action_observers[action].add(func)
 
     def _callback(self, action, **kwargs):
         self._prune_removed_observers(action)
         for observer in self._action_observers[action].copy():
-            observer(**kwargs)
+            try:
+                observer(**kwargs)
+            except RemoveCallbackException:
+                self.unobserve(observer, action)
+        self._prune_removed_observers(action)
 
     def unobserve(self, func: Callable, action):
         self._remove_observers[action].add(func)
+
+    def unobserve_with_self(self, func: Callable, action):
+        self._remove_observers[action].add(self._self_observers[func])
 
     def _prune_removed_observers(self, action):
         self._action_observers[action] -= self._remove_observers[action]

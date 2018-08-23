@@ -2,7 +2,7 @@ from functools import partial
 from itertools import combinations, chain
 from typing import Set
 
-from engine.models.base_model import BaseModel
+from engine.models.base_model import BaseModel, RemoveCallbackException
 from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel, PartConnectionError
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -24,10 +24,10 @@ class CompositeModel(BaseModel):
         self._calculate_inertia()
         self._own_spawns = []
         for part in parts:
-            part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
+            part.observe_with_self(self.remove_part, "alive")
             part.observe(self.prune_dead_parts_from_bounding_box, "explode")
             part.observe(self.rebuild, "move")
-            part.observe(lambda: self.rebuild_connections_for(part), "move")
+            part.observe_with_self(self.rebuild_connections_for, "move")
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -77,17 +77,19 @@ class CompositeModel(BaseModel):
 
     def _add_part(self, part):
         self._part_by_uuid[part.uuid] = part
-        part.observe(lambda: self.remove_part(part) if not part.is_alive else None, "alive")
+        part.observe_with_self(self.remove_part, "alive")
         part.observe(self.prune_dead_parts_from_bounding_box, "explode")
         part.observe(self.rebuild, "move")
-        part.observe(lambda: self.rebuild_connections_for(part), "move")
+        part.observe_with_self(self.rebuild_connections_for, "move")
         self._callback("add_part", added=part)
 
-    def remove_part(self, part_model):
-        if part_model.uuid in self._part_by_uuid:
-            del self._part_by_uuid[part_model.uuid]
-            part_model.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
-            part_model.unobserve(self.rebuild, "move")
+    def remove_part(self, part):
+        if part.uuid in self._part_by_uuid:
+            del self._part_by_uuid[part.uuid]
+            part.unobserve_with_self(self.remove_part, "alive")
+            part.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
+            part.unobserve(self.rebuild, "move")
+            part.unobserve_with_self(self.rebuild_connections_for, "move")
             self._callback("remove_part", removed=part)
         self.prune_dead_parts_from_bounding_box()
         if not self.parts:
@@ -101,6 +103,7 @@ class CompositeModel(BaseModel):
             self._callback("rebuild")
         else:
             self.set_alive(False)
+            raise RemoveCallbackException()
 
     def _build_bounding_box(self, ship_parts: list) -> MultiPolygon:
         bboxes = set()
@@ -126,6 +129,7 @@ class CompositeModel(BaseModel):
             self._callback("rebuild")
         else:
             self.set_alive(False)
+            raise RemoveCallbackException()
 
     def _calculate_mass(self):
         self._mass = sum([part.mass for part in self.parts_of_bbox])
@@ -136,8 +140,8 @@ class CompositeModel(BaseModel):
         self.inertia = self._mass / 12 * (bb_width ** 2 + bb_height ** 2)
 
     def rebuild_connections(self):
-        for part in self.parts:
-            part.disconnect_all()
+        for connection in self._connections.copy():
+            connection.disconnect_all()
         self._connections.clear()
         for part1, part2 in combinations(self.parts, 2):
             self._try_to_connect(part1, part2)
@@ -145,6 +149,8 @@ class CompositeModel(BaseModel):
             part.update_working_status()
 
     def rebuild_connections_for(self, model: ShipPartModel):
+        if not self.is_alive or not model.is_alive:
+            raise RemoveCallbackException()
         for part in self.parts:
             if part not in model.connected_parts:
                 self._try_to_connect(model, part)
@@ -172,18 +178,21 @@ class CompositeModel(BaseModel):
                 connection.disconnect_all()
 
     def _add_connection(self, connection: PartConnectionModel):
-        self._connections.add(connection)
-        connection.observe(lambda: self._remove_connection(connection), "broken")
-        connection.observe(lambda: self._remove_connection(connection), "alive")
-        self._callback("connection", added=connection)
+        if connection not in self._connections:
+            self._connections.add(connection)
+            connection.observe_with_self(self._remove_connection, "broken")
+            connection.observe_with_self(self._remove_connection, "alive")
+            self._callback("connection", added=connection)
 
     def _remove_connection(self, connection: PartConnectionModel):
         try:
             self._connections.remove(connection)
-            connection.remove_all_observers()
-            self._callback("disconnect", removed=connection)
         except KeyError:
             pass
+        else:
+            self._callback("disconnect", removed=connection)
+            if not self.is_alive or not connection.is_alive:
+                raise RemoveCallbackException()
 
     def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):
         class_map = {"ShieldConnection": ShieldConnectionModel}
@@ -193,9 +202,7 @@ class CompositeModel(BaseModel):
         connection = connection_class(part1, part2,
                                       validate_connection_function=func,
                                       max_distance=config.get('distance', 1.7))
-        if connection.is_valid:
-            connection.observe(lambda: self._remove_connection(connection), "broken")
-        else:
+        if not connection.is_valid:
             connection.disconnect_all()
             raise PartConnectionError("Too far")
         return connection

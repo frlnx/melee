@@ -1,5 +1,7 @@
 from functools import partial
-from typing import Callable
+from typing import Callable, List
+
+from pyglet.window import mouse
 
 from engine.models.ship import ShipModel
 from .base import BaseMenu, BaseButton
@@ -11,6 +13,7 @@ class ControlConfigMenu(BaseMenu):
     def __init__(self, heading: str, buttons, x, y, control_config: ControlConfiguration):
         super().__init__(heading, buttons, x, y)
         self.control_config = control_config
+        self.components: List[ControlConfiguration] = [control_config]
 
     @classmethod
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable, x, y,
@@ -40,6 +43,11 @@ class ControlConfigMenu(BaseMenu):
 
         return cls(heading, buttons, x, y, control_config)
 
+    def _component_at(self, x, y):
+        for component in self.components:
+            if component.in_area(x, y):
+                return component
+
     def draw(self):
         super(ControlConfigMenu, self).draw()
         self.control_config.draw()
@@ -55,8 +63,13 @@ class ControlConfigMenu(BaseMenu):
     def on_mouse_release(self, x, y, button, modifiers):
         self.control_config.on_mouse_release(x, y, button, modifiers)
 
-    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
-        self.control_config.on_mouse_drag(x, y, dx, dy, button, modifiers)
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        component = self._component_at(x, y)
+        if component:
+            if buttons & mouse.RIGHT:
+                component.translate(dx, dy)
+            if buttons & mouse.LEFT:
+                self.control_config.on_mouse_drag(x, y, dx, dy, buttons, modifiers)
 
     def on_key_press(self, symbol, modifiers):
         self.control_config.on_key_press(symbol, modifiers)
