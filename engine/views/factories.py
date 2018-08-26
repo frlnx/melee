@@ -5,9 +5,10 @@ from engine.models import *
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 from engine.views.base_view import BaseView
-from engine.views.connection import ConnectionView
+from engine.views.part_connection import PartConnectionView, ShieldConnectionView
 from engine.views.ship import ShipView
 from engine.views.ship_part import ShipPartView
+from .flexible_mesh import FlexibleMesh
 from .opengl_mesh import OpenGLTexturedFace, OpenGLTexturedMaterial, OpenGLMesh, OpenGLFace, OpenGLMaterial
 
 
@@ -18,9 +19,9 @@ class ViewFactory(object):
         AsteroidModel: {"method": "_spheroid",
                         "material": partial(OpenGLTexturedMaterial, texture_file_name="asteroid.png",
                                             diffuse=(0.7, 0.7, 0.7), name="Rock Surface")},
-        ShieldConnectionModel: {"method": "_hexagon_fence",
-                                "material": partial(OpenGLMaterial, diffuse=(.54, .81, .94), ambient=(.54, .81, .94),
-                                                    alpha=.5, name="Shield")}
+        ShieldConnectionModel: {"method": "extruded_lens",
+                                "material": partial(OpenGLMaterial, diffuse=(.54, .81, .94), ambient=(1., 1., 1.),
+                                                    alpha=1., name="Shield")}
     }
 
     def __init__(self, mesh_factory, view_class=BaseView):
@@ -124,6 +125,12 @@ class ViewFactory(object):
         mesh.set_double_sided(True)
         return mesh
 
+    def extruded_lens(self, model, **config):
+        material = config['material']()
+        mesh = FlexibleMesh(model.bounding_box, material)
+        mesh.set_double_sided(True)
+        return mesh
+
     def manufacture(self, model: BaseModel) -> BaseView:
         if self.pre_factorized_views:
             return self.repurpose(model)
@@ -135,8 +142,8 @@ class ViewFactory(object):
 class DynamicViewFactory(ViewFactory):
     model_view_map = {
         PositionalModel: BaseView,
-        PartConnectionModel: ConnectionView,
-        ShieldConnectionModel: ConnectionView,
+        PartConnectionModel: PartConnectionView,
+        ShieldConnectionModel: ShieldConnectionView,
         BaseModel: BaseView,
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
@@ -150,15 +157,15 @@ class DynamicViewFactory(ViewFactory):
         view = view_class(model, mesh=mesh)
         if hasattr(model, 'parts') and isinstance(model, CompositeModel):
             self.build_subviews(view, model.parts, view_class=sub_view_class)
-            self.build_subviews(view, model._connections, view_class=ConnectionView)
+            self.build_subviews(view, model._connections)
             model.observe(lambda added: self._connect_callback(view, added), "connection")
             model.observe(view.remove_sub_view_for_model, "disconnect")
             model.observe(lambda added: self._add_view_callback(view, sub_view_class, added), "add_part")
             model.observe(view.remove_sub_view_for_model, "remove_part")
         return view
 
-    def _connect_callback(self, ship_view: ShipView, added: BaseModel):
-        view = self.manufacture(added, view_class=ConnectionView)
+    def _connect_callback(self, ship_view: ShipView, added: PartConnectionModel):
+        view = self.manufacture(added)
         ship_view.add_sub_view(view)
 
     def _add_view_callback(self, ship_view: ShipView, view_class, added: ShipPartModel):
@@ -168,7 +175,7 @@ class DynamicViewFactory(ViewFactory):
     def _disconnect_callback(self, ship_view: ShipView, removed: BaseModel):
         ship_view.remove_sub_view_for_model(removed)
 
-    def build_subviews(self, ship_view: ShipView, models, view_class):
+    def build_subviews(self, ship_view: ShipView, models, view_class=None):
         for part in models:
             if part.is_alive and not ship_view.has_sub_view_for(part.uuid):
                 sub_view = self.manufacture(part, view_class=view_class)

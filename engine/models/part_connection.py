@@ -152,6 +152,6 @@ class ShieldConnectionModel(PartConnectionModel):
     def _build_arc(self, swell, radius, c_x, c_y, rotation_degrees):
         x_factor = swell * radius
         coords = [(x * x_factor, y * radius) for x, y in self.base_arc]
-        arc = Polygon.manufacture_open(coords, x=c_x, y=c_y, rotation=rotation_degrees)
+        arc = Polygon.manufacture_open(coords, x=c_x, y=c_y, rotation=rotation_degrees, part_id=self.uuid)
         arc.freeze()
         return arc

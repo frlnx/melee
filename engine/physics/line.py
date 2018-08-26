@@ -1,5 +1,7 @@
+from collections import defaultdict
+from functools import partial
 from math import *
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 
 class Point(object):
@@ -39,6 +41,42 @@ class BaseLine(object):
         self.left = min(self.x1, self.x2)
         self.top = max(self.y1, self.y2)
         self.bottom = min(self.y1, self.y2)
+        self._action_observers = defaultdict(set)
+        self._remove_observers = defaultdict(set)
+        self._self_observers = {}
+
+    def set_points(self, x1, y1, x2, y2):
+        self.original_x1, self.original_y1, self.original_x2, self.original_y2 = x1, y1, x2, y2
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+        self.length = hypot(self.dx, self.dy)
+        self.right = max(self.x1, self.x2)
+        self.left = min(self.x1, self.x2)
+        self.top = max(self.y1, self.y2)
+        self.bottom = min(self.y1, self.y2)
+        self._callback("move")
+
+    def _prune_removed_observers(self, action):
+        self._action_observers[action] -= self._remove_observers[action]
+        self._remove_observers[action].clear()
+
+    def observe_with_self(self, func: Callable, action):
+        self._self_observers[func] = self._self_observers.get(func, partial(func, self))
+        self._action_observers[action].add(self._self_observers[func])
+
+    def _observe_original(self, func: Callable, action):
+        self._action_observers[action].add(func)
+
+    def _callback(self, action, **kwargs):
+        self._prune_removed_observers(action)
+        for observer in self._action_observers[action].copy():
+            observer(**kwargs)
+        self._prune_removed_observers(action)
+
+    def unobserve(self, func: Callable, action):
+        self._remove_observers[action].add(func)
+
+    def unobserve_with_self(self, func: Callable, action):
+        self._remove_observers[action].add(self._self_observers[func])
 
     def set_position_rotation(self, x, y, radii):
         if self.x == x and self.y == y and self.rotation == radii:
@@ -56,6 +94,7 @@ class BaseLine(object):
         self.left = min(self.x1, self.x2)
         self.top = max(self.y1, self.y2)
         self.bottom = min(self.y1, self.y2)
+        self._callback("move")
         return True
 
     @property
@@ -108,6 +147,7 @@ class BaseLine(object):
         self.y2 += y
         self.top += y
         self.bottom += y
+        self._callback("move")
 
     def __repr__(self):
         return "{} {} - {} {}".format(self.x1, self.y1, self.x2, self.y2)

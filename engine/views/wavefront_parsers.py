@@ -1,6 +1,6 @@
-from typing import List, Tuple
-from os import path
 from math import cos, sin, radians
+from os import path
+from typing import List, Tuple
 
 
 class Face(object):
@@ -14,6 +14,10 @@ class Face(object):
         self._observers = set()
         self.center_point = self._calculate_center_point()
         self._original_position = self.center_point
+
+    def set_vertices(self, vertices: list):
+        self._vertices = vertices
+        self.callback()
 
     def _calculate_center_point(self) -> tuple:
         cx = 0
@@ -90,6 +94,9 @@ class Material(object):
         self.shininess = shininess
         self.alpha = alpha
 
+    def __copy__(self):
+        return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
+                              emissive=self.emissive, shininess=self.shininess, name=self.name, alpha=self.alpha)
 
 
 class TexturedMaterial(Material):
@@ -100,7 +107,10 @@ class TexturedMaterial(Material):
         super().__init__(diffuse, ambient, specular, emissive, shininess, name, alpha)
         self.texture_file_name = texture_file_name
 
-
+    def __copy__(self):
+        return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
+                              emissive=self.emissive, shininess=self.shininess, name=self.name, alpha=self.alpha,
+                              texture_file_name=self.texture_file_name)
 
 class WaveFrontObject(object):
 

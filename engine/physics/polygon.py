@@ -25,6 +25,15 @@ class BasePolygon(object):
         self._observers = defaultdict(set)
         self._quadrants = set()
 
+    def lines_pairwise(self):
+        return zip(self._lines[:-1], self._lines[1:])
+
+    def lines_inner_triplets(self):
+        return zip(self._lines[:-2], self._lines[1:-1], self._lines[2:])
+
+    def lines_outer_triplets(self):
+        return zip(chain(self._lines[:1], self._lines[:-1]), self._lines, chain(self._lines[1:], self._lines[-1:]))
+
     def observe(self, func, action):
         self._observers[action].add(func)
 
@@ -44,6 +53,13 @@ class BasePolygon(object):
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.part_id == other.part_id
 
+    def update_coords(self, coords, x, y, yaw_degrees):
+        for line_coords, line in zip(zip(coords[:-1], coords[1:]), self.lines):
+            line.set_points(*line_coords)
+        self.set_position_rotation(x, y, yaw_degrees)
+        self.freeze()
+        self.clear_movement()
+
     @classmethod
     def coords_to_lines(cls, coords, **kwargs):
         last_coord = coords[0]
@@ -54,18 +70,18 @@ class BasePolygon(object):
         return lines
 
     @classmethod
-    def manufacture(cls, coords, x=0, y=0, rotation=0):
+    def manufacture(cls, coords, x=0, y=0, rotation=0, part_id=None):
         lines = cls.coords_to_lines(coords)
-        polygon = cls(lines)
+        polygon = cls(lines, part_id=part_id)
         polygon.set_position_rotation(x, y, rotation)
         polygon.clear_movement()
         return polygon
 
     @classmethod
-    def manufacture_open(cls, coords, x=0, y=0, rotation=0):
+    def manufacture_open(cls, coords, x=0, y=0, rotation=0, part_id=None):
         lines = cls.coords_to_lines(coords)
         lines.pop(0)
-        polygon = cls(lines)
+        polygon = cls(lines, part_id=part_id)
         polygon.set_position_rotation(x, y, rotation)
         polygon.clear_movement()
         return polygon

@@ -22,9 +22,9 @@ class PositionalModel(object):
         self._name = name
         self._action_observers = defaultdict(set)
         self._remove_observers = defaultdict(set)
-        self._self_observers = {}
         self._material_observers = set()
         self.material_value = 0.0
+        self._self_observers = {}
 
     def self_observer(self, func):
         self._self_observers[func] = self._self_observers.get(func, partial(func, self))

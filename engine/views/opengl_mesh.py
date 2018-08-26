@@ -221,10 +221,6 @@ class OpenGLMaterial(Material):
         self.opengl_emissive = self.to_c_arr((a * b for a, b in zip(kwargs.get('emissive', ones), self.original_opengl_emissive)))
         self.opengl_shininess = (kwargs.get('shininess', self.original_opengl_shininess) / 1000) * 128
 
-    def __copy__(self):
-        return self.__class__(diffuse=self.diffuse, ambient=self.ambient, specular=self.specular,
-                              emissive=self.emissive, shininess=self.shininess, name=self.name, alpha=self.alpha)
-
     def __getstate__(self):
         d = {}
         for k, val in self.__dict__.items():
