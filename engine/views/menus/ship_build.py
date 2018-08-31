@@ -25,7 +25,8 @@ class ShipBuildMenu(BaseMenu):
         drydock = Drydock(0, vertical_ruler, 0, screen_height, ship_model, view_factory)
         part_store = PartStore(vertical_ruler, screen_width, 0, screen_height, view_factory)
         heading = "Shipyard"
-        callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset)]
+        callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset),
+                     ("Debug", drydock.debug)]
         height = int(font_size * 1.6)
         width = int(height * 6)
         height_spacing = int(height * 1.1)

@@ -213,7 +213,8 @@ class CompositeModel(BaseModel):
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
         intersected_uuids = {bbox.part_id for bbox in intersected_bboxes
-                             if bbox != polygon and bbox.part_id in self._part_by_uuid}
+                             if bbox.part_id != polygon.part_id and bbox.part_id in self._part_by_uuid}
+        #print(", ".join(self._part_by_uuid[uuid].name for uuid in intersected_uuids))
         intersected_uuids -= ignored_uuids
         #print(intersected_uuids)
         #print([self._part_by_uuid[uuid] for uuid in intersected_uuids])

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import reduce
-from itertools import product, chain
-from math import radians, atan2, degrees, floor, ceil
+from itertools import product, chain, zip_longest
+from math import radians, atan2, degrees, floor, ceil, hypot
 from typing import List, Iterator, Set
 from uuid import uuid4
 
@@ -20,7 +20,7 @@ class BasePolygon(object):
         self.y = 0
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
-        self._moving_points = [(l.x1, l.y1) for l in self.lines]
+        self._moving_points = {(l.x1, l.y1) for l in self.lines} | {(l.x2, l.y2) for l in self.lines}
         self._moving_polygon = None
         self._observers = defaultdict(set)
         self._quadrants = set()
@@ -54,7 +54,7 @@ class BasePolygon(object):
         return self.__class__ == other.__class__ and self.part_id == other.part_id
 
     def update_coords(self, coords, x, y, yaw_degrees):
-        for line_coords, line in zip(zip(coords[:-1], coords[1:]), self.lines):
+        for line_coords, line in zip_longest(zip(coords[:-1], coords[1:]), self.lines):
             line.set_points(*line_coords)
         self.set_position_rotation(x, y, yaw_degrees)
         self.freeze()
@@ -122,7 +122,12 @@ class BasePolygon(object):
             angles = cls.get_angles_for_points_from_point(last_point, eval_points)
             delta_angles = [cls.delta_angle(a, last_angle) % 360 for a in angles]
             min_angle = min(delta_angles)
-            min_angle_point = eval_points[delta_angles.index(min_angle)]
+            if delta_angles.count(min_angle) == 1:
+                min_angle_point = eval_points[delta_angles.index(min_angle)]
+            else:
+                straight_points = [p for i, p in enumerate(eval_points) if delta_angles[i] == min_angle]
+                straight_points.sort(key=lambda p: -hypot(last_point[0] - p[0], last_point[1] - p[1]))
+                min_angle_point = straight_points[0]
             last_angle += min_angle
         hull = point_string[point_string.index(min_angle_point):]
         hull.reverse()
@@ -149,15 +154,19 @@ class BasePolygon(object):
         self.rotation = yaw_degrees
         self._moving_points.clear()
         for line in self.lines:
-            self._moving_points.append((line.x1, line.y1))
+            self._moving_points.add((line.x1, line.y1))
+            self._moving_points.add((line.x2, line.y2))
             if line.set_position_rotation(x, y, radians(yaw_degrees)):
-                self._moving_points.append((line.x1, line.y1))
+                self._moving_points.add((line.x1, line.y1))
+                self._moving_points.add((line.x2, line.y2))
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
         self._moving_polygon = None
 
     def clear_movement(self):
-        self._moving_points = [(l.x1, l.y1) for l in self.lines]
+        self._moving_points.clear()
+        self._moving_points.update((l.x1, l.y1) for l in self.lines)
+        #self._moving_points.update((l.x2, l.y2) for l in self.lines)
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
         self._moving_polygon = None
 
@@ -285,8 +294,12 @@ class Polygon(BasePolygon):
 
         #if len(other) == 0 or not self.intersects(other) and not other.point_inside(*self.centroid()):
         #    return set(), set()
+        intersected = set()
+        for p in other:
+            if self.intersects(p):
+                intersected.add(p)
 
-        return set(), {p for p in other if self.intersects(p)}
+        return set(), intersected
 
     def __iter__(self) -> Iterator["Polygon"]:
         return [self].__iter__()
@@ -326,7 +339,7 @@ class ConvexHull(Polygon):
 class MultiPolygon(ConvexHull):
 
     def __init__(self, polygons: Set[PolygonPart]):
-        points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in polygons]))
+        points = set(chain(*[{(l.x1, l.y1) for l in p.lines} | {(l.x2, l.y2) for l in p.lines} for p in polygons]))
         hull = self.convex_hull(points)
         lines = self.coords_to_lines(hull)
         super().__init__(lines)
@@ -350,7 +363,7 @@ class MultiPolygon(ConvexHull):
     def rebuild_hull(self):
         x, y, rotation = self.x, self.y, self.rotation
         self.set_position_rotation(0, 0, 0)
-        points = list(chain(*[[(l.x1, l.y1) for l in p.lines] for p in self._polygons]))
+        points = set(chain(*[{(l.x1, l.y1) for l in p.lines} | {(l.x2, l.y2) for l in p.lines} for p in self._polygons]))
         hull = self.convex_hull(points)
         lines = self.coords_to_lines(hull)
         #self.freeze()

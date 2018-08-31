@@ -24,6 +24,7 @@ class PartConnectionModel(PositionalModel):
         self._max_distance = max_distance
         self.validate_connection_function = validate_connection_function
         self._polygon: Polygon = self.build_polygon()
+        self.adjust_polygon()
         self._connect()
         for part in self._ship_parts:
             part.observe(self.update_polygon, "move")
@@ -48,16 +49,27 @@ class PartConnectionModel(PositionalModel):
             raise RemoveCallbackException()
         else:
             try:
-                self._polygon = self.build_polygon()
+                self.adjust_polygon()
             except PartConnectionError:
                 self.disconnect_all()
                 raise RemoveCallbackException()
             finally:
                 self._callback("move")
 
+    def adjust_polygon(self):
+        if self._n_parts_alive <= 1:
+            self._callback("broken")
+            raise PartConnectionError("Not enough parts")
+        start = self._ship_parts[0].position.x, self._ship_parts[0].position.z
+        end = self._ship_parts[-1].position.x, self._ship_parts[-1].position.z
+        line = self._polygon.lines[0]
+        line.set_points(start, end)
+        if not self.is_valid:
+            self.disconnect_all()
+            raise PartConnectionError(f'{self._ship_parts} have no valid arc')
+
     @property
     def is_alive(self):
-        #  TODO: Scenario middle node of three is dead, the connection is not alive
         return self.is_valid and self._n_parts_alive > 1
 
     @property
@@ -66,7 +78,7 @@ class PartConnectionModel(PositionalModel):
 
     @property
     def is_valid(self):
-        return self.validate_connection_function(self._polygon) and self.distance <= self._max_distance
+        return self.distance <= self._max_distance and self.validate_connection_function(self._polygon)
 
     @property
     def bounding_box(self):
@@ -80,9 +92,9 @@ class PartConnectionModel(PositionalModel):
         for part, next_part in self._pairwise():
             lines.append(Line([(part.position.x, part.position.z), (next_part.position.x, next_part.position.z)]))
         polygon = Polygon(lines)
-        if self.validate_connection_function(polygon):
-            return polygon
-        raise PartConnectionError(f"can't connect {self._ship_parts}")
+        #if self.validate_connection_function(polygon):
+        return polygon
+        #raise PartConnectionError(f"can't connect {self._ship_parts}")
 
     def validate_connection_function(self, polygon: Polygon):
         return False
@@ -123,35 +135,41 @@ class PartConnectionModel(PositionalModel):
 class ShieldConnectionModel(PartConnectionModel):
 
     base_arc = [(sin(radians(d)), cos(radians(d))) for d in range(0, 181, 36)]
-    swells = [swell / 100 * sign for swell in range(0, 81, 20) for sign in [1, -1]][1:]
+    swells = [swell / 100 * sign for swell in range(0, 81, 5) for sign in [1, -1]][1:]
     mass = 0
 
     def build_polygon(self):
         if self._n_parts_alive <= 1:
             self._callback("broken")
             raise PartConnectionError("Not enough parts")
-        arc: Polygon = None
-        for part, next_part in self._pairwise():
-            step_arc = self._find_valid_arc(part, next_part)
-            arc = arc and Polygon(arc.lines + step_arc.lines) or step_arc
+        start_x, start_y = self._ship_parts[0].position.x, self._ship_parts[0].position.z
+        end_x, end_y = self._ship_parts[-1].position.x, self._ship_parts[-1].position.z
+        dx, dy = end_x - start_x, end_y - start_y
+        cx, cy = start_x + dx / 2, start_y + dy / 2
+        rotation = degrees(atan2(dx, dy))
+        coords = [(i * dx / 6, i * dy / 6) for i in range(6)]
+        arc: Polygon = Polygon.manufacture_open(coords, cx, cy, rotation, self.uuid)
         return arc
-    
-    def _find_valid_arc(self, part1: ShipPartModel, part2: ShipPartModel) -> Polygon:
-        start_point = part1.position.x, part1.position.z
-        end_point = part2.position.x, part2.position.z
-        straight_line = Line([start_point, end_point])
-        c_x, c_y = straight_line.centroid
-        radius = straight_line.length / 2
-        for swell in self.swells:
-            arc = self._build_arc(swell, radius, c_x, c_y, straight_line.degrees)
-            if self.validate_connection_function(arc):
-                return arc
-        self.disconnect_all()
-        raise PartConnectionError(f'{part1} and {part2} have no valid arc')
 
-    def _build_arc(self, swell, radius, c_x, c_y, rotation_degrees):
+    def adjust_polygon(self):
+        if self._n_parts_alive <= 1:
+            self._callback("broken")
+            raise PartConnectionError("Not enough parts")
+        start_x, start_y = self._ship_parts[0].position.x, self._ship_parts[0].position.z
+        end_x, end_y = self._ship_parts[-1].position.x, self._ship_parts[-1].position.z
+        dx, dy = end_x - start_x, end_y - start_y
+        cx, cy = start_x + dx / 2, start_y + dy / 2
+        rotation = degrees(atan2(-dx, dy))
+        radius = hypot(dx, dy) / 2
+        for swell in self.swells:
+            coords = self._build_arc_coords(swell, radius)
+            self._polygon.update_coords(coords, cx, cy, rotation)
+            if self.is_valid:
+                return
+        self.disconnect_all()
+        raise PartConnectionError(f'{self._ship_parts} have no valid arc')
+
+    def _build_arc_coords(self, swell, radius):
         x_factor = swell * radius
         coords = [(x * x_factor, y * radius) for x, y in self.base_arc]
-        arc = Polygon.manufacture_open(coords, x=c_x, y=c_y, rotation=rotation_degrees, part_id=self.uuid)
-        arc.freeze()
-        return arc
+        return coords

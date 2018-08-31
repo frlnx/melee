@@ -43,6 +43,9 @@ class ShipModelFactory(object):
         #      part.observe(self.jettison_exploding_part_function(ship, part), "explode")
         return ship
 
+    def add_configuration(self, config):
+        self.ships[config['name']] = config
+
     @classmethod
     def distance(cls, part1: ShipPartModel, part2: ShipPartModel):
         return (part1.position - part2.position).distance

@@ -180,16 +180,7 @@ class DockableItem(DrydockItem):
 
     def set_xy(self, x, y):
         o_x, o_y = self.x, self.y
-        if o_x > x:
-            o_x1 = o_x - 1
-        else:
-            o_x1 = o_x + 1
-
-        if o_y > y:
-            o_y1 = o_y - 1
-        else:
-            o_y1 = o_y + 1
-        for new_x, new_y in [(x, y), (x, o_y1), (o_x1, y), (x, o_y), (o_x, y)]:
+        for new_x, new_y in [(x, y), (x, o_y), (o_x, y)]:
             self.model.teleport_to(new_x, 0, new_y)
             if self.is_legal_position:
                 self.update()
@@ -484,6 +475,9 @@ class Drydock(ShipConfiguration):
         for item in self.items:
             item.legal_move_func = self._legal_placement
 
+    def debug(self):
+        print("Debug mode")
+
     def save_all(self):
         super(Drydock, self).save_all()
         self.original_model.set_parts({item.model for item in self.items})
@@ -504,6 +498,7 @@ class Drydock(ShipConfiguration):
             if item not in self.items:
                 self.add_item(item)
             item.drag(*self._screen_to_model(x, y))
+            self.ship.update_bounding_box()
 
     def _legal_placement(self, trial_item):
         for item in self.items:
@@ -571,7 +566,7 @@ class PartStore(ShipPartDisplay):
         original_x_offset = self.x_offset
         super(PartStore, self).translate(x, y)
         self.x_offset = original_x_offset
-        self.y_offset = max(min(200, self.y_offset), -100)
+        self.y_offset = max(min(20, self.y_offset), 0)
 
     def item_spawn_from_model(self, model):
         view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)

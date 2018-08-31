@@ -45,7 +45,9 @@ class BaseLine(object):
         self._remove_observers = defaultdict(set)
         self._self_observers = {}
 
-    def set_points(self, x1, y1, x2, y2):
+    def set_points(self, start, end):
+        x1, y1 = start
+        x2, y2 = end
         self.original_x1, self.original_y1, self.original_x2, self.original_y2 = x1, y1, x2, y2
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.length = hypot(self.dx, self.dy)
@@ -150,7 +152,9 @@ class BaseLine(object):
         self._callback("move")
 
     def __repr__(self):
-        return "{} {} - {} {}".format(self.x1, self.y1, self.x2, self.y2)
+        return f"{round(self.x1, 1)},{round(self.y1, 1)} " \
+               f"-({round(self.degrees, 1)}/{round(self.length, 1)})- " \
+               f"{round(self.x2, 1)},{round(self.y2, 1)}"
 
 
 class Line(BaseLine):

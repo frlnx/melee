@@ -258,7 +258,12 @@ class TestDefaultShip(object):
 class TestDrydockShieldReconnectivity(object):
 
     def setup(self):
-        self.ship = ShipModelFactory().manufacture("ship")
+        smf = ShipModelFactory()
+        smf.add_configuration({"name": "test_ship", "parts": [
+            {"position": [1.6, 0, 0.4], "rotation": [0, 0, 0], "name": "shield"},
+            {"position": [0, 0, 0], "rotation": [0, 0, 0], "name": "cockpit"},
+            {"position": [-1.48, 0, 0.4], "rotation": [0, 0, 0], "name": "shield"}]})
+        self.ship = smf.manufacture("test_ship")
         self.drydock = Drydock(0, 1000, 0, 1000, self.ship, view_factory=FakeFactory())
         self.ship = self.drydock.ship
         self.target_item: DockableItem = [item for item in self.drydock.items if item.model.name == "shield"][0]
@@ -270,6 +275,7 @@ class TestDrydockShieldReconnectivity(object):
         self.target_callback = MagicMock()
         self.target.observe(self.target_callback, "move")
         self.connections = list(self.ship._connections)
+        self.shield_connections = [c for c in self.connections if all(p.name == "shield" for p in c._ship_parts)]
 
     def test_ship_has_connections(self):
         assert self.connections
@@ -282,3 +288,24 @@ class TestDrydockShieldReconnectivity(object):
         self.target_item.drag(self.target_item.x + 0.01, self.target_item.y)
         for connection in self.connections:
             assert connection.is_valid
+
+    def test_connection_is_not_a_straight_line(self):
+        for shield_connection in self.shield_connections:
+            if len({round(l.degrees, 1) for l in shield_connection.bounding_box.lines}) == 1:
+                print(self.ship.bounding_box)
+            assert len({round(l.degrees, 1) for l in shield_connection.bounding_box.lines}) != 1
+
+    def test_intersected_polygons(self):
+        assert len(self.shield_connections) == 1
+        print("TEST START")
+        for shield_connection in self.shield_connections:
+            print(shield_connection._polygon._moving_points)
+            print(shield_connection._polygon.moving_lines)
+            expected = {p.uuid for p in shield_connection._ship_parts}
+            _, intersected_polygons = shield_connection.bounding_box.intersected_polygons(self.ship.bounding_box)
+            actual = {bb.part_id for bb in intersected_polygons}
+            diff = actual - expected
+            print("ACTUAL:", ", ".join(str(self.ship._part_by_uuid[uuid]) for uuid in actual))
+            print("EXPECTED:", ", ".join(str(self.ship._part_by_uuid[uuid]) for uuid in expected))
+            print("DIFF:", ", ".join(str(self.ship._part_by_uuid[uuid]) for uuid in diff))
+            assert expected == actual
