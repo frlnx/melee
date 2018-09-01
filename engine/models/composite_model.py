@@ -1,3 +1,4 @@
+import traceback
 from functools import partial
 from itertools import combinations, chain
 from typing import Set
@@ -26,8 +27,10 @@ class CompositeModel(BaseModel):
         for part in parts:
             part.observe_with_self(self.remove_part, "alive")
             part.observe(self.prune_dead_parts_from_bounding_box, "explode")
-            part.observe(self.rebuild, "move")
+            #part.observe(self.rebuild, "move")
             part.observe_with_self(self.rebuild_connections_for, "move")
+        for connection in self._connections:
+            connection.update_polygon()
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -145,7 +148,9 @@ class CompositeModel(BaseModel):
         self._connections.clear()
         for part1, part2 in combinations(self.parts, 2):
             self._try_to_connect(part1, part2)
-        for part in self.parts:
+        outwards_parts = list(self.parts)
+        outwards_parts.sort(key=lambda part: part.position.distance)
+        for part in outwards_parts:
             part.update_working_status()
 
     def rebuild_connections_for(self, model: ShipPartModel):
@@ -210,14 +215,12 @@ class CompositeModel(BaseModel):
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
         if not polygon:
             return False
+        traceback.print_stack()
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
         intersected_uuids = {bbox.part_id for bbox in intersected_bboxes
                              if bbox.part_id != polygon.part_id and bbox.part_id in self._part_by_uuid}
-        #print(", ".join(self._part_by_uuid[uuid].name for uuid in intersected_uuids))
         intersected_uuids -= ignored_uuids
-        #print(intersected_uuids)
-        #print([self._part_by_uuid[uuid] for uuid in intersected_uuids])
         return len(intersected_uuids) == 0
 
     @property

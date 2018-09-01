@@ -23,7 +23,7 @@ class ShipModelFactory(object):
         config = deepcopy(self.ships[name])
         parts = self.ship_part_model_factory.manufacture_all(config['parts'])
 
-        ship_id = "Unknown ship {}".format(self.ship_id_counter)
+        ship_id = "Ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
         position = position or (0, 0, 0)
         rotation = rotation or (0, 0, 0)
@@ -46,10 +46,6 @@ class ShipModelFactory(object):
     def add_configuration(self, config):
         self.ships[config['name']] = config
 
-    @classmethod
-    def distance(cls, part1: ShipPartModel, part2: ShipPartModel):
-        return (part1.position - part2.position).distance
-
     @staticmethod
     def jettison_exploding_part_function(ship: ShipModel, prat: ShipPartModel):
         def jettison_exploding_part():
@@ -66,12 +62,24 @@ class ShipPartModelFactory(object):
 
     ship_parts = {}
     model_map = {}
+    build_configs = [
+        {"key": "button"}, {"key": "keyboard"}, {"key": "axis"}, {"key": "mouse", "default": []},
+        {"key": "position", "default": (0, 0, 0), "class": MutableOffsets},
+        {"key": "rotation", "default": (0, 0, 0), "class": MutableDegrees},
+        {"key": "movement", "default": (0, 0, 0), "class": MutableOffsets},
+        {"key": "spin", "default": (0, 0, 0), "class": MutableDegrees},
+        {"key": "acceleration", "default": (0, 0, 0), "class": MutableOffsets},
+        {"key": "torque", "default": (0, 0, 0), "class": MutableDegrees}
+    ]
 
     def __init__(self):
         if len(self.ship_parts) == 0:
-            with open("ship_parts.json", 'r') as f:
-                ship_parts = json.load(f)
-            self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
+            self.reload_from_disk()
+
+    def reload_from_disk(self):
+        with open("ship_parts.json", 'r') as f:
+            ship_parts = json.load(f)
+        self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
 
     def manufacture_all(self, part_configs: list):
         parts = set()
@@ -86,16 +94,8 @@ class ShipPartModelFactory(object):
 
     def manufacture(self, name, model_class=None, **placement_config) -> ShipPartModel:
         config = deepcopy(self.ship_parts[name])
-        build_configs = [
-            {"key": "button"}, {"key": "keyboard"}, {"key": "axis"}, {"key": "mouse", "default": []},
-            {"key": "position", "default": (0, 0, 0), "class": MutableOffsets},
-            {"key": "rotation", "default": (0, 0, 0), "class": MutableDegrees},
-            {"key": "movement", "default": (0, 0, 0), "class": MutableOffsets},
-            {"key": "spin", "default": (0, 0, 0), "class": MutableDegrees},
-            {"key": "acceleration", "default": (0, 0, 0), "class": MutableOffsets},
-            {"key": "torque", "default": (0, 0, 0), "class": MutableDegrees}
-        ]
-        for build_config in build_configs:
+
+        for build_config in self.build_configs:
             key = build_config['key']
             config[key] = placement_config.get(key) or build_config.get('default')
             if 'class' in build_config:
@@ -136,7 +136,6 @@ class ProjectileModelFactory(object):
                   movement: MutableOffsets, spin: MutableDegrees,
                   acceleration: MutableOffsets, torque: MutableDegrees):
         projectile = self.projectiles[name].pop()
-        print(len(self.projectiles[name]), "left")
         projectile.set_movement(*movement)
         projectile.teleport_to(*position)
         projectile.teleport_screw(*rotation)

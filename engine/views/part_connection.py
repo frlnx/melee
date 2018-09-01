@@ -20,7 +20,7 @@ class PartConnectionView(BaseView):
 
     def _draw_local(self):
         super(PartConnectionView, self)._draw_local()
-        self._draw_bbox(self.model.bounding_box, color=self.bbox_color)
+        #self._draw_bbox(self.model.bounding_box, color=self.bbox_color)
 
 
 class ShieldConnectionView(PartConnectionView):

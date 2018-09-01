@@ -471,6 +471,8 @@ class Drydock(ShipConfiguration):
         self.original_model = ship
         ship = ship.copy()
         ship.set_position_and_rotation(0, 0, 0, 0, 0, 0)
+        ship.update_bounding_box()
+        ship.rebuild_connections()
         super().__init__(left, right, bottom, top, ship, view_factory)
         for item in self.items:
             item.legal_move_func = self._legal_placement

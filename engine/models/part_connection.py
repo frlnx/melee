@@ -26,6 +26,7 @@ class PartConnectionModel(PositionalModel):
         self._polygon: Polygon = self.build_polygon()
         self.adjust_polygon()
         self._connect()
+        self._alive = self.is_valid
         for part in self._ship_parts:
             part.observe(self.update_polygon, "move")
             #part.observe(lambda: self._callback("alive"), "alive")
@@ -65,12 +66,13 @@ class PartConnectionModel(PositionalModel):
         line = self._polygon.lines[0]
         line.set_points(start, end)
         if not self.is_valid:
+            self._alive = False
             self.disconnect_all()
             raise PartConnectionError(f'{self._ship_parts} have no valid arc')
 
     @property
     def is_alive(self):
-        return self.is_valid and self._n_parts_alive > 1
+        return self._alive and self._n_parts_alive > 1
 
     @property
     def _n_parts_alive(self):
@@ -152,6 +154,7 @@ class ShieldConnectionModel(PartConnectionModel):
         return arc
 
     def adjust_polygon(self):
+        print("adjusting", self)
         if self._n_parts_alive <= 1:
             self._callback("broken")
             raise PartConnectionError("Not enough parts")
@@ -162,11 +165,15 @@ class ShieldConnectionModel(PartConnectionModel):
         rotation = degrees(atan2(-dx, dy))
         radius = hypot(dx, dy) / 2
         for swell in self.swells:
+            print("swelling", self)
             coords = self._build_arc_coords(swell, radius)
             self._polygon.update_coords(coords, cx, cy, rotation)
             if self.is_valid:
+                print("found valid", self)
                 return
+        print("no valid connection", self)
         self.disconnect_all()
+        self._alive = False
         raise PartConnectionError(f'{self._ship_parts} have no valid arc')
 
     def _build_arc_coords(self, swell, radius):
