@@ -26,7 +26,7 @@ class CompositeModel(BaseModel):
         for part in parts:
             part.observe_with_self(self.remove_part, "alive")
             part.observe(self.prune_dead_parts_from_bounding_box, "explode")
-            #part.observe(self.rebuild, "move")
+            part.observe(self.rebuild, "move")
             part.observe_with_self(self.rebuild_connections_for, "move")
         for connection in self._connections:
             connection.update_polygon()
@@ -211,14 +211,14 @@ class CompositeModel(BaseModel):
             raise PartConnectionError("Too far")
         return connection
 
-    def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
-        if not polygon:
+    def _validation_function(self, ignored_parts: Set[ShipPartModel], local_polygon: "Polygon"):
+        if not local_polygon:
             return False
-        polygon = polygon.copy_to(self.bounding_box.x, self.bounding_box.y, self.bounding_box.rotation)
-        _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
+        global_polygon = local_polygon.copy_to(self.bounding_box.x, self.bounding_box.y, self.bounding_box.rotation)
+        _, intersected_bboxes = global_polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
         intersected_uuids = {bbox.part_id for bbox in intersected_bboxes
-                             if bbox.part_id != polygon.part_id and bbox.part_id in self._part_by_uuid}
+                             if bbox.part_id != global_polygon.part_id and bbox.part_id in self._part_by_uuid}
         intersected_uuids -= ignored_uuids
         return len(intersected_uuids) == 0
 
