@@ -1,4 +1,3 @@
-import traceback
 from functools import partial
 from itertools import combinations, chain
 from typing import Set
@@ -215,7 +214,7 @@ class CompositeModel(BaseModel):
     def _validation_function(self, ignored_parts: Set[ShipPartModel], polygon: "Polygon"):
         if not polygon:
             return False
-        traceback.print_stack()
+        polygon = polygon.copy_to(self.bounding_box.x, self.bounding_box.y, self.bounding_box.rotation)
         _, intersected_bboxes = polygon.intersected_polygons(self.bounding_box)
         ignored_uuids = {part.uuid for part in ignored_parts}
         intersected_uuids = {bbox.part_id for bbox in intersected_bboxes

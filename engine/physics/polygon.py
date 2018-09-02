@@ -290,6 +290,10 @@ class Polygon(BasePolygon):
     def __copy__(self):
         return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines], self.x, self.y, self.rotation)
 
+    def copy_to(self, x, y, rotation):
+        return self.manufacture([(l.original_x1, l.original_y1) for l in self.lines],
+                                self.x + x, self.y + y, self.rotation + rotation)
+
     def intersected_polygons(self, other: "Polygon"):
 
         #if len(other) == 0 or not self.intersects(other) and not other.point_inside(*self.centroid()):
@@ -297,6 +301,14 @@ class Polygon(BasePolygon):
         intersected = set()
         for p in other:
             if self.intersects(p):
+                intersected.add(p)
+
+        return set(), intersected
+
+    def intra_intersected_polygons(self, other: "Polygon"):
+        intersected = set()
+        for p in other:
+            if self.original_intersects(p):
                 intersected.add(p)
 
         return set(), intersected
