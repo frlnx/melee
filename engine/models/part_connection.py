@@ -2,8 +2,8 @@ from math import *
 from typing import List, Callable
 
 from engine.physics.line import Line
-from engine.physics.polygon import Polygon
-from .base_model import PositionalModel, RemoveCallbackException
+from engine.physics.polygon import Polygon, ClippingPolygon
+from .base_model import AnimationModel, RemoveCallbackException
 from .ship_part import ShipPartModel
 
 
@@ -11,7 +11,7 @@ class PartConnectionError(AttributeError):
     pass
 
 
-class PartConnectionModel(PositionalModel):
+class PartConnectionModel(AnimationModel):
 
     mass = 0
 
@@ -29,8 +29,8 @@ class PartConnectionModel(PositionalModel):
         self._alive = self.is_valid
         for part in self._ship_parts:
             part.observe(self.update_polygon, "move")
-            #part.observe(lambda: self._callback("alive"), "alive")
-            #part.observe(lambda: self._callback("alive"), "explode")
+            part.observe(lambda: self._callback("alive"), "alive")
+            part.observe(lambda: self._callback("alive"), "explode")
 
     def _pairwise(self):
         return zip(self._ship_parts[:-1], self._ship_parts[1:])
@@ -133,12 +133,43 @@ class PartConnectionModel(PositionalModel):
     def __repr__(self):
         return "PartConnection: " + " -> ".join([part.name for part in self._ship_parts])
 
+    @property
+    def is_shield(self):
+        return False
+
 
 class ShieldConnectionModel(PartConnectionModel):
 
     base_arc = [(sin(radians(d)), cos(radians(d))) for d in range(0, 181, 36)]
     swells = [swell / 100 * sign for swell in range(0, 81, 5) for sign in [1, -1]][1:]
     mass = 0
+    _polygon: ClippingPolygon
+
+    def __init__(self, *ship_parts, validate_connection_function: Callable, max_distance=1.7):
+        super().__init__(*ship_parts, validate_connection_function=validate_connection_function,
+                         max_distance=max_distance)
+        self._charge = 0
+        for part in self._ship_parts:
+            part.observe(self.load_charge, "load_charge")
+
+    def _disconnect(self, part):
+        part.unobserve(self.load_charge, "load_charge")
+        super(ShieldConnectionModel, self)._disconnect(part)
+
+    def load_charge(self, amount):
+        if self._charge < 1.0:
+            self._charge += amount
+            self._charge = max(self._charge, 1.0)
+            n_lines = len(self.base_arc)
+            self._polygon.set_active_lines(*[(i - n_lines / 2) / n_lines / 2 < self._charge for i in range(n_lines)])
+
+    @property
+    def is_shield(self):
+        return True
+
+    def damage(self):
+        self._polygon.set_active_lines(*[False] * len(self.base_arc))
+        self._callback("move")
 
     def build_polygon(self):
         if self._n_parts_alive <= 1:
@@ -150,11 +181,10 @@ class ShieldConnectionModel(PartConnectionModel):
         cx, cy = start_x + dx / 2, start_y + dy / 2
         rotation = degrees(atan2(dx, dy))
         coords = [(i * dx / 6, i * dy / 6) for i in range(6)]
-        arc: Polygon = Polygon.manufacture_open(coords, cx, cy, rotation, self.uuid)
+        arc: Polygon = ClippingPolygon.manufacture_open(coords, cx, cy, rotation, self.uuid)
         return arc
 
     def adjust_polygon(self):
-        print("adjusting", self)
         if self._n_parts_alive <= 1:
             self._callback("broken")
             raise PartConnectionError("Not enough parts")
@@ -165,13 +195,10 @@ class ShieldConnectionModel(PartConnectionModel):
         rotation = degrees(atan2(-dx, dy))
         radius = hypot(dx, dy) / 2
         for swell in self.swells:
-            print("swelling", self)
             coords = self._build_arc_coords(swell, radius)
             self._polygon.update_coords(coords, cx, cy, rotation)
             if self.is_valid:
-                print("found valid", self)
                 return
-        print("no valid connection", self)
         self.disconnect_all()
         self._alive = False
         raise PartConnectionError(f'{self._ship_parts} have no valid arc')

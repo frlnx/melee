@@ -232,7 +232,7 @@ class TestShieldConnectionValidArc(object):
         assert self.shield1 in self.shield2.connected_parts
 
     def test_connection_is_not_a_straight_line(self):
-        assert [0] * len(self.target.bounding_box.lines) != [l.y1 for l in self.target.bounding_box.lines]
+        assert [0] * len(list(self.target.bounding_box.lines)) != [l.y1 for l in self.target.bounding_box.lines]
 
 
 class TestDefaultShip(object):
@@ -305,7 +305,8 @@ class TestDrydockShieldReconnectivity(object):
             _, intersected_polygons = shield_connection.bounding_box.intersected_polygons(self.ship.bounding_box)
             actual = {bb.part_id for bb in intersected_polygons}
             diff = actual - expected
-            print("ACTUAL:", ", ".join(str(self.ship._part_by_uuid[uuid]) for uuid in actual))
-            print("EXPECTED:", ", ".join(str(self.ship._part_by_uuid[uuid]) for uuid in expected))
-            print("DIFF:", ", ".join(str(self.ship._part_by_uuid[uuid]) for uuid in diff))
+            print("Shield", shield_connection.bounding_box.part_id, shield_connection.uuid)
+            print("ACTUAL:", ", ".join(str(self.ship._part_by_uuid.get(uuid, uuid)) for uuid in actual))
+            print("EXPECTED:", ", ".join(str(self.ship._part_by_uuid.get(uuid, uuid)) for uuid in expected))
+            print("DIFF:", ", ".join(str(self.ship._part_by_uuid.get(uuid, uuid)) for uuid in diff))
             assert expected == actual

@@ -61,7 +61,12 @@ class ShipModelFactory(object):
 class ShipPartModelFactory(object):
 
     ship_parts = {}
-    model_map = {}
+    model_map = {
+        "engine": ThrusterModel,
+        "fuel tank": FuelTankModel,
+        "shield": ShieldModel,
+        "generator": GeneratorModel
+    }
     build_configs = [
         {"key": "button"}, {"key": "keyboard"}, {"key": "axis"}, {"key": "mouse", "default": []},
         {"key": "position", "default": (0, 0, 0), "class": MutableOffsets},

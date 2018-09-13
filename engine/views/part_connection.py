@@ -11,16 +11,10 @@ class PartConnectionView(BaseView):
         super().__init__(model, mesh=mesh)
 
     def draw(self):
-        if self.is_alive:
-            super(PartConnectionView, self).draw()
+        super(PartConnectionView, self).draw()
 
     def draw_transparent(self):
-        if self.is_alive:
-            super(PartConnectionView, self).draw_transparent()
-
-    def _draw_local(self):
-        super(PartConnectionView, self)._draw_local()
-        #self._draw_bbox(self.model.bounding_box, color=self.bbox_color)
+        super(PartConnectionView, self).draw_transparent()
 
 
 class ShieldConnectionView(PartConnectionView):

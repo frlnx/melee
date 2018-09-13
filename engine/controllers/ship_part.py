@@ -12,7 +12,6 @@ class ShipPartController(BaseController):
         self._spawn_func = spawn_func
 
     def update(self, dt):
-        self._model.timers(dt)
         if self._gamepad:
             self.get_input()
 

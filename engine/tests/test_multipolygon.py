@@ -27,7 +27,7 @@ class TestMultiPolygonCollision(object):
 
     def setup(self):
         coords = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
-        polygons = [PolygonPart.manufacture(coords, x=px, y=py) for px, py in coords]
+        polygons = {PolygonPart.manufacture(coords, x=px, y=py) for px, py in coords}
         target = MultiPolygon(polygons)
         collider = MultiPolygon.manufacture([(-.9, -10), (-.9, -10)])
         collider.set_position_rotation(-.9, 20, 0)

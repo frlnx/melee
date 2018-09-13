@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import reduce
-from itertools import product, chain, zip_longest
+from itertools import product, chain, zip_longest, compress
 from math import radians, atan2, degrees, floor, ceil, hypot
 from typing import List, Iterator, Set
 from uuid import uuid4
@@ -300,15 +300,9 @@ class Polygon(BasePolygon):
         #    return set(), set()
         intersected = set()
         for p in other:
+            if self == p:
+                continue
             if self.intersects(p):
-                intersected.add(p)
-
-        return set(), intersected
-
-    def intra_intersected_polygons(self, other: "Polygon"):
-        intersected = set()
-        for p in other:
-            if self.original_intersects(p):
                 intersected.add(p)
 
         return set(), intersected
@@ -350,11 +344,11 @@ class ConvexHull(Polygon):
 
 class MultiPolygon(ConvexHull):
 
-    def __init__(self, polygons: Set[PolygonPart]):
+    def __init__(self, polygons: Set[PolygonPart], part_id=None):
         points = set(chain(*[{(l.x1, l.y1) for l in p.lines} | {(l.x2, l.y2) for l in p.lines} for p in polygons]))
         hull = self.convex_hull(points)
         lines = self.coords_to_lines(hull)
-        super().__init__(lines)
+        super().__init__(lines, part_id=part_id)
         self._polygons = polygons
         self._part_id_index = {p.part_id: p for p in self._polygons}
 
@@ -402,9 +396,9 @@ class MultiPolygon(ConvexHull):
         return own_intersections, other_intersections
 
     @classmethod
-    def manufacture(cls, coords, x=0, y=0, rotation=0):
+    def manufacture(cls, coords, x=0, y=0, rotation=0, part_id=None):
         lines = cls.coords_to_lines(coords)
-        polygon = MultiPolygon({PolygonPart(lines)})
+        polygon = MultiPolygon({PolygonPart(lines)}, part_id=part_id)
         polygon.set_position_rotation(x, y, rotation)
         polygon.clear_movement()
         return polygon
@@ -414,3 +408,17 @@ class MultiPolygon(ConvexHull):
         for polygon in self._polygons:
             polygon.set_position_rotation(x, y, yaw_degrees)
         self.reset_quadrants()
+
+
+class ClippingPolygon(Polygon):
+
+    def __init__(self, lines: List[Line], part_id):
+        self._active_lines = [True] * len(lines)
+        super().__init__(lines, part_id=part_id)
+
+    @property
+    def lines(self):
+        return list(compress(self._lines, self._active_lines))
+
+    def set_active_lines(self, *states):
+        self._active_lines = states

@@ -14,4 +14,4 @@ class TestShipModelFactory(object):
         assert self.model.bounding_box.right > 0.5
 
     def test_bouding_box_sub_polygons_are_not_all_the_same(self):
-        assert 1 != len(set([(p.lines[0].x1, p.lines[0].y1) for p in self.model.bounding_box._polygons]))
+        assert 1 != len(set([(list(p.lines)[0].x1, list(p.lines)[0].y1) for p in self.model.bounding_box._polygons]))

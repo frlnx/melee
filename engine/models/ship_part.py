@@ -1,4 +1,3 @@
-from math import radians, cos, atan2, degrees
 from typing import Set
 
 from engine.models.base_model import BaseModel
@@ -22,8 +21,6 @@ class ShipPartModel(BaseModel):
         self.material_affected = part_spec.get('material_affected')
         self.material_mode = part_spec.get('material_mode')
         self.material_channels = part_spec.get('material_channels')
-        self.max_fuel_stored = part_spec.get('fuel_storage')
-        self._fuel_stored = part_spec.get('fuel_storage')
         self._connectability = part_spec.get('connectability', set())
         self.connection_configs = {config['name']: config for config in self._connectability}
         self.needs_connection_to: set = {c['name'] for c in self._connectability if c.get('required')}
@@ -34,26 +31,24 @@ class ShipPartModel(BaseModel):
         self._connected_parts = set()
         self._working = False
         self.update_working_status()
-        self.full_torque = self._full_torque()
 
-    @property
-    def fuel_stored(self):
-        return self._fuel_stored
+    def set_input_value(self, value):
+        self.input_value = self.working and value or 0
+        self.set_material_value(self.input_value)
 
     @property
     def working(self):
         return self._working
 
     def update_working_status(self):
-        working = (self.needs_fulfilled and
-                   self.is_alive and
-                   not self.is_exploding and
-                   self.fuel_stored != 0 and
-                   self.has_route_to_cockpit)
-        updated = self._working != working
-        self._working = working
+        actual_working = self._check_working()
+        updated = self._working != actual_working
+        self._working = actual_working
         if updated:
             self._callback("working")
+
+    def _check_working(self):
+        return self.needs_fulfilled and self.is_alive and not self.is_exploding and self.has_route_to_cockpit
 
     @property
     def has_route_to_cockpit(self):
@@ -71,25 +66,6 @@ class ShipPartModel(BaseModel):
             new_parts -= checked
             queue = new_parts
         return False
-
-    @property
-    def _connected_fuel_tanks(self):
-        return [part for part in self.connected_parts if part.fuel_stored]
-
-    def _consume_fuel(self, amount):
-        fuel_tanks = self._connected_fuel_tanks
-        n_fuel_tanks = len(fuel_tanks)
-        amount_per_tank = amount / n_fuel_tanks
-        for fuel_tank in fuel_tanks:
-            fuel_tank.drain_fuel(amount_per_tank)
-
-    def drain_fuel(self, amount):
-        if self._fuel_stored is None:
-            raise AttributeError(f"No fuel stored in a {self.name}")
-        self._fuel_stored -= amount
-        self._fuel_stored = max(0, self._fuel_stored)
-        if self._fuel_stored == 0:
-            self.update_working_status()
 
     @property
     def needs_fulfilled(self):
@@ -163,22 +139,8 @@ class ShipPartModel(BaseModel):
         self.keyboard = keyboard
         self.axis = axis
 
-    def set_input_value(self, value):
-        self.input_value = self.working and value or 0
-        thrust = self.input_value * self.state_spec.get('thrust generated', 0)
-        torque_yaw = self.full_torque * thrust
-        self.set_local_acceleration(0, 0, -thrust)
-        self.set_torque(0, torque_yaw, 0)
-        self.set_material_value(value)
-
     def run(self, dt):
-        fuel_consumption = self.state_spec.get('fuel consumption')
-        if fuel_consumption and self.input_value > 0 and self.working:
-            fuel_consumed = fuel_consumption * self.input_value
-            self._consume_fuel(fuel_consumed)
-
-    def timers(self, dt):
-        super().timers(dt)
+        #super().run(dt)
         if 'timeout' in self.state_spec:
             self._time_in_state += dt
             self.set_material_value(self._time_in_state / self.state_spec['timeout'])
@@ -226,23 +188,6 @@ class ShipPartModel(BaseModel):
     def __repr__(self):
         return "{} @{}".format(self.name, self.position.xyz)
 
-    def update(self):
-        super(ShipPartModel, self).update()
-        self.full_torque = self._full_torque()
-
-    @property
-    def diff_yaw_of_force_to_pos(self):
-        return (((self.rotation.yaw % 360) - (self.position.direction.yaw % 360) + 180) % 360) - 180
-
-    @property
-    def radians_force_is_lateral_to_position(self):
-        return radians(self.diff_yaw_of_force_to_pos - 90)
-
-    def _full_torque(self):
-        amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position)
-        full_torque_radians = atan2(amount_of_force_that_rotates, self.position.distance)
-        return degrees(full_torque_radians)
-
     def damage(self):
         super(ShipPartModel, self).damage()
         self.explode()
@@ -259,4 +204,4 @@ class ShipPartModel(BaseModel):
                               keyboard=self.keyboard, mouse=self.mouse.copy(), axis=self.axis, button=self.button,
                               connectability=self._connectability.copy(), mesh_name=self.mesh_name,
                               material_affected=self.material_affected, material_channels=self.material_channels,
-                              material_mode=self.material_mode, fuel_storage=self.max_fuel_stored)
+                              material_mode=self.material_mode)

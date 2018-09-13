@@ -148,7 +148,11 @@ class DynamicViewFactory(ViewFactory):
         ShipModel: ShipView,
         ShipPartModel: ShipPartView,
         PlasmaModel: BaseView,
-        AsteroidModel: BaseView
+        AsteroidModel: BaseView,
+        ThrusterModel: ShipPartView,
+        GeneratorModel: ShipPartView,
+        FuelTankModel: ShipPartView,
+        ShieldModel: ShipPartView
     }
 
     def manufacture(self, model: PositionalModel, view_class=None, sub_view_class=None):

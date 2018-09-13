@@ -76,7 +76,7 @@ class TestAsteroidShipCollision(object):
     def test_collision(self):
         self.ship.set_position(-50, 0, 0)
         self.ship.update_bounding_box()
-        my_parts, asteroid_parts = self.ship.intersected_polygons(self.asteroid)
+        my_parts, asteroid_parts = self.ship.polygons_in_order_of_collision(self.asteroid)
         assert 0 < len(my_parts)
         assert 1 == len(asteroid_parts)
 
@@ -92,6 +92,6 @@ test_data = [
 def test_collision_360(asteroid, ship):
     ship.set_position(-50, 0, 0)
     ship.update_bounding_box()
-    my_parts, asteroid_parts = ship.intersected_polygons(asteroid)
+    my_parts, asteroid_parts = ship.polygons_in_order_of_collision(asteroid)
     assert 0 < len(my_parts)
     assert 1 == len(asteroid_parts)

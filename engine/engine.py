@@ -184,7 +184,7 @@ class Engine(object):
         for m1, m2 in pairs:
             assert isinstance(m1, BaseModel)
             assert isinstance(m2, BaseModel)
-            m1_intersection_parts, m2_intersection_parts = m1.intersected_polygons(m2)
+            m1_intersection_parts, m2_intersection_parts = m1.polygons_in_order_of_collision(m2)
             if not m1_intersection_parts and not m2_intersection_parts:
                 continue
             intersects, x, y = m1.intersection_point(m2)

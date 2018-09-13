@@ -1,6 +1,7 @@
 from functools import partial
 from itertools import combinations, chain
-from typing import Set
+from typing import Set, Dict
+from uuid import UUID
 
 from engine.models.base_model import BaseModel, RemoveCallbackException
 from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel, PartConnectionError
@@ -15,6 +16,7 @@ class CompositeModel(BaseModel):
                  acceleration: MutableOffsets, torque: MutableDegrees):
         self._part_by_uuid = {part.uuid: part for part in parts}
         self._connections: Set[PartConnectionModel] = set()
+        self._shields: Dict[UUID: ShieldConnectionModel] = {}
         self._position = position
         self._rotation = rotation
         self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
@@ -30,6 +32,8 @@ class CompositeModel(BaseModel):
             part.observe_with_self(self.rebuild_connections_for, "move")
         for connection in self._connections:
             connection.update_polygon()
+        self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
+        self._shields = {c.uuid: c for c in self._connections if c.is_shield}
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -39,6 +43,9 @@ class CompositeModel(BaseModel):
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         parts = set()
         for bbox in bounding_boxes:
+            if bbox.part_id in self._shields:
+                parts.add(self._shields[bbox.part_id])
+                break
             parts.add(self._part_by_uuid[bbox.part_id])
         return parts
 
@@ -109,7 +116,7 @@ class CompositeModel(BaseModel):
 
     def _build_bounding_box(self, ship_parts: list) -> MultiPolygon:
         bboxes = set()
-        for part in ship_parts:
+        for part in chain(ship_parts, self._connections):
             bbox = part.bounding_box.__copy__()
             bbox.part_id = part.uuid
             bbox.set_position_rotation(part.x, part.z, part.yaw)
@@ -224,7 +231,7 @@ class CompositeModel(BaseModel):
 
     @property
     def parts_of_bbox(self):
-        return [part for part in chain(self.parts, self._connections) if part.is_alive and not part.is_exploding]
+        return [part for part in chain(self.parts, self._shields.values()) if part.is_alive and not part.is_exploding]
 
     @property
     def acceleration(self):

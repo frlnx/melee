@@ -84,7 +84,7 @@
       {
         "name": "active",
         "power required": 100,
-        "shield_charge_amount": 10.0
+        "shield_charge_amount": 0.1
       }
     ],
     "connectability": [

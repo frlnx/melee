@@ -119,79 +119,22 @@ class PositionalModel(object):
         return self._roll
 
 
-class BaseModel(PositionalModel):
+class AnimationModel(PositionalModel):
 
-    def __init__(self,
-                 position: MutableOffsets,
-                 rotation: MutableDegrees,
-                 movement: MutableOffsets,
-                 spin: MutableDegrees,
-                 acceleration: MutableOffsets,
-                 torque: MutableDegrees,
-                 bounding_box: MultiPolygon):
-        super(BaseModel, self).__init__()
-        self.uuid = uuid4()
-        self._mass = 1
-        self._position = position
-        self._rotation = rotation
-        self._movement = movement
-        self._spin = spin
-        self._acceleration = acceleration
-        self._torque = torque
-        self._bounding_box = bounding_box
+    def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, name=None):
+        super().__init__(x, y, z, pitch, yaw, roll, name)
         self._time_consumed = 0
-        try:
-            bb_width = (self._bounding_box.right - self._bounding_box.left)
-            bb_height = (self._bounding_box.top - self._bounding_box.bottom)
-            self.inertia = self.mass / 12 * (bb_width ** 2 + bb_height ** 2)
-        except AttributeError:
-            self.inertia = 1
-        self.bounding_box_update_needed = False
-        self._alive = True
+        self._explosion_time = 0
         self._exploding = False
-        self._explosion_time = 0.0
+        self._alive = True
 
-    def __eq__(self, other):
-        return self.uuid == other.uuid
-
-    def __hash__(self):
-        return self.uuid.__hash__()
-
-    def __gt__(self, other):
-        return self.uuid > other.uuid
-
-    def parts_by_bounding_boxes(self, bounding_boxes: set):
-        return {self}
-
-    @property
-    def destructive_energy(self):
-        return 0
-
-    def damage(self):
-        pass
-
-    def intersected_polygons(self, other: "BaseModel"):
-        own_intersections, other_intersections = self.bounding_box.intersected_polygons(other.bounding_box)
-        delta_movement = self.movement - other.movement
-        r = delta_movement.direction.yaw_radian
-
-        def order_by_direction(part):
-            x, y = part.centroid()
-            return x * sin(r) + y * cos(r)
-        if self.destructable:
-            own_intersections = sorted(own_intersections, key=order_by_direction)
-        if other.destructable:
-            other_intersections = sorted(other_intersections, key=order_by_direction)
-            other_intersections.reverse()
-        return own_intersections, other_intersections
-
-    def __repr__(self):
-        return "{} {}".format(self.__class__.__name__, self.uuid)
-
-    def __getstate__(self):
-        d = {k: val for k, val in self.__dict__.items()}
-        d['_action_observers'] = defaultdict(set)
-        return d
+    def run(self, dt):
+        self._time_consumed += dt
+        if self.is_exploding:
+            self._explosion_time += dt
+            if self.explosion_timer > 3.0:
+                self.set_alive(False)
+                self._exploding = False
 
     def explode(self):
         if not self.is_exploding:
@@ -216,6 +159,77 @@ class BaseModel(PositionalModel):
         if callback:
             self._callback("alive")
 
+
+class BaseModel(AnimationModel):
+
+    def __init__(self,
+                 position: MutableOffsets,
+                 rotation: MutableDegrees,
+                 movement: MutableOffsets,
+                 spin: MutableDegrees,
+                 acceleration: MutableOffsets,
+                 torque: MutableDegrees,
+                 bounding_box: MultiPolygon):
+        super(BaseModel, self).__init__()
+        self.uuid = uuid4()
+        self._mass = 1
+        self._position = position
+        self._rotation = rotation
+        self._movement = movement
+        self._spin = spin
+        self._acceleration = acceleration
+        self._torque = torque
+        self._bounding_box = bounding_box
+        try:
+            bb_width = (self._bounding_box.right - self._bounding_box.left)
+            bb_height = (self._bounding_box.top - self._bounding_box.bottom)
+            self.inertia = self.mass / 12 * (bb_width ** 2 + bb_height ** 2)
+        except AttributeError:
+            self.inertia = 1
+        self.bounding_box_update_needed = False
+
+    def __eq__(self, other):
+        return self.uuid == other.uuid
+
+    def __hash__(self):
+        return self.uuid.__hash__()
+
+    def __gt__(self, other):
+        return self.uuid > other.uuid
+
+    def parts_by_bounding_boxes(self, bounding_boxes: set):
+        return {self}
+
+    @property
+    def destructive_energy(self):
+        return 0
+
+    def damage(self):
+        pass
+
+    def polygons_in_order_of_collision(self, other: "BaseModel"):
+        own_intersections, other_intersections = self.bounding_box.intersected_polygons(other.bounding_box)
+        delta_movement = self.movement - other.movement
+        r = delta_movement.direction.yaw_radian
+
+        def order_by_direction(part):
+            x, y = part.centroid()
+            return x * sin(r) + y * cos(r)
+        if self.destructable:
+            own_intersections = sorted(own_intersections, key=order_by_direction)
+        if other.destructable:
+            other_intersections = sorted(other_intersections, key=order_by_direction)
+            other_intersections.reverse()
+        return own_intersections, other_intersections
+
+    def __repr__(self):
+        return "{} {}".format(self.__class__.__name__, self.uuid)
+
+    def __getstate__(self):
+        d = {k: val for k, val in self.__dict__.items()}
+        d['_action_observers'] = defaultdict(set)
+        return d
+
     @property
     def data_dict(self):
         return {"uuid": self.uuid, "position": list(self.position.xyz), "rotation": self.rotation.yaw,
@@ -233,6 +247,7 @@ class BaseModel(PositionalModel):
         self._bounding_box.set_position_rotation(self.x, self.z, self.yaw)
 
     def run(self, dt):
+        super(BaseModel, self).run(dt)
         half_of_acceleration = self.acceleration * dt / 2
         half_of_torque = self.torque * dt / 2
         self.movement.translate(half_of_acceleration)
@@ -243,19 +258,10 @@ class BaseModel(PositionalModel):
         self.spin.translate(half_of_torque)
         if self.bounding_box_update_needed:
             self.update_bounding_box()
-        self.timers(dt)
 
     def update_bounding_box(self):
         self._bounding_box.set_position_rotation(self.x, self.z, -self.yaw)
         self.bounding_box_update_needed = False
-
-    def timers(self, dt):
-        self._time_consumed += dt
-        if self.is_exploding:
-            self._explosion_time += dt
-            if self.explosion_timer > 3.0:
-                self.set_alive(False)
-                self._exploding = False
 
     @property
     def time_consumed(self):
