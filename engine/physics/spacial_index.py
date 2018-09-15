@@ -54,8 +54,14 @@ class SpacialIndex(object):
             self._add_model_to_2d_space_index(model, q)
 
     def _remove_model_from_2d_space_index(self, model: BaseModel, index: tuple):
-        self._2d_space_index[index].remove(model)
-        self._model_quadrant_index[model].remove(index)
+        try:
+            self._2d_space_index[index].remove(model)
+        except KeyError:
+            pass
+        try:
+            self._model_quadrant_index[model].remove(index)
+        except KeyError:
+            pass
 
     def _add_model_to_2d_space_index(self, model: BaseModel, index: tuple):
         self._2d_space_index[index].add(model)

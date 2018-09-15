@@ -10,7 +10,6 @@ class ShipController(BaseController):
     def __init__(self, model: ShipModel, gamepad: "InputHandler"):
         super().__init__(model, gamepad)
         self._model = model
-        self._possible_targets = [model]
         self._button_config = {
             3: self.select_next_target,
             2: self.reset,
@@ -20,11 +19,9 @@ class ShipController(BaseController):
 
     def self_destruct(self):
         for part in self._model.parts:
-            part.set_movement(*self._model.momentum_at(part.position).forces)
-            self._model.mutate_offsets_to_global(part.position)
-            part.set_rotation(*self._model.rotation)
-            self._model.add_own_spawn(part)
-            self._model.remove_part(part)
+            if part.name != "cockpit":
+                self._model.eject_part(part)
+                part.explode()
 
     @property
     def spawns(self):
@@ -36,26 +33,8 @@ class ShipController(BaseController):
         self._model.set_movement(0, 0, 0)
         self._model.set_spin(0, 0, 0)
 
-    def register_target(self, target_model: ShipModel):
-        if target_model.mass > 1.0 and target_model not in self._possible_targets:
-            self._possible_targets.append(target_model)
-
-    def deregister_target(self, target_model: ShipModel):
-        try:
-            self._possible_targets.remove(target_model)
-        except ValueError:
-            pass
-        if self._model.target == target_model:
-            self.select_next_target()
-
     def select_next_target(self):
-        next_target = self.next_target()
-        self._model.set_target(next_target)
-
-    def next_target(self) -> ShipModel:
-        index = self._possible_targets.index(self._model.target)
-        target_model = self._possible_targets[(index + 1) % len(self._possible_targets)]
-        return target_model
+        self._model.cycle_next_target()
 
     @property
     def sub_controllers(self) -> Set[ShipPartController]:

@@ -5,7 +5,7 @@ import pyglet
 from engine.controllers.factories import ControllerFactory
 from engine.engine import Engine
 from engine.input_handlers import Keyboard
-from engine.models import BaseModel, ShipModel
+from engine.models import BaseModel
 from engine.views.menus import ShipBuildMenu, BaseMenu, InputMenu, ControlConfigMenu
 from engine.window import Window
 
@@ -117,9 +117,9 @@ class ClientEngine(Engine):
     def start_local(self):
         self.spawn_self()
 
-        #m2 = self.smf.manufacture("ship", position=self.random_position(), spin=(0, 90, 0))
-        #self._new_model_callback(m2)
-        #self.spawn(m2)
+        m2 = self.smf.manufacture("ship", position=self.random_position(), spin=(0, 90, 0))
+        self._new_model_callback(m2)
+        self.spawn(m2)
 
         self.spawn_asteroids(200, area=2000)
         self.schedule(self.update)
@@ -141,20 +141,16 @@ class ClientEngine(Engine):
     def spawn(self, model: BaseModel):
         super(ClientEngine, self).spawn(model)
         self.window.spawn(model)
-        if isinstance(model, ShipModel):
-            self.spawn_ship(model)
-
-    def spawn_ship(self, model):
-        self.propagate_target(model)
+        if model.mass > 3:
+            self.propagate_target(model)
 
     def decay(self, uuid):
         model = self.models[uuid]
-        self.my_controller.deregister_target(model)
+        self.my_model.remove_target(model)
         super(ClientEngine, self).decay(uuid)
 
     def propagate_target(self, ship: BaseModel):
-        pass
-        #self.my_controller.register_target(ship)
+        self.my_model.add_target(ship)
 
     def update(self, dt):
         self.my_controller.update(dt)

@@ -7,7 +7,6 @@ from twisted.internet.task import LoopingCall
 
 from engine.models.base_model import BaseModel
 from engine.models.factories import ShipModelFactory, AsteroidModelFactory
-from engine.physics.force import MutableOffsets, MutableForce
 from engine.physics.spacial_index import SpacialIndex
 
 
@@ -188,16 +187,17 @@ class Engine(object):
             if not m1_intersection_parts and not m2_intersection_parts:
                 continue
             intersects, x, y = m1.intersection_point(m2)
-            if intersects:
-                m1_vector = m2.movement - m1.movement
-                m2_vector = -m1_vector
-                combined_mass = m1.mass + m2.mass
-                m1_mass_quota = m2.mass / combined_mass
-                m2_mass_quota = m1.mass / combined_mass
-                m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
-                m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
-                m1.add_collision(m1_force)
-                m2.add_collision(m2_force)
+            if not intersects:
+                continue
+            #m1_vector = m2.movement - m1.movement
+            #m2_vector = -m1_vector
+            #combined_mass = m1.mass + m2.mass
+            #m1_mass_quota = m2.mass / combined_mass
+            #m2_mass_quota = m1.mass / combined_mass
+            #m1_force = MutableForce(MutableOffsets(x, 0, y), m1_vector * m1_mass_quota)
+            #m2_force = MutableForce(MutableOffsets(x, 0, y), m2_vector * m2_mass_quota)
+            #m1.add_collision(m1_force)
+            #m2.add_collision(m2_force)
             if m1.destructable and m2.destructable:
                 n_parts_damaged = min(len(m1_intersection_parts), len(m2_intersection_parts))
                 m1_intersection_parts = m1_intersection_parts[:n_parts_damaged]

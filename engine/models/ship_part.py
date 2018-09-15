@@ -140,7 +140,9 @@ class ShipPartModel(BaseModel):
         self.axis = axis
 
     def run(self, dt):
-        #super().run(dt)
+        self.timers(dt)
+
+    def timers(self, dt):
         if 'timeout' in self.state_spec:
             self._time_in_state += dt
             self.set_material_value(self._time_in_state / self.state_spec['timeout'])

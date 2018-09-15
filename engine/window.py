@@ -194,4 +194,6 @@ class Window(pyglet.window.Window):
         for view in self.del_views:
             del self._views_by_uuid[view.model.uuid]
             del self._models_by_uuid[view.model.uuid]
+        if self._camera_following not in self._views_by_uuid:
+            self._camera_following = self._views_by_uuid.keys().__iter__().__next__()
         self.del_views.clear()

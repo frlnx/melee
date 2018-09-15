@@ -17,6 +17,9 @@ class GeneratorModel(ShipPartModel):
     def _consume_fuel(self, amount):
         fuel_tanks = self._connected_fuel_tanks
         n_fuel_tanks = len(fuel_tanks)
+        if n_fuel_tanks == 0:
+            self.update_working_status()
+            return
         amount_per_tank = amount / n_fuel_tanks
         for fuel_tank in fuel_tanks:
             fuel_tank.drain_fuel(amount_per_tank)

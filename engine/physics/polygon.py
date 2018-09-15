@@ -422,3 +422,6 @@ class ClippingPolygon(Polygon):
 
     def set_active_lines(self, *states):
         self._active_lines = states
+        self._left = self._right = self._top = self._bottom = None
+        self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
+        self._moving_polygon = None

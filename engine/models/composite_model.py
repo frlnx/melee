@@ -16,7 +16,8 @@ class CompositeModel(BaseModel):
                  acceleration: MutableOffsets, torque: MutableDegrees):
         self._part_by_uuid = {part.uuid: part for part in parts}
         self._connections: Set[PartConnectionModel] = set()
-        self._shields: Dict[UUID: ShieldConnectionModel] = {}
+        self._connection_by_uuid: Dict[UUID: ShieldConnectionModel] = {}
+        self._all_by_uuid = {}
         self._position = position
         self._rotation = rotation
         self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
@@ -26,14 +27,15 @@ class CompositeModel(BaseModel):
         self._calculate_inertia()
         self._own_spawns = []
         for part in parts:
-            part.observe_with_self(self.remove_part, "alive")
-            part.observe(self.prune_dead_parts_from_bounding_box, "explode")
+            part.observe_with_self(self.eject_part, "explode")
             part.observe(self.rebuild, "move")
             part.observe_with_self(self.rebuild_connections_for, "move")
         for connection in self._connections:
             connection.update_polygon()
         self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
-        self._shields = {c.uuid: c for c in self._connections if c.is_shield}
+        self._connection_by_uuid = {c.uuid: c for c in self._connections}
+        self._all_by_uuid = dict(self._connection_by_uuid)
+        self._all_by_uuid.update(self._part_by_uuid)
 
     def run(self, dt):
         super(CompositeModel, self).run(dt)
@@ -43,10 +45,12 @@ class CompositeModel(BaseModel):
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         parts = set()
         for bbox in bounding_boxes:
-            if bbox.part_id in self._shields:
-                parts.add(self._shields[bbox.part_id])
-                break
-            parts.add(self._part_by_uuid[bbox.part_id])
+            if bbox.part_id in self._all_by_uuid:
+                part = self._all_by_uuid[bbox.part_id]
+                if hasattr(part, 'damage'):
+                    parts.add(part)
+                if isinstance(part, ShieldConnectionModel):
+                    break
         return parts
 
     def part_at(self, x, z) -> ShipPartModel:
@@ -86,23 +90,31 @@ class CompositeModel(BaseModel):
 
     def _add_part(self, part):
         self._part_by_uuid[part.uuid] = part
-        part.observe_with_self(self.remove_part, "alive")
-        part.observe(self.prune_dead_parts_from_bounding_box, "explode")
+        self._all_by_uuid[part.uuid] = part
+        part.observe_with_self(self.eject_part, "explode")
         part.observe(self.rebuild, "move")
         part.observe_with_self(self.rebuild_connections_for, "move")
         self._callback("add_part", added=part)
 
-    def remove_part(self, part):
+    def remove_part(self, part: ShipPartModel):
         if part.uuid in self._part_by_uuid:
             del self._part_by_uuid[part.uuid]
-            part.unobserve_with_self(self.remove_part, "alive")
-            part.unobserve(self.prune_dead_parts_from_bounding_box, "explode")
+            del self._all_by_uuid[part.uuid]
+            part.unobserve_with_self(self.eject_part, "explode")
             part.unobserve(self.rebuild, "move")
             part.unobserve_with_self(self.rebuild_connections_for, "move")
             self._callback("remove_part", removed=part)
         self.prune_dead_parts_from_bounding_box()
         if not self.parts:
             self.set_alive(False)
+
+    def eject_part(self, part: ShipPartModel):
+        part.disconnect_all()
+        self.remove_part(part)
+        part.set_movement(*self.movement)#*self.momentum_at(part.position).forces)
+        self.mutate_offsets_to_global(part.position)
+        part.rotate(*self.rotation)
+        self.add_own_spawn(part)
 
     def rebuild(self):
         if len(self.parts_of_bbox) > 0:
@@ -112,7 +124,7 @@ class CompositeModel(BaseModel):
             self._callback("rebuild")
         else:
             self.set_alive(False)
-            raise RemoveCallbackException()
+            #raise RemoveCallbackException()
 
     def _build_bounding_box(self, ship_parts: list) -> MultiPolygon:
         bboxes = set()
@@ -138,7 +150,7 @@ class CompositeModel(BaseModel):
             self._callback("rebuild")
         else:
             self.set_alive(False)
-            raise RemoveCallbackException()
+            #raise RemoveCallbackException()
 
     def _calculate_mass(self):
         self._mass = sum([part.mass for part in self.parts_of_bbox])
@@ -191,6 +203,7 @@ class CompositeModel(BaseModel):
     def _add_connection(self, connection: PartConnectionModel):
         if connection not in self._connections:
             self._connections.add(connection)
+            self._all_by_uuid[connection.uuid] = connection
             connection.observe_with_self(self._remove_connection, "broken")
             connection.observe_with_self(self._remove_connection, "alive")
             self._callback("connection", added=connection)
@@ -198,6 +211,7 @@ class CompositeModel(BaseModel):
     def _remove_connection(self, connection: PartConnectionModel):
         try:
             self._connections.remove(connection)
+            del self._all_by_uuid[connection.uuid]
         except KeyError:
             pass
         else:
@@ -231,7 +245,7 @@ class CompositeModel(BaseModel):
 
     @property
     def parts_of_bbox(self):
-        return [part for part in chain(self.parts, self._shields.values()) if part.is_alive and not part.is_exploding]
+        return [part for part in chain(self.parts, self._connection_by_uuid.values()) if part.is_alive and not part.is_exploding]
 
     @property
     def acceleration(self):

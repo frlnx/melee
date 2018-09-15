@@ -129,6 +129,9 @@ class AnimationModel(PositionalModel):
         self._alive = True
 
     def run(self, dt):
+        self.timers(dt)
+
+    def timers(self, dt):
         self._time_consumed += dt
         if self.is_exploding:
             self._explosion_time += dt
@@ -208,6 +211,8 @@ class BaseModel(AnimationModel):
         pass
 
     def polygons_in_order_of_collision(self, other: "BaseModel"):
+        if self.is_exploding or other.is_exploding:
+            return set(), set()
         own_intersections, other_intersections = self.bounding_box.intersected_polygons(other.bounding_box)
         delta_movement = self.movement - other.movement
         r = delta_movement.direction.yaw_radian

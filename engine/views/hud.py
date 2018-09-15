@@ -23,6 +23,7 @@ class ShipHudView(ShipView):
     def _draw_bbox(*args, **kwargs):
         pass
 
+
 class Hud(object):
 
     def __init__(self, view_factory: DynamicViewFactory):
@@ -33,6 +34,7 @@ class Hud(object):
         self.own_model: ShipModel = None
         self.target_model: ShipModel = None
         self.target_view: ShipHudView = None
+        self._default_text = Label("Unknown", font_name="Courier New")
 
     def set_target_model(self, model: BaseModel):
         self.target_model = model
@@ -58,7 +60,7 @@ class Hud(object):
 
     def draw(self):
         glPushMatrix()
-        label = self.texts[self.target_model]
+        label = self.texts.get(self.target_model, self._default_text)
         glTranslatef(1200, 400, 0)
         label.draw()
         glPopMatrix()

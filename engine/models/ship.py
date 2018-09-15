@@ -1,5 +1,6 @@
-from typing import Set
+from typing import Set, List
 
+from engine.models import BaseModel
 from engine.models.composite_model import CompositeModel
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
@@ -11,10 +12,28 @@ class ShipModel(CompositeModel):
                  acceleration: MutableOffsets, torque: MutableDegrees):
         super().__init__(parts, position, rotation, movement, spin, acceleration, torque)
         self.ship_id = ship_id
-        self._target: ShipModel = None
-        self._valid_targets: Set[ShipModel] = set()
+        self._targets: List[BaseModel] = []
+        self._current_target_index = 0
         self._fuel_parts = set()
         self._max_fuel = sum([part.max_fuel_stored for part in self._fuel_parts])
+
+    def add_target(self, target: BaseModel):
+        if target not in self._targets:
+            self._targets.append(target)
+
+    def remove_target(self, target: BaseModel):
+        try:
+            self._targets.remove(target)
+        except ValueError:
+            pass
+
+    def cycle_next_target(self):
+        self._current_target_index += 1
+        self._current_target_index %= len(self._targets)
+
+    def cycle_previous_target(self):
+        self._current_target_index -= 1
+        self._current_target_index %= len(self._targets)
 
     def _add_part(self, part):
         super(ShipModel, self)._add_part(part)
@@ -33,13 +52,16 @@ class ShipModel(CompositeModel):
 
     def __getstate__(self):
         state = super(ShipModel, self).__getstate__()
-        state['_valid_targets'] = set()
+        state['_valid_targets'] = []
         state['_target'] = self.target and self.target.uuid or None
         return state
 
     @property
-    def target(self) -> "ShipModel":
-        return self._target or self
+    def target(self) -> "BaseModel":
+        try:
+            return self._targets[self._current_target_index]
+        except IndexError:
+            return self
 
     @property
     def fuel_percentage(self):
