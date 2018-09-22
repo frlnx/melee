@@ -1,8 +1,8 @@
 from collections import defaultdict
 from functools import reduce
-from itertools import product, chain, zip_longest, compress
-from math import radians, atan2, degrees, floor, ceil, hypot
-from typing import List, Iterator, Set
+from itertools import product, chain, zip_longest, compress, filterfalse
+from math import radians, atan2, degrees, floor, ceil, hypot, pi, sin
+from typing import List, Iterator, Set, Tuple
 from uuid import uuid4
 
 from engine.physics.line import Line
@@ -25,13 +25,23 @@ class BasePolygon(object):
         self._observers = defaultdict(set)
         self._quadrants = set()
 
-    def lines_pairwise(self):
+    def lines_pairwise(self) -> Iterator[Tuple[Line, Line]]:
         return zip(self._lines[:-1], self._lines[1:])
 
-    def lines_inner_triplets(self):
+    def lines_overlapping_pairs(self) -> Iterator[Tuple[Line, Line]]:
+        return self.iterate_overlapping_pairs(self._lines)
+
+    @staticmethod
+    def iterate_overlapping_pairs(lines):
+        return zip(lines, chain(lines[1:], lines[:1]))
+
+    def lines_overlapping_triplets(self) -> Iterator[Tuple[Line, Line, Line]]:
+        return zip(chain(self._lines[-1:], self._lines[:-1]), self._lines, chain(self._lines[1:], self._lines[:1]))
+
+    def lines_inner_triplets(self) -> Iterator[Tuple[Line, Line, Line]]:
         return zip(self._lines[:-2], self._lines[1:-1], self._lines[2:])
 
-    def lines_outer_triplets(self):
+    def lines_outer_triplets(self) -> Iterator[Tuple[Line, Line, Line]]:
         return zip(chain(self._lines[:1], self._lines[:-1]), self._lines, chain(self._lines[1:], self._lines[-1:]))
 
     def observe(self, func, action):
@@ -230,12 +240,12 @@ class BasePolygon(object):
         self.callback("quadrants")
 
     def __repr__(self):
-        return f"{self.part_id} {len(self.lines)}-sided at {self.x}, {self.y}"
+        return f"{self.part_id[:4]} {len(self.lines)}-sided at {self.x}, {self.y}"
 
 
 class Polygon(BasePolygon):
 
-    def centroid(self):
+    def _centroid(self):
         points = [l.centroid for l in self.lines]
         centroid = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), points)
         return centroid[0] / len(points), centroid[1] / len(points)
@@ -314,6 +324,65 @@ class Polygon(BasePolygon):
         return 1
 
 
+class ClosedPolygon(Polygon):
+
+    def __init__(self, lines: List[Line], part_id=None):
+        super().__init__(lines, part_id=part_id)
+        self.evaluate_directionality()
+        self.centroid = self._centroid()
+
+    def area(self):
+        if len(self.lines) < 3:
+            return 0
+        return sum(map(Triangle.area, self._triangles()))
+
+    def _centroid(self):
+        if len(self.lines) < 3:
+            return self.x, self.y
+        weights = list(map(Triangle.area, self._triangles()))
+        sum_weights = sum(weights)
+        centroids = list(map(Triangle._centroid, self._triangles()))
+        x = sum(x * weight for (x, _), weight in zip(centroids, weights)) / sum_weights
+        y = sum(y * weight for (_, y), weight in zip(centroids, weights)) / sum_weights
+        return x, y
+
+    def evaluate_directionality(self):
+        self._angular_sum = sum(line1.delta_radii_to(line2) for line1, line2 in self.lines_overlapping_pairs())
+        self.clockwise = self._angular_sum < 0  # Depends on what coordinate system you use of course.
+
+    def _triangles(self):
+        lines = list(self.lines)
+        triangles = []
+        while len(lines) > 3:
+            line1, line2, line3 = self.find_lines_of_ear(lines, self.clockwise)
+            triangles.append(Triangle([line1, line2, line3]))
+            line3 = line3.copy()
+            line3.flip()
+            lines[lines.index(line1)] = line3
+            lines.remove(line2)
+        triangles.append(Triangle(lines))
+        return triangles
+
+    @classmethod
+    def find_lines_of_ear(cls, lines, clockwise):
+        for line1, line2 in cls.iterate_overlapping_pairs(lines):
+            if not line1.delta_radii_to(line2) > 0 == clockwise:
+                continue
+            line3 = Line([(line2.x2, line2.y2), (line1.x1, line1.y1)])
+            if any(map(lambda line: line1.on_left_side(line.x1, line.y1) == clockwise and
+                                    line2.on_left_side(line.x1, line.y1) == clockwise and
+                                    line3.on_left_side(line.x1, line.y1) == clockwise,
+                       filterfalse([line1, line2].__contains__, lines))):
+                continue
+            return line1, line2, line3
+        raise AttributeError("No ears found, are you sure this polygon is " +
+                             (clockwise and "clockwise?" or "counter-clockwise?"))
+
+
+class OpenPolygon(Polygon):
+    pass
+
+
 class PolygonPart(Polygon):
 
     def __init__(self, lines: List[Line], part_id=None):
@@ -336,10 +405,31 @@ class PolygonPart(Polygon):
         super(PolygonPart, self).freeze()
 
 
-class ConvexHull(Polygon):
+class ConvexHull(ClosedPolygon):
 
     def point_inside(self, x, y):
         return all(line.on_left_side(x, y) for line in self.moving_lines)
+
+
+class Triangle(ConvexHull):
+
+    def __init__(self, lines: List[Line]):
+        assert len(lines) == 3
+        super().__init__(lines)
+
+    def _centroid(self):
+        points = [l.centroid for l in self.lines]
+        centroid = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), points)
+        return centroid[0] / len(points), centroid[1] / len(points)
+
+    def area(self):
+        a, b, c = self.lines
+        area = a.length * b.length * 0.5 * sin(a.radii % pi - b.radii % pi)
+        return abs(area)
+
+    def __repr__(self):
+        coords = ", ".join("(" + str(line.x1) + ", " + str(line.y1) + ")" for line in self.lines)
+        return f"Triangle {coords}, size: {self.area()}"
 
 
 class MultiPolygon(ConvexHull):
@@ -375,6 +465,8 @@ class MultiPolygon(ConvexHull):
         #self.freeze()
         self._lines = lines
         self.set_position_rotation(x, y, rotation)
+        self.evaluate_directionality()
+        self.centroid = self._centroid()
 
     def __iter__(self) -> Iterator[Polygon]:
         return self._polygons.__iter__()

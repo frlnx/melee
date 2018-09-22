@@ -13,7 +13,8 @@ from engine.physics.polygon import MultiPolygon
 class CompositeModel(BaseModel):
     def __init__(self, parts: Set[ShipPartModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees):
+                 acceleration: MutableOffsets, torque: MutableDegrees, center_of_mass: MutableOffsets):
+        self._center_of_mass = center_of_mass
         self._part_by_uuid = {part.uuid: part for part in parts}
         self._connections: Set[PartConnectionModel] = set()
         self._connection_by_uuid: Dict[UUID: ShieldConnectionModel] = {}
@@ -84,13 +85,14 @@ class CompositeModel(BaseModel):
         self.rebuild()
         self.rebuild_connections()
 
-    def add_part(self, part):
+    def add_part(self, part: ShipPartModel):
         self._add_part(part)
         self.rebuild()
 
     def _add_part(self, part):
         self._part_by_uuid[part.uuid] = part
         self._all_by_uuid[part.uuid] = part
+        part._center_of_mass = self._center_of_mass
         part.observe_with_self(self.eject_part, "explode")
         part.observe(self.rebuild, "move")
         part.observe_with_self(self.rebuild_connections_for, "move")
@@ -110,8 +112,9 @@ class CompositeModel(BaseModel):
 
     def eject_part(self, part: ShipPartModel):
         part.disconnect_all()
+        part._center_of_mass = part.position
         self.remove_part(part)
-        part.set_movement(*self.movement)#*self.momentum_at(part.position).forces)
+        part.set_movement(*self.movement)
         self.mutate_offsets_to_global(part.position)
         part.rotate(*self.rotation)
         self.add_own_spawn(part)
@@ -120,11 +123,19 @@ class CompositeModel(BaseModel):
         if len(self.parts_of_bbox) > 0:
             self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
             self._calculate_mass()
+            self.update_center_of_mass()
             self._calculate_inertia()
             self._callback("rebuild")
         else:
             self.set_alive(False)
-            #raise RemoveCallbackException()
+
+    def update_center_of_mass(self):
+        weights = [part.mass for part in self.parts]
+        sum_weights = sum(weights)
+        centroids = [part.position for part in self.parts]
+        x = sum(x * weight for (x, _, _), weight in zip(centroids, weights)) / sum_weights
+        z = sum(z * weight for (_, _, z), weight in zip(centroids, weights)) / sum_weights
+        self._center_of_mass.set(x, 0, z)
 
     def _build_bounding_box(self, ship_parts: list) -> MultiPolygon:
         bboxes = set()
@@ -146,6 +157,7 @@ class CompositeModel(BaseModel):
             part_uuids = {part.uuid for part in self.parts if not part.is_alive or part.is_exploding}
             self.bounding_box.remove_polygons(part_uuids)
             self._calculate_mass()
+            self.update_center_of_mass()
             self._calculate_inertia()
             self._callback("rebuild")
         else:

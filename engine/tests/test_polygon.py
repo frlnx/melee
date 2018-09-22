@@ -2,7 +2,7 @@ from itertools import product
 
 import pytest
 
-from engine.physics.polygon import Polygon
+from engine.physics.polygon import Polygon, ClosedPolygon
 
 
 class TestPolygonManufacture(object):
@@ -53,8 +53,22 @@ class TestPolygonMovement(object):
         assert set([line.original_x1 for line in self.target.lines]) == {-6, 4}
 
 
+class TestPolygonArea(object):
+
+    def setup(self):
+        self.target = ClosedPolygon.manufacture([(-1, -1), (-1, 1), (1, 1), (1, -1)])
+
+    def test_area_is_four(self):
+        assert self.target.area() == 4
+
+    def test_centroid(self):
+        assert self.target._centroid() == (0, 0)
+
+
 p1 = Polygon.manufacture([(0.46, -1.21), (1.29, -1.78), (1.86, -0.95), (1.03, -0.38)])
 p2 = Polygon.manufacture([(0.5, 0.5), (-0.5, 0.5), (-0.5, -0.5), (0.5, -0.5)])
+
+
 @pytest.mark.parametrize("line1,line2", product(p1.lines, p2.lines))
 def test_lines_that_should_not_intersect(line1, line2):
     if line1.bounding_box_intersects(line2):

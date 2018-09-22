@@ -161,6 +161,11 @@ class Line(BaseLine):
 
     precision = 9
 
+    def flip(self):
+        self.x1, self.y1, self.x2, self.y2 = self.x2, self.y2, self.x1, self.y1
+        self.original_x1, self.original_y1, self.original_x2, self.original_y2 = \
+            self.original_x2, self.original_y2, self.original_x1, self.original_y1
+
     def bounding_box_intersects(self, other: BaseLine):
         if self.right < other.left:
             return False
@@ -204,11 +209,17 @@ class Line(BaseLine):
         return round(self._common_denominator_with(other), self.precision) == 0
 
     def on_right_side(self, x, y):
-        return self._position(x, y) > 0
+        return self.sign_of_sidedness(x, y) > 0
 
     def on_left_side(self, x, y):
-        return self._position(x, y) < 0
+        return self.sign_of_sidedness(x, y) < 0
 
-    def _position(self, x, y):
+    def sign_of_sidedness(self, x, y):
         position = (self.x2 - self.x1) * (y - self.y1) - (self.y2 - self.y1) * (x - self.x1)
         return position
+
+    def delta_radii_to(self, other: "Line"):
+        return (self.radii - other.radii + pi) % (pi * 2) - pi
+
+    def copy(self):
+        return self.__class__([(self.x1, self.y1), (self.x2, self.y2)])

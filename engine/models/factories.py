@@ -21,7 +21,8 @@ class ShipModelFactory(object):
     def manufacture(self, name, position=None, rotation=None, movement=None, spin=None,
                     acceleration=None, torque=None) -> ShipModel:
         config = deepcopy(self.ships[name])
-        parts = self.ship_part_model_factory.manufacture_all(config['parts'])
+        center_of_mass = MutableOffsets(0, 0, 0)
+        parts = self.ship_part_model_factory.manufacture_all(config['parts'], center_of_mass)
 
         ship_id = "Ship {}".format(self.ship_id_counter)
         self.ship_id_counter += 1
@@ -38,7 +39,8 @@ class ShipModelFactory(object):
         acceleration = MutableOffsets(*acceleration)
         torque = MutableDegrees(*torque)
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
-                         movement=movement, spin=spin, acceleration=acceleration, torque=torque)
+                         movement=movement, spin=spin, acceleration=acceleration, torque=torque,
+                         center_of_mass=center_of_mass)
         #  for part in parts:
         #      part.observe(self.jettison_exploding_part_function(ship, part), "explode")
         return ship
@@ -86,10 +88,10 @@ class ShipPartModelFactory(object):
             ship_parts = json.load(f)
         self.ship_parts = {ship_part['name']: ship_part for ship_part in ship_parts}
 
-    def manufacture_all(self, part_configs: list):
+    def manufacture_all(self, part_configs: list, center_of_mass: MutableOffsets):
         parts = set()
         for part_config in part_configs:
-            part = self.manufacture(**part_config)
+            part = self.manufacture(**part_config, center_of_mass=center_of_mass)
             parts.add(part)
             for sub_part_name in part_config.get('sub_parts', []):
                 model_class = self.model_map.get(sub_part_name, ShipPartModel)
@@ -106,6 +108,7 @@ class ShipPartModelFactory(object):
             if 'class' in build_config:
                 config[key] = build_config['class'](*config[key])
 
+        config['center_of_mass'] = placement_config.get('center_of_mass', config['position'])
         x = config['position'].x
         y = config['position'].z
         yaw = config['rotation'].yaw

@@ -218,7 +218,7 @@ class BaseModel(AnimationModel):
         r = delta_movement.direction.yaw_radian
 
         def order_by_direction(part):
-            x, y = part.centroid()
+            x, y = part._centroid()
             return x * sin(r) + y * cos(r)
         if self.destructable:
             own_intersections = sorted(own_intersections, key=order_by_direction)

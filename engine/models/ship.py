@@ -9,8 +9,8 @@ from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
 class ShipModel(CompositeModel):
     def __init__(self, ship_id, parts: Set[ShipPartModel], position: MutableOffsets,
                  rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees):
-        super().__init__(parts, position, rotation, movement, spin, acceleration, torque)
+                 acceleration: MutableOffsets, torque: MutableDegrees, center_of_mass: MutableOffsets):
+        super().__init__(parts, position, rotation, movement, spin, acceleration, torque, center_of_mass)
         self.ship_id = ship_id
         self._targets: List[BaseModel] = []
         self._current_target_index = 0
@@ -68,8 +68,10 @@ class ShipModel(CompositeModel):
         return sum(part.fuel_stored for part in self._fuel_parts if part.fuel_stored) / self._max_fuel
 
     def copy(self):
-        parts = [part.copy() for part in self.parts]
+        center_of_mass = self._center_of_mass.__copy__()
+        parts = [part.copy(center_of_mass=center_of_mass) for part in self.parts]
         return self.__class__(self.ship_id, parts,
                               position=self.position.__copy__(), rotation=self.rotation.__copy__(),
                               movement=self.movement.__copy__(), spin=self.spin.__copy__(),
-                              acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__())
+                              acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
+                              center_of_mass=center_of_mass)

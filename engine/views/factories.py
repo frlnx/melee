@@ -101,7 +101,7 @@ class ViewFactory(object):
         faces = []
         material = config['material']()
         for line in model.bounding_box.lines:
-            c_x, c_z = line.centroid
+            c_x, c_z = line._centroid
             c_y = 0
             half_length = line.length / 2
             r = line.radii + radians(90)

@@ -16,11 +16,11 @@ class TestMultiPolygonMovement(object):
         assert self.target.y == 0
 
     def test_centroid(self):
-        assert 2, 2 == self.polygon_part.centroid()
+        assert 2, 2 == self.polygon_part._centroid()
 
     def test_movement_keeps_each_polygons_offsets_in_mind(self):
         self.target.set_position_rotation(10, 10, 0)
-        assert (12, 12) == self.polygon_part.centroid()
+        assert (12, 12) == self.polygon_part._centroid()
 
 
 class TestMultiPolygonCollision(object):

@@ -26,7 +26,7 @@ class FuelTankModel(ShipPartModel):
     def fuel_stored(self):
         return self._fuel_stored
 
-    def copy(self) -> "FuelTankModel":
+    def copy(self, **kwargs) -> "FuelTankModel":
         return self.__class__(name=self.name, position=self.position.__copy__(), rotation=self.rotation.__copy__(),
                               movement=self.movement.__copy__(), spin=self.spin.__copy__(),
                               acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
@@ -34,4 +34,4 @@ class FuelTankModel(ShipPartModel):
                               keyboard=self.keyboard, mouse=self.mouse.copy(), axis=self.axis, button=self.button,
                               connectability=self._connectability.copy(), mesh_name=self.mesh_name,
                               material_affected=self.material_affected, material_channels=self.material_channels,
-                              material_mode=self.material_mode, fuel_storage=self.max_fuel_stored)
+                              material_mode=self.material_mode, fuel_storage=self.max_fuel_stored, **kwargs)

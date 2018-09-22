@@ -8,10 +8,12 @@ from .fuel_tank import FuelTankModel
 class ThrusterModel(ShipPartModel):
 
     def __init__(self, name, position: MutableOffsets, rotation: MutableDegrees, movement: MutableOffsets,
-                 spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees, bounding_box, **part_spec):
-
-        super().__init__(name, position, rotation, movement, spin, acceleration, torque, bounding_box, **part_spec)
+                 spin: MutableDegrees, acceleration: MutableOffsets, torque: MutableDegrees, bounding_box,
+                 center_of_mass: MutableOffsets, **part_spec):
+        super().__init__(name, position, rotation, movement, spin, acceleration, torque, bounding_box,
+                         center_of_mass, **part_spec)
         self.full_torque = self._full_torque()
+        self._center_of_mass
 
     @property
     def _connected_fuel_tanks(self) -> list:
@@ -44,7 +46,8 @@ class ThrusterModel(ShipPartModel):
 
     @property
     def diff_yaw_of_force_to_pos(self):
-        return (((self.rotation.yaw % 360) - (self.position.direction.yaw % 360) + 180) % 360) - 180
+        return (((self.rotation.yaw % 360) -
+                 ((self.position - self._center_of_mass).direction.yaw % 360) + 180) % 360) - 180
 
     @property
     def radians_force_is_lateral_to_position(self):
@@ -52,5 +55,5 @@ class ThrusterModel(ShipPartModel):
 
     def _full_torque(self):
         amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position)
-        full_torque_radians = atan2(amount_of_force_that_rotates, self.position.distance)
+        full_torque_radians = atan2(amount_of_force_that_rotates, (self.position - self._center_of_mass).distance)
         return degrees(full_torque_radians)

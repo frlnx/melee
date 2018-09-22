@@ -8,9 +8,11 @@ class ShipPartModel(BaseModel):
 
     def __init__(self, name, position: MutableOffsets, rotation: MutableDegrees,
                  movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees, bounding_box, **part_spec):
+                 acceleration: MutableOffsets, torque: MutableDegrees,
+                 bounding_box, center_of_mass: MutableOffsets, **part_spec):
         super().__init__(position, rotation, movement, spin, acceleration, torque, bounding_box)
         self._name = name
+        self._center_of_mass = center_of_mass
         self._states: dict = part_spec['states']
         self.button = part_spec.get('button')
         self.keyboard = part_spec.get('keyboard')
@@ -198,7 +200,7 @@ class ShipPartModel(BaseModel):
         super(ShipPartModel, self).explode()
         self.disconnect_all()
 
-    def copy(self) -> "ShipPartModel":
+    def copy(self, **kwargs) -> "ShipPartModel":
         return self.__class__(name=self.name, position=self.position.__copy__(), rotation=self.rotation.__copy__(),
                               movement=self.movement.__copy__(), spin=self.spin.__copy__(),
                               acceleration=self.acceleration.__copy__(), torque=self.torque.__copy__(),
@@ -206,4 +208,4 @@ class ShipPartModel(BaseModel):
                               keyboard=self.keyboard, mouse=self.mouse.copy(), axis=self.axis, button=self.button,
                               connectability=self._connectability.copy(), mesh_name=self.mesh_name,
                               material_affected=self.material_affected, material_channels=self.material_channels,
-                              material_mode=self.material_mode)
+                              material_mode=self.material_mode, **kwargs)
