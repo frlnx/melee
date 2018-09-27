@@ -59,6 +59,10 @@ class MutableVector(Vector):
         self._x = x
         self._y = y
         self._z = z
+        self._observers = set()
+
+    def observe(self, func):
+        self._observers.add(func)
 
     @property
     def xyz(self):
@@ -74,7 +78,8 @@ class MutableVector(Vector):
         return True
 
     def update(self):
-        pass
+        for func in self._observers:
+            func()
 
     def __iadd__(self, other):
         self.set(*[x + y for x, y in zip(self, other)])
@@ -112,6 +117,10 @@ class Degrees(Vector):
 
     def __add__(self, other: Vector):
         return self.__class__(*[(((s % 360) + (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
+
+    @property
+    def direction(self):
+        return sin(self.yaw_radian), 0, cos(self.yaw_radian)
 
     @property
     def pitch(self):

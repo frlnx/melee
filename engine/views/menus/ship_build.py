@@ -6,24 +6,31 @@ from pyglet.window.key import MOD_CTRL
 from engine.models import ShipModel
 from engine.models.factories import ShipPartModelFactory
 from engine.views.menus.base import BaseMenu, BaseButton
+from engine.views.ship_parts.factories import PartStoreViewFactory, DrydockViewFactory
 from .drydock import Drydock, PartStore, DockableItem, ShipBuildMenuComponent
+from .model_inspection import ModelInspectionMenuComponent
 
 
 class ShipBuildMenu(BaseMenu):
 
     ship_part_model_factory = ShipPartModelFactory()
 
-    def __init__(self, heading: str, buttons: List[BaseButton], x, y, drydock: Drydock, part_store: PartStore):
+    def __init__(self, heading: str, buttons: List[BaseButton], x, y, drydock: Drydock, part_store: PartStore,
+                 part_inspection: ModelInspectionMenuComponent):
         super().__init__(heading, buttons, x, y)
-        self.components: List[ShipBuildMenuComponent] = [drydock, part_store]
+        self.components: List[ShipBuildMenuComponent] = [drydock, part_store, part_inspection]
         self._held_item: DockableItem = None
 
     @classmethod
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable,
-                                   x, y, view_factory, font_size=36, screen_width=1280, screen_height=720):
+                                   x, y, font_size=36, screen_width=1280, screen_height=720):
         vertical_ruler = screen_width - 100
-        drydock = Drydock(0, vertical_ruler, 0, screen_height, ship_model, view_factory)
-        part_store = PartStore(vertical_ruler, screen_width, 0, screen_height, view_factory)
+        drydock = Drydock(0, vertical_ruler, 0, screen_height, ship_model, DrydockViewFactory())
+        part_store = PartStore(vertical_ruler, screen_width, 0, screen_height, PartStoreViewFactory())
+        part_inspection = ModelInspectionMenuComponent(0, 200, 0, 200, ship_model)
+
+        drydock.observe(part_inspection.set_model, "highlight")
+
         heading = "Shipyard"
         callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset),
                      ("Debug", drydock.debug)]
@@ -38,7 +45,7 @@ class ShipBuildMenu(BaseMenu):
                                                func=func)
             buttons.append(button)
 
-        return cls(heading, buttons, x, y, drydock, part_store)
+        return cls(heading, buttons, x, y, drydock, part_store, part_inspection)
 
     def _component_at(self, x, y):
         for component in self.components:

@@ -34,6 +34,8 @@ class BaseView(object):
         self._model.observe(self.update, "move")
         self._model.observe(self.explode, "explode")
         self._model.observe(self.alive_callback, "alive")
+        self.position = self.model.position
+        self.rotation = self.model.rotation
         self.update()
         self._mesh = mesh
         if mesh:
@@ -45,6 +47,26 @@ class BaseView(object):
         self.yaw_catchup = 0
         if model.is_exploding:
             self.explode()
+
+    def replace_position(self, position):
+        self.position = position
+        self.update()
+
+    def replace_rotation(self, rotation):
+        self.rotation = rotation
+        self.update()
+
+    @property
+    def pitch(self):
+        return self.rotation.pitch
+
+    @property
+    def yaw(self):
+        return self.rotation.yaw
+
+    @property
+    def roll(self):
+        return self.rotation.roll
 
     def distance_to(self, other):
         return (self.position - other.position).distance
@@ -115,22 +137,6 @@ class BaseView(object):
         glScalef(*self._mesh_scale)
         glGetFloatv(GL_MODELVIEW_MATRIX, self._model_view_matrix)
         glPopMatrix()
-
-    @property
-    def position(self):
-        return self._model.position
-
-    @property
-    def pitch(self):
-        return self._model.pitch
-
-    @property
-    def yaw(self):
-        return self._model.yaw
-
-    @property
-    def roll(self):
-        return self._model.roll
 
     def draw(self):
         self.set_up_matrix()

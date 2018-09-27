@@ -1,5 +1,6 @@
 import ctypes
 import json
+from collections import defaultdict
 from functools import partial
 from math import hypot, atan2, degrees
 from typing import Callable
@@ -14,11 +15,12 @@ from engine.models.base_model import PositionalModel
 from engine.models.factories import ShipPartModelFactory
 from engine.models.ship import ShipModel
 from engine.models.ship_part import ShipPartModel
-from engine.views.factories import DynamicViewFactory
-from engine.views.menus.base import MenuComponent
-from engine.views.ship import ShipView
-from engine.views.ship_part import ShipPartDrydockView, NewPartDrydockView, ShipPartView, \
+from engine.models.ship_parts import *
+from engine.views.menus.base import OrthoMenuComponent
+from engine.views.ship_part import ShipPartDrydockView, NewPartDrydockView, \
     ShipPartConfigurationView
+from engine.views.ship_parts.factories import DrydockViewFactory, PartStoreViewFactory, ConfigViewFactory
+from engine.views.ship_parts.thruster_view import ThrusterDrydockView
 
 
 class DrydockElement(object):
@@ -26,7 +28,7 @@ class DrydockElement(object):
     # noinspection PyTypeChecker
     _to_cfloat_array: Callable = ctypes.c_float * 4
 
-    def __init__(self, model: PositionalModel, view: ShipPartView):
+    def __init__(self, model: PositionalModel, view: ShipPartDrydockView):
         self.model = model
         self._view = view
         self._highlight = False
@@ -244,7 +246,7 @@ class ItemSpawn(DrydockElement):
         return new_item.grab()
 
 
-class ShipBuildMenuComponent(MenuComponent):
+class ShipBuildMenuComponent(OrthoMenuComponent):
 
     def __init__(self, left, right, bottom, top, x_offset, y_offset):
         super().__init__(left, right, bottom, top)
@@ -270,11 +272,11 @@ class ShipBuildMenuComponent(MenuComponent):
         pass
 
     def draw(self):
+        super(ShipBuildMenuComponent, self).draw()
         draw(8, GL_LINES, self.v2i_bounding_box, self.c4B_bounding_box)
 
 
 class ShipPartDisplay(ShipBuildMenuComponent):
-    default_part_view_class = ShipPartView
     default_item_class = DrydockItem
 
     def __init__(self, items: set, left, right, bottom, top, x, y, scale=25):
@@ -369,10 +371,10 @@ class ShipPartDisplay(ShipBuildMenuComponent):
 
 class ShipConfiguration(ShipPartDisplay):
 
-    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory):
         self.ship = ship
         self.view_factory = view_factory
-        self.ship_view: ShipView = view_factory.manufacture(ship, sub_view_class=self.default_part_view_class)
+        self.ship_view = view_factory.manufacture(ship)
         items = set()
         for part_model in ship.parts:
             view = self.ship_view.get_sub_view(part_model.uuid)
@@ -414,7 +416,7 @@ class ControlConfiguration(ShipConfiguration):
     default_item_class = ConfigurableItem
     _highlighted_item: ConfigurableItem
 
-    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: ConfigViewFactory):
         self.original_model = ship
         ship = ship.copy()
         ship.set_position_and_rotation(0, 0, 0, 0, 0, 0)
@@ -466,8 +468,10 @@ class Drydock(ShipConfiguration):
     default_part_view_class = ShipPartDrydockView
     default_item_class = DockableItem
 
-    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, ship: ShipModel, view_factory: DrydockViewFactory):
         self.view_factory = view_factory
+        self.view_factory.model_view_map[ThrusterModel] = ThrusterDrydockView
+        self.view_factory.default_view_class = ShipPartDrydockView
         self.original_model = ship
         ship = ship.copy()
         ship.set_position_and_rotation(0, 0, 0, 0, 0, 0)
@@ -476,6 +480,14 @@ class Drydock(ShipConfiguration):
         super().__init__(left, right, bottom, top, ship, view_factory)
         for item in self.items:
             item.legal_move_func = self._legal_placement
+        self.observers = defaultdict(set)
+
+    def observe(self, func, action):
+        self.observers[action].add(func)
+
+    def _callback(self, action, **kwargs):
+        for func in self.observers[action]:
+            func(**kwargs)
 
     def debug(self):
         print("Debug mode")
@@ -535,13 +547,14 @@ class Drydock(ShipConfiguration):
             model_highlight = 0. <= distance < 25
             circle_highlight = 25. <= distance < 50
             self.highlighted_item.set_highlight(model_highlight, circle_highlight)
+            self._callback("highlight", model=self.highlighted_item.model)
 
 
 class PartStore(ShipPartDisplay):
     default_part_view_class = ShipPartDrydockView
     default_item_class = DockableItem
 
-    def __init__(self, left, right, bottom, top, view_factory: DynamicViewFactory):
+    def __init__(self, left, right, bottom, top, view_factory: PartStoreViewFactory):
         self.view_factory = view_factory
         self.part_factory = ShipPartModelFactory()
         self.x_offset = x = (right - left) / 2 + left
@@ -571,20 +584,18 @@ class PartStore(ShipPartDisplay):
         self.y_offset = max(min(20, self.y_offset), 0)
 
     def item_spawn_from_model(self, model):
-        view: NewPartDrydockView = self.view_factory.manufacture(model, view_class=NewPartDrydockView)
+        view: NewPartDrydockView = self.view_factory.manufacture(model)
         view.set_mesh_scale(1)
-        spawn_func = partial(self.item_from_name, model.name, view_class=ShipPartDrydockView,
-                             position=model.position)
+        spawn_func = partial(self.item_from_name, model.name, position=model.position)
         return ItemSpawn(model, view, spawn_func=spawn_func)
 
-    def item_from_name(self, name, model_class=None, view_class=None, position=None):
+    def item_from_name(self, name, model_class=None, position=None):
         model = self.part_factory.manufacture(name, model_class=model_class, position=position)
-        item = self.item_from_model(model, view_class=view_class)
+        item = self.item_from_model(model)
         return item
 
-    def item_from_model(self, model, view_class=None):
-        view_class = view_class or self.default_part_view_class
-        view: ShipPartDrydockView = self.view_factory.manufacture(model, view_class=view_class)
+    def item_from_model(self, model):
+        view: ShipPartDrydockView = self.view_factory.manufacture(model)
         view.set_mesh_scale(0.25)
         item = self.default_item_class(model, view)
         return item

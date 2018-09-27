@@ -1,6 +1,8 @@
 from typing import List, Callable
 
 from pyglet.gl import GL_LINES
+from pyglet.gl import GL_PROJECTION, GL_MODELVIEW
+from pyglet.gl import glMatrixMode, glLoadIdentity, gluPerspective, glViewport, glOrtho
 from pyglet.graphics import draw
 from pyglet.text import Label
 from pyglet.window import key
@@ -49,11 +51,49 @@ class MenuComponent(object):
     def __init__(self, left, right, bottom, top):
         self.left, self.right, self.bottom, self.top = left, right, bottom, top
 
+    @property
+    def width(self):
+        return self.right - self.left
+
+    @property
+    def height(self):
+        return self.top - self.bottom
+
     def in_area(self, x, y):
         return (self.left < x < self.right) and (self.bottom < y < self.top)
 
     def draw(self):
-        pass
+        glViewport(self.left * 2, self.bottom * 2, self.width * 2, self.height * 2)
+        self.set_up_perspective()
+
+    def set_up_perspective(self):
+        raise NotImplementedError()
+
+    @property
+    def perspective(self):
+        return float(self.width) / self.height
+
+
+class PerspectiveMenuComponent(MenuComponent):
+
+    def set_up_perspective(self):
+        #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        #glEnable(GL_DEPTH_TEST)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluPerspective(60., self.perspective, 1, 1000.)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+
+class OrthoMenuComponent(MenuComponent):
+
+    def set_up_perspective(self):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(self.left, self.width, self.bottom, self.height, -1., 1000.)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
 
 
 class BaseMenu(object):

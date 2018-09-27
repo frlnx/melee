@@ -1,7 +1,7 @@
-from itertools import chain
+from itertools import chain, cycle
 from math import hypot, ceil
 
-from pyglet.graphics import draw, GL_QUADS
+from pyglet.graphics import draw, GL_QUADS, GL_LINES
 from pyglet.graphics import glRotatef, glTranslated
 
 from engine.models.ship import ShipModel
@@ -94,3 +94,11 @@ class ShipView(BaseView):
         super(ShipView, self).update_view_timer(dt)
         for sub_view in self._sub_views:
             sub_view.update_view_timer(dt)
+
+
+class ShipBuildView(ShipView):
+    cross_base = [0, 0, 1, 0, 0, -1, 1, 0, 0, -1, 0, 0]
+
+    def _draw_local(self):
+        draw(4, GL_LINES,
+             ('v3f', list([a + b for a, b in zip(self.cross_base, cycle(self.model.center_of_mass))])))

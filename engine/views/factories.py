@@ -5,6 +5,7 @@ from engine.models import *
 from engine.physics.force import MutableOffsets, MutableDegrees
 from engine.physics.polygon import Polygon
 from engine.views.base_view import BaseView
+from engine.views.meshfactory import factory
 from engine.views.part_connection import PartConnectionView, ShieldConnectionView
 from engine.views.ship import ShipView
 from engine.views.ship_part import ShipPartView
@@ -24,9 +25,9 @@ class ViewFactory(object):
                                                     alpha=1., name="Shield")}
     }
 
-    def __init__(self, mesh_factory, view_class=BaseView):
+    def __init__(self, view_class=BaseView):
         self.meshes = {}
-        self.mesh_factory = mesh_factory
+        self.mesh_factory = factory
         self._view_class = view_class
         self.pre_factorized_views = []
         if view_class == BaseView:
@@ -155,34 +156,49 @@ class DynamicViewFactory(ViewFactory):
         ShieldModel: ShipPartView
     }
 
-    def manufacture(self, model: PositionalModel, view_class=None, sub_view_class=None):
-        view_class = view_class or self.model_view_map[model.__class__]
+    def __init__(self, default_sub_view_class=ShipPartView, default_view_class=BaseView):
+        self.default_sub_view_class = default_sub_view_class
+        self.default_view_class = default_view_class
+        super().__init__()
+
+    def manufacture(self, model: PositionalModel):
+        return self._manufacture_view(model)
+
+    def _manufacture_subview(self, model: ShipPartModel):
+        view_class = self.model_view_map.get(model.__class__, self.default_sub_view_class)
+        return self._manufacture(model, view_class)
+
+    def _manufacture_view(self, model: PositionalModel):
+        view_class = self.model_view_map.get(model.__class__, self.default_view_class)
+        return self._manufacture(model, view_class)
+
+    def _manufacture(self, model: PositionalModel, view_class):
         mesh = self._mesh_for_model(model)
         view = view_class(model, mesh=mesh)
         if hasattr(model, 'parts') and isinstance(model, CompositeModel):
-            self.build_subviews(view, model.parts, view_class=sub_view_class)
+            self.build_subviews(view, model.parts)
             self.build_subviews(view, model._connections)
             model.observe(lambda added: self._connect_callback(view, added), "connection")
             model.observe(view.remove_sub_view_for_model, "disconnect")
-            model.observe(lambda added: self._add_view_callback(view, sub_view_class, added), "add_part")
+            model.observe(lambda added: self._add_view_callback(view, added), "add_part")
             model.observe(view.remove_sub_view_for_model, "remove_part")
         return view
 
     def _connect_callback(self, ship_view: ShipView, added: PartConnectionModel):
-        view = self.manufacture(added)
+        view = self._manufacture_subview(added)
         ship_view.add_sub_view(view)
 
-    def _add_view_callback(self, ship_view: ShipView, view_class, added: ShipPartModel):
-        view = self.manufacture(added, view_class=view_class)
+    def _add_view_callback(self, ship_view: ShipView, added: ShipPartModel):
+        view = self._manufacture_subview(added)
         ship_view.add_sub_view(view)
 
     def _disconnect_callback(self, ship_view: ShipView, removed: BaseModel):
         ship_view.remove_sub_view_for_model(removed)
 
-    def build_subviews(self, ship_view: ShipView, models, view_class=None):
+    def build_subviews(self, ship_view: ShipView, models):
         for part in models:
             if part.is_alive and not ship_view.has_sub_view_for(part.uuid):
-                sub_view = self.manufacture(part, view_class=view_class)
+                sub_view = self._manufacture_subview(part)
                 ship_view.add_sub_view(sub_view)
                 part.observe(lambda: ship_view.remove_sub_view(sub_view), "alive")
             elif not part.is_alive and ship_view.has_sub_view_for(part.uuid):

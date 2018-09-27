@@ -43,6 +43,10 @@ class CompositeModel(BaseModel):
         for part in self.parts:
             part.run(dt)
 
+    @property
+    def center_of_mass(self):
+        return self._center_of_mass
+
     def parts_by_bounding_boxes(self, bounding_boxes: set):
         parts = set()
         for bbox in bounding_boxes:

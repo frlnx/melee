@@ -83,8 +83,7 @@ class ClientEngine(Engine):
 
     def _menu_shipyard(self):
         self.window.set_menu(ShipBuildMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
-                                                                      0, self._menu_bottom,
-                                                                      self.window.view_factory))
+                                                                      0, self._menu_bottom))
 
     def _menu_network(self):
         self.window.set_menu(InputMenu.input_menu("Network", self._menu_connect, self._menu_left, self._menu_bottom,
@@ -92,8 +91,7 @@ class ClientEngine(Engine):
 
     def _menu_controls(self):
         menu = ControlConfigMenu.manufacture_for_ship_model(self.my_model, self._menu_main_menu,
-                                                            0, self._menu_bottom,
-                                                            self.window.view_factory)
+                                                            0, self._menu_bottom)
         if self.input_handler:
             self.input_handler.push_handlers(menu)
         self.window.set_menu(menu)

@@ -34,6 +34,10 @@ class ShipPartModel(BaseModel):
         self._working = False
         self.update_working_status()
 
+    @property
+    def center_of_mass(self):
+        return self._center_of_mass
+
     def set_input_value(self, value):
         self.input_value = self.working and value or 0
         self.set_material_value(self.input_value)

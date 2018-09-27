@@ -1,18 +1,18 @@
 import ctypes
-import pickle
 from random import random, randrange
 from typing import Callable
 
 import pyglet
 from pyglet.gl import GL_DIFFUSE, GL_AMBIENT
 from pyglet.gl import GL_PROJECTION, GL_DEPTH_TEST, GL_MODELVIEW, GL_LIGHT0, GL_POSITION, GL_LIGHTING
-from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef
+from pyglet.gl import glMatrixMode, glLoadIdentity, glEnable, gluPerspective, glLightfv, glRotatef, glViewport
 from pyglet.gl import glOrtho, glDisable, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT
 
 from engine.views.base_view import BaseView
 from engine.views.debris import Debris
 from engine.views.factories import DynamicViewFactory
 from engine.views.hud import Hud
+from engine.views.meshfactory import factory
 
 
 class Window(pyglet.window.Window):
@@ -21,15 +21,13 @@ class Window(pyglet.window.Window):
 
     def __init__(self, input_handler=None):
         super().__init__(width=1280, height=720)
-        with open('meshfactory.pkl', 'rb') as f:
-            self.mesh_factory = pickle.load(f)
-        self.view_factory = DynamicViewFactory(self.mesh_factory)
+        self.view_factory = DynamicViewFactory()
         self.hud = Hud(self.view_factory)
         self.new_views = set()
         self.del_views = set()
         self._menu = None
         self._exit = False
-        self.backdrop = self.mesh_factory.manufacture("backdrop")
+        self.backdrop = factory.manufacture("backdrop")
         # self.spawn_sound = pyglet.media.load('plasma.mp3', streaming=False)
         self.input_handler = input_handler
         self.debris = []
@@ -112,6 +110,7 @@ class Window(pyglet.window.Window):
         self.on_draw = self._on_draw_game
 
     def _on_draw_menu(self):
+        glViewport(0, 0, self.width * 2, self.height * 2)
         self.set_up_perspective()
         self.backdrop.draw()
         self.draw_menu()
@@ -168,7 +167,7 @@ class Window(pyglet.window.Window):
 
     @property
     def views_in_range(self):
-        return [view for view in self.views if view.distance_to(self.camera_view) < 200.]
+        return [view for view in self.views if view.distance_to(self.camera_view) < 400.]
 
     def draw_menu(self):
         self._set_up_flat_ortho_projection()

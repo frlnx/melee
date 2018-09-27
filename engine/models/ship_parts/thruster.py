@@ -13,7 +13,6 @@ class ThrusterModel(ShipPartModel):
         super().__init__(name, position, rotation, movement, spin, acceleration, torque, bounding_box,
                          center_of_mass, **part_spec)
         self.full_torque = self._full_torque()
-        self._center_of_mass
 
     @property
     def _connected_fuel_tanks(self) -> list:

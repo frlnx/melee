@@ -1,16 +1,14 @@
 import ctypes
-from math import *
 from os import path
 
 import pyglet
 from pyglet.gl import *
 from pyglet.window import Window, key
 
-from engine.physics.polygon import Polygon
 from engine.views.flexible_mesh import FlexibleMesh
 from engine.views.opengl_animations import Explosion
 from engine.views.opengl_drawables import ExplosionDrawable
-from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh, OpenGLMaterial
+from engine.views.opengl_mesh import OpenGLWaveFrontParser, OpenGLMesh
 
 
 class TestWindow(Window):
@@ -39,19 +37,26 @@ class TestWindow(Window):
     def update(self, dt):
         self.rotation += dt * 25
         self.obj.timer(dt)
-        for i, line in enumerate(self.obj.polygon.lines):
-            r = radians(i * 23 + self.rotation)
-            line.set_points(i, cos(r), i+1, cos(r + radians(23)))
+        #for i, line in enumerate(self.obj.polygon.lines):
+        #    r = radians(i * 23 + self.rotation)
+        #    line.set_points(i, cos(r), i+1, cos(r + radians(23)))
 
     def on_draw(self):
         self.clear()
-        glLoadIdentity()
         glEnable(GL_LIGHTING)
 
         glEnable(GL_LIGHT0)
         glLightfv(GL_LIGHT0, GL_AMBIENT, self.to_cfloat_array(1, 1, 1, 1.0))
         glLightfv(GL_LIGHT0, GL_POSITION, self.to_cfloat_array(0, 1, 1, 0))
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self.to_cfloat_array(1.0, 1.0, 1.0, 1.0))
+
+        for x in range(2):
+            for y in range(2):
+                self.setup_viewport(x, y)
+                self.draw()
+
+    def draw(self):
+        glLoadIdentity()
 
         glTranslated(0, 0, -14)
         glRotatef(self.rotation, 0, 1, 0)
@@ -62,6 +67,15 @@ class TestWindow(Window):
         self.backdrop.draw_transparent()
         self.obj.draw_transparent()
         return
+
+    def setup_viewport(self, x, y):
+        glViewport(x * self.width, y * self.height, self.width, self.height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glEnable(GL_DEPTH_TEST)
+        gluPerspective(60., float(self.width) / self.height, 1., 1000.)
+        glMatrixMode(GL_MODELVIEW)
+
 
     def on_key_press(self, symbol, modifiers):
         super(TestWindow, self).on_key_press(symbol, modifiers)
@@ -78,13 +92,13 @@ if __name__ == "__main__":
 
     print(GL_MAX_LIGHTS, GL_LIGHT0)
 
-    #op = OpenGLWaveFrontParser(object_class=OpenGLMesh)
-    #with open(path.join("objects", "cockpit.obj"), 'r') as f:
-    #    obj = op.parse(f.readlines())
-    material = OpenGLMaterial(diffuse=(.54, .81, .94), ambient=(.54, .81, .94), alpha=1, name="Shield")
-    polygon = Polygon.manufacture_open([(i, 0) for i in range(10)])
+    op = OpenGLWaveFrontParser(object_class=OpenGLMesh)
+    with open(path.join("objects", "cockpit.obj"), 'r') as f:
+        obj = op.parse(f.readlines())
+    #material = OpenGLMaterial(diffuse=(.54, .81, .94), ambient=(.54, .81, .94), alpha=1, name="Shield")
+    #polygon = Polygon.manufacture_open([(i, 0) for i in range(10)])
 
-    obj = FlexibleMesh(polygon, material)
-    obj.set_double_sided(True)
+    #obj = FlexibleMesh(polygon, material)
+    #obj.set_double_sided(True)
     win = TestWindow(obj)
     pyglet.app.run()

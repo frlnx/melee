@@ -17,7 +17,8 @@ class PositionalModel(object):
     destructable = True
 
     def __init__(self, x=0, y=0, z=0, pitch=0, yaw=0, roll=0, name=None):
-        self._x, self._y, self._z, self._pitch, self._yaw, self._roll = x, y, z, pitch, yaw, roll
+        self._position = MutableOffsets(x, y, z)
+        self._rotation = MutableDegrees(pitch, yaw, roll)
         self._mesh_name = name
         self._name = name
         self._action_observers = defaultdict(set)
@@ -88,35 +89,35 @@ class PositionalModel(object):
 
     @property
     def position(self):
-        return self.x, self.y, self.z
+        return self._position
 
     @property
     def rotation(self):
-        return self.pitch, self.yaw, self.roll
+        return self._rotation
 
     @property
     def x(self):
-        return self._x
+        return self._position.x
 
     @property
     def y(self):
-        return self._y
+        return self._position.y
 
     @property
     def z(self):
-        return self._z
+        return self._position.z
 
     @property
     def pitch(self):
-        return self._pitch
+        return self._rotation.pitch
 
     @property
     def yaw(self):
-        return self._yaw
+        return self._rotation.yaw
 
     @property
     def roll(self):
-        return self._roll
+        return self._rotation.roll
 
 
 class AnimationModel(PositionalModel):
@@ -423,35 +424,3 @@ class BaseModel(AnimationModel):
     @property
     def movement(self):
         return self._movement
-
-    @property
-    def position(self):
-        return self._position
-
-    @property
-    def rotation(self):
-        return self._rotation
-
-    @property
-    def x(self):
-        return self._position.x
-
-    @property
-    def y(self):
-        return self._position.y
-
-    @property
-    def z(self):
-        return self._position.z
-
-    @property
-    def pitch(self):
-        return self._rotation.pitch
-
-    @property
-    def yaw(self):
-        return self._rotation.yaw
-
-    @property
-    def roll(self):
-        return self._rotation.roll
