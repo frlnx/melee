@@ -1,9 +1,10 @@
 from math import *
 from typing import List, Callable
 
+from engine.models.observable import RemoveCallbackException
 from engine.physics.line import Line
 from engine.physics.polygon import Polygon, ClippingPolygon
-from .base_model import AnimationModel, RemoveCallbackException
+from .base_model import AnimationModel
 from .ship_part import ShipPartModel
 
 

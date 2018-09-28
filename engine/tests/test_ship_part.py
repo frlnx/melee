@@ -8,7 +8,7 @@ model_factory = ShipPartModelFactory()
 class TestHorizontalEngineAt135DegreesOff(object):
 
     def setup(self):
-        model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 90, 0])
+        model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 90, 0], center_of_mass=(0, 0, 0))
         model._working = True
         self.target = model
         self.target.set_state("active")
@@ -34,7 +34,7 @@ class TestHorizontalEngineAt135DegreesOff(object):
 class TestHorizontalEngineAt45DegreesOff(object):
 
     def setup(self):
-        model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 0, 0])
+        model = model_factory.manufacture("engine", position=[1, 0, -1], rotation=[0, 0, 0], center_of_mass=(0, 0, 0))
         model._working = True
         self.target = model
         self.target.set_state("active")

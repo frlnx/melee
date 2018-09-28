@@ -20,7 +20,8 @@ class TestReconnection(object):
         self.cockpit = spmf.manufacture("cockpit")
         parts = {self.cockpit, self.target}
         self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
-                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__(),
+                              null_offset.__copy__())
 
     def test_distance(self):
         self.target.teleport_to(1, 0, 0)
@@ -59,7 +60,8 @@ class TestDrydockReconnection(object):
         cockpit = spmf.manufacture("cockpit")
         parts = {cockpit, target}
         self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
-                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__(),
+                              null_offset.__copy__())
         self.drydock = Drydock(0, 1000, 0, 1000, self.ship, view_factory=FakeFactory())
         self.ship = self.drydock.ship
         self.target_item: DockableItem = [item for item in self.drydock.items if item.model.name == "generator"][0]
@@ -137,7 +139,8 @@ class TestShieldConnection(object):
         self.other = spmf.manufacture("shield")
         parts = {self.other, self.target}
         self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
-                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__(),
+                              null_offset.__copy__())
 
     def test_inital_state_is_unconnected(self):
         assert set() == self.ship._connections
@@ -172,7 +175,8 @@ class TestPartConnectionManualDisconnection(object):
         self.cockpit = spmf.manufacture("cockpit")
         parts = {self.cockpit, self.generator}
         self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
-                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__(),
+                              null_offset.__copy__())
         self.target = list(self.ship._connections)[0]
 
     def test_disconnect_all(self):
@@ -194,7 +198,8 @@ class TestShieldConnectionInvalidArc(object):
         self.shield2 = spmf.manufacture("shield", position=(-2, 0, 0))
         parts = self.obstacles | {self.shield1, self.shield2}
         self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
-                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__(),
+                              null_offset.__copy__())
 
     def test_no_valid_arc(self):
         with raises(PartConnectionError):
@@ -220,7 +225,8 @@ class TestShieldConnectionValidArc(object):
         self.shield2 = spmf.manufacture("shield", position=(-2.5, 0, 0))
         parts = self.obstacles | {self.shield1, self.shield2}
         self.ship = ShipModel("foo", parts, null_offset.__copy__(), null_rotation.__copy__(), null_offset.__copy__(),
-                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__())
+                              null_rotation.__copy__(), null_offset.__copy__(), null_rotation.__copy__(),
+                              null_offset.__copy__())
         self.target = [c for c in self.ship._connections if set(c._ship_parts) == {self.shield1, self.shield2}][0]
 
     def test_making_connection_does_not_result_in_part_connection_error(self):

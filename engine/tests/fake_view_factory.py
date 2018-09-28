@@ -2,6 +2,8 @@ from unittest.mock import MagicMock
 
 
 class FakeFactory(object):
-    def manufacture(self, name, view_class=None, sub_view_class=None):
+    model_view_map = {}
+
+    def manufacture(self, *args, **kwargs):
         mm = MagicMock()
         return mm

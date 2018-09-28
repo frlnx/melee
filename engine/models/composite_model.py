@@ -3,7 +3,8 @@ from itertools import combinations, chain
 from typing import Set, Dict
 from uuid import UUID
 
-from engine.models.base_model import BaseModel, RemoveCallbackException
+from engine.models.base_model import BaseModel
+from engine.models.observable import RemoveCallbackException
 from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel, PartConnectionError
 from engine.models.ship_part import ShipPartModel
 from engine.physics.force import MutableOffsets, MutableDegrees
@@ -28,9 +29,9 @@ class CompositeModel(BaseModel):
         self._calculate_inertia()
         self._own_spawns = []
         for part in parts:
-            part.observe_with_self(self.eject_part, "explode")
+            part.observe(self._eject_part_callback, "explode")
             part.observe(self.rebuild, "move")
-            part.observe_with_self(self.rebuild_connections_for, "move")
+            part.observe(self.rebuild_connections_for, "move")
         for connection in self._connections:
             connection.update_polygon()
         self._bounding_box = self._build_bounding_box(self.parts_of_bbox)
@@ -97,22 +98,25 @@ class CompositeModel(BaseModel):
         self._part_by_uuid[part.uuid] = part
         self._all_by_uuid[part.uuid] = part
         part._center_of_mass = self._center_of_mass
-        part.observe_with_self(self.eject_part, "explode")
+        part.observe(self._eject_part_callback, "explode")
         part.observe(self.rebuild, "move")
-        part.observe_with_self(self.rebuild_connections_for, "move")
+        part.observe(self.rebuild_connections_for, "move")
         self._callback("add_part", added=part)
 
     def remove_part(self, part: ShipPartModel):
         if part.uuid in self._part_by_uuid:
             del self._part_by_uuid[part.uuid]
             del self._all_by_uuid[part.uuid]
-            part.unobserve_with_self(self.eject_part, "explode")
+            part.unobserve(self._eject_part_callback, "explode")
             part.unobserve(self.rebuild, "move")
-            part.unobserve_with_self(self.rebuild_connections_for, "move")
+            part.unobserve(self.rebuild_connections_for, "move")
             self._callback("remove_part", removed=part)
         self.prune_dead_parts_from_bounding_box()
         if not self.parts:
             self.set_alive(False)
+
+    def _eject_part_callback(self, caller):
+        self.eject_part(part=caller)
 
     def eject_part(self, part: ShipPartModel):
         part.disconnect_all()
@@ -187,12 +191,12 @@ class CompositeModel(BaseModel):
         for part in outwards_parts:
             part.update_working_status()
 
-    def rebuild_connections_for(self, model: ShipPartModel):
-        if not self.is_alive or not model.is_alive:
+    def rebuild_connections_for(self, caller: ShipPartModel):
+        if not self.is_alive or not caller.is_alive:
             raise RemoveCallbackException()
         for part in self.parts:
-            if part not in model.connected_parts:
-                self._try_to_connect(model, part)
+            if part not in caller.connected_parts:
+                self._try_to_connect(caller, part)
 
     def _try_to_connect(self, part1, part2):
         if part1 == part2:
@@ -220,19 +224,19 @@ class CompositeModel(BaseModel):
         if connection not in self._connections:
             self._connections.add(connection)
             self._all_by_uuid[connection.uuid] = connection
-            connection.observe_with_self(self._remove_connection, "broken")
-            connection.observe_with_self(self._remove_connection, "alive")
+            connection.observe(self._remove_connection, "broken")
+            connection.observe(self._remove_connection, "alive")
             self._callback("connection", added=connection)
 
-    def _remove_connection(self, connection: PartConnectionModel):
+    def _remove_connection(self, caller: PartConnectionModel):
         try:
-            self._connections.remove(connection)
-            del self._all_by_uuid[connection.uuid]
+            self._connections.remove(caller)
+            del self._all_by_uuid[caller.uuid]
         except KeyError:
             pass
         else:
-            self._callback("disconnect", removed=connection)
-            if not self.is_alive or not connection.is_alive:
+            self._callback("disconnect", removed=caller)
+            if not self.is_alive or not caller.is_alive:
                 raise RemoveCallbackException()
 
     def _make_connection(self, part1: "ShipPartModel", part2: "ShipPartModel"):

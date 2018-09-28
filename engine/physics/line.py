@@ -1,7 +1,7 @@
-from collections import defaultdict
-from functools import partial
 from math import *
-from typing import List, Tuple, Callable
+from typing import List, Tuple
+
+from engine.models.observable import Observable
 
 
 class Point(object):
@@ -28,9 +28,10 @@ class Point(object):
         self.x, self.y = x, y
 
 
-class BaseLine(object):
+class BaseLine(Observable):
 
     def __init__(self, coords: List[Tuple[float, float]]):
+        Observable.__init__(self)
         (self.original_x1, self.original_y1), (self.original_x2, self.original_y2) = coords
         self.x1, self.y1, self.x2, self.y2 = self.original_x1, self.original_y1, self.original_x2, self.original_y2
         self.x = 0
@@ -41,9 +42,6 @@ class BaseLine(object):
         self.left = min(self.x1, self.x2)
         self.top = max(self.y1, self.y2)
         self.bottom = min(self.y1, self.y2)
-        self._action_observers = defaultdict(set)
-        self._remove_observers = defaultdict(set)
-        self._self_observers = {}
 
     def set_points(self, start, end):
         x1, y1 = start
@@ -56,29 +54,6 @@ class BaseLine(object):
         self.top = max(self.y1, self.y2)
         self.bottom = min(self.y1, self.y2)
         self._callback("move")
-
-    def _prune_removed_observers(self, action):
-        self._action_observers[action] -= self._remove_observers[action]
-        self._remove_observers[action].clear()
-
-    def observe_with_self(self, func: Callable, action):
-        self._self_observers[func] = self._self_observers.get(func, partial(func, self))
-        self._action_observers[action].add(self._self_observers[func])
-
-    def _observe_original(self, func: Callable, action):
-        self._action_observers[action].add(func)
-
-    def _callback(self, action, **kwargs):
-        self._prune_removed_observers(action)
-        for observer in self._action_observers[action].copy():
-            observer(**kwargs)
-        self._prune_removed_observers(action)
-
-    def unobserve(self, func: Callable, action):
-        self._remove_observers[action].add(func)
-
-    def unobserve_with_self(self, func: Callable, action):
-        self._remove_observers[action].add(self._self_observers[func])
 
     def set_position_rotation(self, x, y, radii):
         if self.x == x and self.y == y and self.rotation == radii:

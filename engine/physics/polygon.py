@@ -1,16 +1,17 @@
-from collections import defaultdict
 from functools import reduce
 from itertools import product, chain, zip_longest, compress, filterfalse
 from math import radians, atan2, degrees, floor, ceil, hypot, pi, sin
 from typing import List, Iterator, Set, Tuple
 from uuid import uuid4
 
+from engine.models.observable import Observable
 from engine.physics.line import Line
 
 
-class BasePolygon(object):
+class BasePolygon(Observable):
 
     def __init__(self, lines: List[Line], part_id=None):
+        Observable.__init__(self)
         if len(lines) == 0:
             raise AttributeError("Need at least one point")
         self.part_id = part_id or uuid4().hex
@@ -22,7 +23,6 @@ class BasePolygon(object):
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
         self._moving_points = {(l.x1, l.y1) for l in self.lines} | {(l.x2, l.y2) for l in self.lines}
         self._moving_polygon = None
-        self._observers = defaultdict(set)
         self._quadrants = set()
 
     def lines_pairwise(self) -> Iterator[Tuple[Line, Line]]:
@@ -43,19 +43,6 @@ class BasePolygon(object):
 
     def lines_outer_triplets(self) -> Iterator[Tuple[Line, Line, Line]]:
         return zip(chain(self._lines[:1], self._lines[:-1]), self._lines, chain(self._lines[1:], self._lines[-1:]))
-
-    def observe(self, func, action):
-        self._observers[action].add(func)
-
-    def unobserve(self, func, action):
-        try:
-            self._observers[action].remove(func)
-        except KeyError:
-            pass
-
-    def callback(self, action):
-        for callback in self._observers[action]:
-            callback()
 
     def __hash__(self):
         return self.part_id.__hash__()
@@ -237,7 +224,7 @@ class BasePolygon(object):
 
     def reset_quadrants(self):
         self._quadrants = set()
-        self.callback("quadrants")
+        self._callback("quadrants")
 
     def __repr__(self):
         return f"{self.part_id[:4]} {len(self.lines)}-sided at {self.x}, {self.y}"

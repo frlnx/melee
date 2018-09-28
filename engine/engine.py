@@ -1,23 +1,23 @@
 import random
 import time
-from collections import defaultdict
 from typing import Callable
 
 from twisted.internet.task import LoopingCall
 
 from engine.models.base_model import BaseModel
 from engine.models.factories import ShipModelFactory, AsteroidModelFactory
+from engine.models.observable import Observable
 from engine.physics.spacial_index import SpacialIndex
 
 
-class Engine(object):
+class Engine(Observable):
 
     fps = 60
 
     version = (1, 0, 0)
 
     def __init__(self, event_loop):
-        self._observers = defaultdict(set)
+        Observable.__init__(self)
         self._event_loop = event_loop
         self.smf = ShipModelFactory()
         self.amf = AsteroidModelFactory()
@@ -32,23 +32,13 @@ class Engine(object):
         self._collision_check_models = set()
         self._spacial_index = SpacialIndex()
 
-    def observe(self, func: Callable, action: str):
-        self._observers[action].add(func)
-
-    def unobserve(self, func, action):
-        self._observers[action].remove(func)
-
-    def callback(self, action):
-        for func in self._observers[action]:
-            func()
-
     def register_player(self, callsign, ship_uuid):
         self._players[ship_uuid] = callsign
-        self.callback("players")
+        self._callback("players")
 
     def deregister_player(self, ship_uuid):
         del self._players[ship_uuid]
-        self.callback("players")
+        self._callback("players")
 
     @property
     def players(self):

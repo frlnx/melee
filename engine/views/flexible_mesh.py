@@ -15,7 +15,7 @@ class FlexibleMesh(OpenGLMesh):
         self.line_faces: Dict[Line, Tuple[OpenGLFace, OpenGLFace]] = {l: self.make_faces(l) for l in polygon.lines}
         faces = list(chain(*self.line_faces.values()))
         for line in polygon.lines:
-            line.observe_with_self(self.line_callback, "move")
+            line.observe(self.line_callback, "move")
             self.line_callback(line)
         super().__init__(faces, [])
 

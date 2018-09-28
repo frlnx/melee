@@ -28,9 +28,10 @@ class TestDryDockSave(object):
         for part in self.original_parts:
             for signal in ["working", "explode", "alive"]:
                 part._prune_removed_observers(signal)
-                assert not part._action_observers[signal]
+                assert not part._observers[signal]
 
     def test_ship_observes_new_parts(self):
         for part in self.parts_after_save:
             for signal in ["alive"]:
-                assert part._action_observers[signal]
+                part._introduce_new_observers(signal)
+                assert part._observers[signal]

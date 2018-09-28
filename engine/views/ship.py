@@ -66,7 +66,7 @@ class ShipView(BaseView):
 
     def add_sub_view(self, sub_view):
         self._sub_views.add(sub_view)
-        sub_view.model.observe_with_self(self.remove_sub_view_for_model, "alive")
+        sub_view.model.observe(self.remove_sub_view_for_model, "alive")
         self._sub_view_indexed[sub_view.model.uuid] = sub_view
 
     def remove_sub_view(self, sub_view):
