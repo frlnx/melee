@@ -1,6 +1,5 @@
 import ctypes
 import json
-from collections import defaultdict
 from functools import partial
 from math import hypot, atan2, degrees
 from typing import Callable
@@ -252,8 +251,10 @@ class ShipBuildMenuComponent(OrthoMenuComponent):
         super().__init__(left, right, bottom, top)
         self.x_offset = x_offset
         self.y_offset = y_offset
-        self.v2i_bounding_box = ('v2i', [left, bottom, right, bottom, right, bottom, right, top,
-                                         right, top, left, top, left, top, left, bottom])
+
+        self.v2i_bounding_box = ('v2i', [left + 1, bottom + 1, right - 1, bottom + 1, right - 1, bottom + 1, right - 1,
+                                         top - 1, right - 1, top - 1, left + 1, top - 1, left + 1, top - 1, left + 1,
+                                         bottom + 1])
         self.c4B_bounding_box = ('c4B', [150, 150, 200, 255] * 8)
 
     def grab(self, x, y) -> DockableItem:
@@ -317,6 +318,8 @@ class ShipPartDisplay(ShipBuildMenuComponent):
 
     def highlight_at(self, x, y):
         self.set_highlighted_item(self.find_closest_item_to(x, y))
+        if self.highlighted_item:
+            self._callback("highlight", model=self.highlighted_item.model)
 
     def find_closest_item_to(self, x, y):
         closest_item = None
@@ -480,14 +483,6 @@ class Drydock(ShipConfiguration):
         super().__init__(left, right, bottom, top, ship, view_factory)
         for item in self.items:
             item.legal_move_func = self._legal_placement
-        self.observers = defaultdict(set)
-
-    def observe(self, func, action):
-        self.observers[action].add(func)
-
-    def _callback(self, action, **kwargs):
-        for func in self.observers[action]:
-            func(**kwargs)
 
     def debug(self):
         print("Debug mode")
@@ -547,7 +542,6 @@ class Drydock(ShipConfiguration):
             model_highlight = 0. <= distance < 25
             circle_highlight = 25. <= distance < 50
             self.highlighted_item.set_highlight(model_highlight, circle_highlight)
-            self._callback("highlight", model=self.highlighted_item.model)
 
 
 class PartStore(ShipPartDisplay):

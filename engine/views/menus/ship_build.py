@@ -25,11 +25,12 @@ class ShipBuildMenu(BaseMenu):
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable,
                                    x, y, font_size=36, screen_width=1280, screen_height=720):
         vertical_ruler = screen_width - 100
-        drydock = Drydock(0, vertical_ruler, 0, screen_height, ship_model, DrydockViewFactory())
+        drydock = Drydock(400, vertical_ruler, 0, screen_height, ship_model, DrydockViewFactory())
         part_store = PartStore(vertical_ruler, screen_width, 0, screen_height, PartStoreViewFactory())
-        part_inspection = ModelInspectionMenuComponent(0, 200, 0, 200, ship_model)
+        part_inspection = ModelInspectionMenuComponent(0, 400, 0, 400, ship_model)
 
         drydock.observe(part_inspection.set_model, "highlight")
+        part_store.observe(part_inspection.set_model, "highlight")
 
         heading = "Shipyard"
         callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset),

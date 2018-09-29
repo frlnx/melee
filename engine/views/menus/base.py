@@ -1,11 +1,13 @@
 from typing import List, Callable
 
 from pyglet.gl import GL_LINES
-from pyglet.gl import GL_PROJECTION, GL_MODELVIEW
-from pyglet.gl import glMatrixMode, glLoadIdentity, gluPerspective, glViewport, glOrtho
+from pyglet.gl import GL_PROJECTION, GL_MODELVIEW, GL_DEPTH_TEST
+from pyglet.gl import glMatrixMode, glLoadIdentity, gluPerspective, glViewport, glOrtho, glEnable
 from pyglet.graphics import draw
 from pyglet.text import Label
 from pyglet.window import key
+
+from engine.models.observable import Observable
 
 
 class BaseButton(object):
@@ -47,9 +49,13 @@ class BaseButton(object):
         return self.left < x < self.right and self.bottom < y < self.top
 
 
-class MenuComponent(object):
+class MenuComponent(Observable):
     def __init__(self, left, right, bottom, top):
+        Observable.__init__(self)
         self.left, self.right, self.bottom, self.top = left, right, bottom, top
+
+    def timers(self, dt):
+        pass
 
     @property
     def width(self):
@@ -78,7 +84,7 @@ class PerspectiveMenuComponent(MenuComponent):
 
     def set_up_perspective(self):
         #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        #glEnable(GL_DEPTH_TEST)
+        glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(60., self.perspective, 1, 1000.)
@@ -91,7 +97,7 @@ class OrthoMenuComponent(MenuComponent):
     def set_up_perspective(self):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        glOrtho(self.left, self.width, self.bottom, self.height, -1., 1000.)
+        glOrtho(self.left, self.right, self.bottom, self.top, -1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
