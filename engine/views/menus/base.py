@@ -53,17 +53,12 @@ class MenuComponent(Observable):
     def __init__(self, left, right, bottom, top):
         Observable.__init__(self)
         self.left, self.right, self.bottom, self.top = left, right, bottom, top
+        self.width = self.right - self.left
+        self.height = self.top - self.bottom
+        self.aspect_ratio = float(self.width) / self.height
 
     def timers(self, dt):
         pass
-
-    @property
-    def width(self):
-        return self.right - self.left
-
-    @property
-    def height(self):
-        return self.top - self.bottom
 
     def in_area(self, x, y):
         return (self.left < x < self.right) and (self.bottom < y < self.top)
@@ -75,10 +70,6 @@ class MenuComponent(Observable):
     def set_up_perspective(self):
         raise NotImplementedError()
 
-    @property
-    def perspective(self):
-        return float(self.width) / self.height
-
 
 class PerspectiveMenuComponent(MenuComponent):
 
@@ -87,7 +78,7 @@ class PerspectiveMenuComponent(MenuComponent):
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(60., self.perspective, 1, 1000.)
+        gluPerspective(60., self.aspect_ratio, 1, 1000.)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
