@@ -149,7 +149,7 @@ class BaseModel(AnimationModel):
         self.bounding_box_update_needed = False
 
     def __eq__(self, other):
-        return self.uuid == other.uuid
+        return other is not None and self.uuid == other.uuid
 
     def __hash__(self):
         return self.uuid.__hash__()

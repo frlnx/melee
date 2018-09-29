@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 from engine.client import ClientEngine
-from engine.input_handlers import Keyboard, GamePad
+from engine.input_handlers import GamePad
 from engine.network.client.client import NetworkClient
 from engine.pigtwisted import TwistedEventLoop
-from engine.window import Window
 
 
 def main():
@@ -14,10 +13,10 @@ def main():
     except:
         gamepad = None
         print("No gamepad found!")
-    window = Window(input_handler=gamepad)
-    gamepad = gamepad or Keyboard(window)
+    #window = Window(input_handler=gamepad)
+    #gamepad = gamepad or Keyboard(window)
     event_loop = TwistedEventLoop()
-    engine = ClientEngine(event_loop=event_loop, input_handler=gamepad, window=window)
+    engine = ClientEngine(event_loop=event_loop, input_handler=gamepad)#, window=window)
     NetworkClient(engine)
 
 

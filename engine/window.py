@@ -19,10 +19,11 @@ class Window(pyglet.window.Window):
     # noinspection PyTypeChecker
     _to_cfloat_array: Callable = ctypes.c_float * 4
 
-    def __init__(self, input_handler=None):
+    def __init__(self, player_ship, input_handler=None):
         super().__init__(width=1280, height=720)
+        self.player_ship = player_ship
         self.view_factory = DynamicViewFactory()
-        self.hud = Hud(self.view_factory)
+        self.hud = Hud(0, 200, 0, 200, player_ship)
         self.new_views = set()
         self.del_views = set()
         self._menu = None
@@ -60,7 +61,6 @@ class Window(pyglet.window.Window):
             print(f"Got {model.uuid} already!")
         self._models_by_uuid[model.uuid] = model
         view = self.view_factory.manufacture(model)
-        self.hud.add_model(model)
         #  self.spawn_sound.play()
         self.new_views.add(view)
         if not self._camera_following:
@@ -128,6 +128,7 @@ class Window(pyglet.window.Window):
         self.draw_hud()
 
     def set_up_perspective(self):
+        glViewport(0, 0, self.width * 2, self.height * 2)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
@@ -174,7 +175,6 @@ class Window(pyglet.window.Window):
         self._menu.draw()
 
     def draw_hud(self):
-        self._set_up_flat_ortho_projection()
         self.hud.draw()
 
     def _set_up_flat_ortho_projection(self):

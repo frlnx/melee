@@ -197,4 +197,7 @@ class Line(BaseLine):
         return (self.radii - other.radii + pi) % (pi * 2) - pi
 
     def copy(self):
-        return self.__class__([(self.x1, self.y1), (self.x2, self.y2)])
+        line = self.__class__([(self.x1, self.y1), (self.x2, self.y2)])
+        line.original_x1, line.original_y1, line.original_x2, line.original_y2 = \
+            self.original_x1, self.original_y1, self.original_x2, self.original_y2
+        return line

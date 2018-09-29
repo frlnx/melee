@@ -44,13 +44,13 @@ class ThrusterModel(ShipPartModel):
         self.full_torque = self._full_torque()
 
     @property
-    def diff_yaw_of_force_to_pos(self):
-        return (((self.rotation.yaw % 360) -
+    def degrees_off_center_of_mass(self):
+        return (((self.rotation.yaw + 180 % 360) -
                  ((self.position - self._center_of_mass).direction.yaw % 360) + 180) % 360) - 180
 
     @property
     def radians_force_is_lateral_to_position(self):
-        return radians(self.diff_yaw_of_force_to_pos - 90)
+        return radians(self.degrees_off_center_of_mass + 90)
 
     def _full_torque(self):
         amount_of_force_that_rotates = cos(self.radians_force_is_lateral_to_position)

@@ -98,3 +98,4 @@ ENV/
 .DS_Store
 *.pkl
 __cache__
+cache

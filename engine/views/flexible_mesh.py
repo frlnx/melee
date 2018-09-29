@@ -25,10 +25,10 @@ class FlexibleMesh(OpenGLMesh):
         face2 = OpenGLFace([(ox1, 0, oy1), (nx2, 0, ny2), (nx1, 0, ny1)], [(0, 1, 0)] * 3, self.material)
         return face1, face2
 
-    def line_callback(self, line: Line):
-        for l in self.line_triples[line]:
+    def line_callback(self, caller: Line):
+        for l in self.line_triples[caller]:
             self.update_line(l)
-        self.update_line(line)
+        self.update_line(caller)
 
     def update_line(self, line: Line):
         (ox1, oy1), (ox2, oy2), (nx1, ny1), (nx2, ny2) = self.make_face_coordinates(line)

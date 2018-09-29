@@ -15,7 +15,7 @@ class PlasmaModel(BaseModel):
 
     def recycle(self):
         self.bounding_box.clear_movement()
-        self._action_observers.clear()
+        self._observers.clear()
         self._ttl = 4
         self._alive = True
 

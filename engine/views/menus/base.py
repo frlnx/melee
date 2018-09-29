@@ -65,16 +65,8 @@ class MenuComponent(Observable):
 
     def draw(self):
         glViewport(self.left * 2, self.bottom * 2, self.width * 2, self.height * 2)
-        self.set_up_perspective()
 
-    def set_up_perspective(self):
-        raise NotImplementedError()
-
-
-class PerspectiveMenuComponent(MenuComponent):
-
-    def set_up_perspective(self):
-        #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    def _set_up_perspective(self):
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -82,15 +74,44 @@ class PerspectiveMenuComponent(MenuComponent):
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-
-class OrthoMenuComponent(MenuComponent):
-
-    def set_up_perspective(self):
+    def _set_up_ortho(self):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glOrtho(self.left, self.right, self.bottom, self.top, -1., 1000.)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+
+    def _draw_perspective(self):
+        pass
+
+    def _draw_ortho(self):
+        pass
+
+
+class PerspectiveMenuComponent(MenuComponent):
+
+    def draw(self):
+        super(PerspectiveMenuComponent, self).draw()
+        self._set_up_perspective()
+        self._draw_perspective()
+
+
+class OrthoMenuComponent(MenuComponent):
+
+    def draw(self):
+        super(OrthoMenuComponent, self).draw()
+        self._set_up_ortho()
+        self._draw_ortho()
+
+
+class PerspectiveOrthoOverlayComponent(MenuComponent):
+
+    def draw(self):
+        super(PerspectiveOrthoOverlayComponent, self).draw()
+        self._set_up_perspective()
+        self._draw_perspective()
+        self._set_up_ortho()
+        self._draw_ortho()
 
 
 class BaseMenu(object):

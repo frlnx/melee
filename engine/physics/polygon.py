@@ -59,6 +59,8 @@ class BasePolygon(Observable):
 
     @classmethod
     def coords_to_lines(cls, coords, **kwargs):
+        if not coords:
+            return []
         last_coord = coords[0]
         lines = [Line([coords[-1], coords[0]])]
         for coord in coords[1:]:
@@ -504,3 +506,6 @@ class ClippingPolygon(Polygon):
         self._left = self._right = self._top = self._bottom = None
         self._moving_left = self._moving_right = self._moving_top = self._moving_bottom = None
         self._moving_polygon = None
+
+    def __copy__(self):
+        return self.__class__([line.copy() for line in self._lines], part_id=self.part_id)

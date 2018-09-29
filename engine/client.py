@@ -21,7 +21,7 @@ class ClientEngine(Engine):
         self.my_controller = None
 
         if window is None:
-            self.window: Window = Window(input_handler=input_handler)
+            self.window: Window = Window(self.my_model, input_handler=input_handler)
         else:
             self.window: Window = window
         self.window.connect = self.connect

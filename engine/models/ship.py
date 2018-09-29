@@ -48,7 +48,7 @@ class ShipModel(CompositeModel):
 
     def set_target(self, target: "ShipModel"):
         self._target = target
-        self._callback("target")
+        self._callback("target", target=target)
 
     def __getstate__(self):
         state = super(ShipModel, self).__getstate__()
