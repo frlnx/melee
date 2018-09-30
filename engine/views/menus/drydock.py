@@ -583,13 +583,13 @@ class PartStore(ShipPartDisplay):
         spawn_func = partial(self.item_from_name, model.name, position=model.position)
         return ItemSpawn(model, view, spawn_func=spawn_func)
 
-    def item_from_name(self, name, model_class=None, position=None):
-        model = self.part_factory.manufacture(name, model_class=model_class, position=position)
+    def item_from_name(self, name, position=None):
+        model = self.part_factory.manufacture(name, position=position)
         item = self.item_from_model(model)
         return item
 
     def item_from_model(self, model):
-        view: ShipPartDrydockView = self.view_factory.manufacture(model)
+        view: ShipPartDrydockView = self.view_factory.manufacture(model, view_class=ShipPartDrydockView)
         view.set_mesh_scale(0.25)
         item = self.default_item_class(model, view)
         return item

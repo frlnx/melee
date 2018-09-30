@@ -24,5 +24,5 @@ class ConfigViewFactory(DynamicViewFactory):
 class PartStoreViewFactory(DynamicViewFactory):
 
     def __init__(self):
-        super().__init__(default_sub_view_class=NewPartDrydockView, default_view_class=ShipView)
-
+        self.model_view_map = {}
+        super().__init__(default_sub_view_class=NewPartDrydockView, default_view_class=NewPartDrydockView)

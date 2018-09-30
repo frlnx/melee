@@ -56,9 +56,10 @@ class MenuComponent(Observable):
         self.width = self.right - self.left
         self.height = self.top - self.bottom
         self.aspect_ratio = float(self.width) / self.height
+        self._animation_timer = 0.
 
     def timers(self, dt):
-        pass
+        self._animation_timer += dt
 
     def in_area(self, x, y):
         return (self.left < x < self.right) and (self.bottom < y < self.top)

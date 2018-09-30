@@ -161,8 +161,9 @@ class DynamicViewFactory(ViewFactory):
         self.default_view_class = default_view_class
         super().__init__()
 
-    def manufacture(self, model: PositionalModel):
-        return self._manufacture_view(model)
+    def manufacture(self, model: PositionalModel, view_class=None):
+        view_class = view_class or self.model_view_map.get(model.__class__, self.default_view_class)
+        return self._manufacture(model, view_class=view_class)
 
     def _manufacture_subview(self, model: ShipPartModel):
         view_class = self.model_view_map.get(model.__class__, self.default_sub_view_class)

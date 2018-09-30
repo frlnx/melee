@@ -1,3 +1,5 @@
+from math import sqrt
+
 from pyglet.gl import glScalef, glTranslatef, glRotatef, glLoadIdentity
 from pyglet.text import Label
 
@@ -15,6 +17,7 @@ class ModelInspectionMenuComponent(PerspectiveOrthoOverlayComponent):
     def __init__(self, left, right, bottom, top, model: BaseModel):
         super().__init__(left, right, bottom, top)
         self._model = None
+        self._view_scale = 1.
         self._view: BaseView = None
         self._position = MutableOffsets(0, 0, 0)
         self._rotation = MutableDegrees(0, 0, 0)
@@ -31,6 +34,7 @@ class ModelInspectionMenuComponent(PerspectiveOrthoOverlayComponent):
             return
         self._unobserve_model_info_changes()
         self._model = model
+        self._view_scale = 3. / sqrt(self._model.mass)
         self._view = self.factory.manufacture(model)
         self._view.replace_position(self._position)
         self._view.replace_rotation(self._rotation)
@@ -43,7 +47,7 @@ class ModelInspectionMenuComponent(PerspectiveOrthoOverlayComponent):
     def _build_info_text(self):
         text = ""
         fields = ['name', 'full_torque', 'degrees_off_center_of_mass', 'generation_level', 'fuel_stored', 'working',
-                  'max_power_output']
+                  'max_power_output', 'ship_id']
         for field in fields:
             try:
                 data = getattr(self._model, field)
@@ -68,8 +72,8 @@ class ModelInspectionMenuComponent(PerspectiveOrthoOverlayComponent):
     def _draw_perspective(self):
         super(ModelInspectionMenuComponent, self)._draw_perspective()
         glTranslatef(0, 0, -10)
-        glRotatef(90, 1, .5, .5)
-        glScalef(3., 3., 3.)
+        glRotatef(90 + (self._animation_timer * 90), 1, .5, .5)
+        glScalef(self._view_scale, self._view_scale, self._view_scale)
 
         self._view.draw()
         self._view.draw_transparent()

@@ -18,7 +18,12 @@ class PositionalModel(Observable):
         self._mesh_name = name
         self._name = name
         self.material_value = 0.0
+        self._mass = 1
 
+    @property
+    def mass(self):
+        return self._mass
+    
     @property
     def is_alive(self):
         return True
@@ -132,7 +137,6 @@ class BaseModel(AnimationModel):
                  bounding_box: MultiPolygon):
         super(BaseModel, self).__init__()
         self.uuid = uuid4()
-        self._mass = 1
         self._position = position
         self._rotation = rotation
         self._movement = movement
@@ -149,7 +153,7 @@ class BaseModel(AnimationModel):
         self.bounding_box_update_needed = False
 
     def __eq__(self, other):
-        return other is not None and self.uuid == other.uuid
+        return other is not None and self.__class__ == other.__class__ and self.uuid == other.uuid
 
     def __hash__(self):
         return self.uuid.__hash__()
@@ -228,10 +232,6 @@ class BaseModel(AnimationModel):
     @property
     def time_consumed(self):
         return self._time_consumed
-
-    @property
-    def mass(self):
-        return self._mass
 
     def apply_global_force(self, force: MutableForce):
         self.mutate_force_to_local(force)

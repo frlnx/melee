@@ -4,6 +4,7 @@ from typing import Callable, List
 from pyglet.window import mouse
 
 from engine.models.ship import ShipModel
+from engine.views.ship_parts.factories import ConfigViewFactory
 from .base import BaseMenu, BaseButton
 from .drydock import ControlConfiguration
 
@@ -17,12 +18,13 @@ class ControlConfigMenu(BaseMenu):
 
     @classmethod
     def manufacture_for_ship_model(cls, ship_model: ShipModel, close_menu_function: Callable, x, y,
-                                   view_factory, font_size=36, screen_width=1280, screen_height=720):
+                                   font_size=36, screen_width=1280, screen_height=720):
         left = 0
         right = screen_width
         bottom = 0
         top = screen_height
-        control_config = ControlConfiguration(left, right, bottom, top, ship=ship_model, view_factory=view_factory)
+        control_config = ControlConfiguration(left, right, bottom, top, ship=ship_model,
+                                              view_factory=ConfigViewFactory())
 
         heading = "Configure controls"
         callables = [("<- Back", close_menu_function),
