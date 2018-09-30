@@ -2,6 +2,8 @@ from __future__ import division
 
 from math import sqrt, atan2, cos, sin, degrees, radians
 
+from engine.models.observable import Observable
+
 
 class Vector(object):
 
@@ -53,16 +55,13 @@ class Vector(object):
         return "[{},{},{}]".format(*self)
 
 
-class MutableVector(Vector):
+class MutableVector(Vector, Observable):
 
     def __init__(self, x, y, z):
         self._x = x
         self._y = y
         self._z = z
-        self._observers = set()
-
-    def observe(self, func):
-        self._observers.add(func)
+        Observable.__init__(self)
 
     @property
     def xyz(self):
@@ -78,8 +77,7 @@ class MutableVector(Vector):
         return True
 
     def update(self):
-        for func in self._observers:
-            func()
+        self._callback("move")
 
     def __iadd__(self, other):
         self.set(*[x + y for x, y in zip(self, other)])
@@ -192,8 +190,8 @@ class MutableOffsets(MutableVector, Offsets):
         self.__iadd__(*xyz)
 
     def update(self):
-        super().update()
         self.direction.set(self.direction.x, degrees(atan2(-self._x, -self._z)), self.direction.z)
+        super().update()
 
 
 class Force(object):

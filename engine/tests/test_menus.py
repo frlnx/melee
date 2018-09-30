@@ -42,9 +42,11 @@ class TestConfigControlsMenu(object):
         def cancel_func():
             pass
 
+        from engine.views import meshfactory
+
         fake_mesh_factory = FakeFactory()
-        self.target = menus.ControlConfigMenu.manufacture_for_ship_model(self.ship_model, cancel_func, 0, 0,
-                                                                        fake_mesh_factory)
+        meshfactory.get_factory = lambda: fake_mesh_factory
+        self.target = menus.ControlConfigMenu.manufacture_for_ship_model(self.ship_model, cancel_func, 0, 0)
 
     def test_menu_has_two_button(self):
         assert len(self.target.buttons) >= 2

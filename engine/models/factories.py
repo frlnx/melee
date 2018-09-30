@@ -76,7 +76,8 @@ class ShipPartModelFactory(object):
         {"key": "movement", "default": (0, 0, 0), "class": MutableOffsets},
         {"key": "spin", "default": (0, 0, 0), "class": MutableDegrees},
         {"key": "acceleration", "default": (0, 0, 0), "class": MutableOffsets},
-        {"key": "torque", "default": (0, 0, 0), "class": MutableDegrees}
+        {"key": "torque", "default": (0, 0, 0), "class": MutableDegrees},
+        {"key": "center_of_mass", "default": (0, 0, 0), "class": MutableOffsets}
     ]
 
     def __init__(self):
@@ -108,7 +109,6 @@ class ShipPartModelFactory(object):
             if 'class' in build_config:
                 config[key] = build_config['class'](*config[key])
 
-        config['center_of_mass'] = placement_config.get('center_of_mass', config['position'])
         x = config['position'].x
         y = config['position'].z
         yaw = config['rotation'].yaw

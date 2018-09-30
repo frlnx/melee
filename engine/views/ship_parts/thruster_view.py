@@ -14,7 +14,7 @@ class ThrusterDrydockView(ShipPartDrydockView):
         #self.model = model
         self.angles_v3f = []
         self.update_angles()
-        model._center_of_mass.observe(self.update_angles)
+        model._center_of_mass.observe(self.update_angles, "move")
 
     def update(self):
         super(ThrusterDrydockView, self).update()
