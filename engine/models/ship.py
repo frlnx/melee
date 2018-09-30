@@ -3,13 +3,13 @@ from typing import Set, List
 from engine.models import BaseModel
 from engine.models.composite_model import CompositeModel
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableForce, MutableUnboundDegrees
 
 
 class ShipModel(CompositeModel):
     def __init__(self, ship_id, parts: Set[ShipPartModel], position: MutableOffsets,
-                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees, center_of_mass: MutableOffsets):
+                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableUnboundDegrees,
+                 acceleration: MutableOffsets, torque: MutableUnboundDegrees, center_of_mass: MutableOffsets):
         super().__init__(parts, position, rotation, movement, spin, acceleration, torque, center_of_mass)
         self.ship_id = ship_id
         self._targets: List[BaseModel] = []

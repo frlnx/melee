@@ -7,14 +7,14 @@ from engine.models.base_model import BaseModel
 from engine.models.observable import RemoveCallbackException
 from engine.models.part_connection import PartConnectionModel, ShieldConnectionModel, PartConnectionError
 from engine.models.ship_part import ShipPartModel
-from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableUnboundDegrees
 from engine.physics.polygon import MultiPolygon
 
 
 class CompositeModel(BaseModel):
     def __init__(self, parts: Set[ShipPartModel], position: MutableOffsets,
-                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableDegrees,
-                 acceleration: MutableOffsets, torque: MutableDegrees, center_of_mass: MutableOffsets):
+                 rotation: MutableDegrees, movement: MutableOffsets, spin: MutableUnboundDegrees,
+                 acceleration: MutableOffsets, torque: MutableUnboundDegrees, center_of_mass: MutableOffsets):
         self._center_of_mass = center_of_mass
         self._part_by_uuid = {part.uuid: part for part in parts}
         self._connections: Set[PartConnectionModel] = set()

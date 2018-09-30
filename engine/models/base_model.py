@@ -133,7 +133,7 @@ class BaseModel(AnimationModel):
                  movement: MutableOffsets,
                  spin: MutableUnboundDegrees,
                  acceleration: MutableOffsets,
-                 torque: MutableDegrees,
+                 torque: MutableUnboundDegrees,
                  bounding_box: MultiPolygon):
         super(BaseModel, self).__init__()
         self.uuid = uuid4()
