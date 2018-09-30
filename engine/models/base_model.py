@@ -3,7 +3,7 @@ from math import cos, sin, radians
 from uuid import uuid4
 
 from engine.models.observable import Observable
-from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce
+from engine.physics.force import MutableOffsets, MutableDegrees, Offsets, MutableForce, MutableUnboundDegrees
 from engine.physics.polygon import MultiPolygon
 
 
@@ -23,7 +23,7 @@ class PositionalModel(Observable):
     @property
     def mass(self):
         return self._mass
-    
+
     @property
     def is_alive(self):
         return True
@@ -131,7 +131,7 @@ class BaseModel(AnimationModel):
                  position: MutableOffsets,
                  rotation: MutableDegrees,
                  movement: MutableOffsets,
-                 spin: MutableDegrees,
+                 spin: MutableUnboundDegrees,
                  acceleration: MutableOffsets,
                  torque: MutableDegrees,
                  bounding_box: MultiPolygon):

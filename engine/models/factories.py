@@ -5,7 +5,7 @@ from math import sin, cos, radians
 from random import normalvariate
 
 from engine.models import *
-from engine.physics.force import MutableOffsets, MutableDegrees
+from engine.physics.force import MutableOffsets, MutableDegrees, MutableUnboundDegrees
 from engine.physics.polygon import MultiPolygon
 
 
@@ -35,9 +35,9 @@ class ShipModelFactory(object):
         position = MutableOffsets(*position)
         rotation = MutableDegrees(*rotation)
         movement = MutableOffsets(*movement)
-        spin = MutableDegrees(*spin)
+        spin = MutableUnboundDegrees(*spin)
         acceleration = MutableOffsets(*acceleration)
-        torque = MutableDegrees(*torque)
+        torque = MutableUnboundDegrees(*torque)
         ship = ShipModel(ship_id=ship_id, parts=parts, position=position, rotation=rotation,
                          movement=movement, spin=spin, acceleration=acceleration, torque=torque,
                          center_of_mass=center_of_mass)
@@ -74,9 +74,9 @@ class ShipPartModelFactory(object):
         {"key": "position", "default": (0, 0, 0), "class": MutableOffsets},
         {"key": "rotation", "default": (0, 0, 0), "class": MutableDegrees},
         {"key": "movement", "default": (0, 0, 0), "class": MutableOffsets},
-        {"key": "spin", "default": (0, 0, 0), "class": MutableDegrees},
+        {"key": "spin", "default": (0, 0, 0), "class": MutableUnboundDegrees},
         {"key": "acceleration", "default": (0, 0, 0), "class": MutableOffsets},
-        {"key": "torque", "default": (0, 0, 0), "class": MutableDegrees},
+        {"key": "torque", "default": (0, 0, 0), "class": MutableUnboundDegrees},
         {"key": "center_of_mass", "default": (0, 0, 0), "class": MutableOffsets}
     ]
 

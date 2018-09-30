@@ -145,7 +145,13 @@ class Degrees(Vector):
         return radians(self.roll)
 
 
-class MutableDegrees(MutableVector, Degrees):
+class MutableUnboundDegrees(MutableVector, Degrees):
+
+    def translate(self, *xyz):
+        self.__iadd__(*xyz)
+
+
+class MutableDegrees(MutableUnboundDegrees):
 
     def __isub__(self, other: Vector):
         self.set(*[(((s % 360) - (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
@@ -155,8 +161,6 @@ class MutableDegrees(MutableVector, Degrees):
         self.set(*[(((s % 360) + (o % 360) + 180) % 360) - 180 for s, o in zip(self, other)])
         return self
 
-    def translate(self, *xyz):
-        self.__iadd__(*xyz)
 
 
 class Offsets(Vector):
