@@ -7,6 +7,7 @@ from engine.models import ShipModel
 from engine.models.factories import ShipPartModelFactory
 from engine.views.menus.base import BaseMenu, BaseButton
 from engine.views.ship_parts.factories import PartStoreViewFactory, DrydockViewFactory
+from .button_container import ButtonContainer
 from .drydock import Drydock, PartStore, DockableItem, ShipBuildMenuComponent
 from .model_inspection import ModelInspectionMenuComponent
 
@@ -35,6 +36,7 @@ class ShipBuildMenu(BaseMenu):
         heading = "Shipyard"
         callables = [("<- Back", close_menu_function), ("Save", drydock.save_all), ("Reset", drydock.reset),
                      ("Debug", drydock.debug)]
+        callables = [close_menu_function, drydock.save_all, drydock.reset, drydock.debug]
         height = int(font_size * 1.6)
         width = int(height * 6)
         height_spacing = int(height * 1.1)
@@ -45,6 +47,7 @@ class ShipBuildMenu(BaseMenu):
                                                bottom=y - height_spacing * i, top=y - height_spacing * i + height,
                                                func=func)
             buttons.append(button)
+        buttons = ButtonContainer.labeled_menu_from_function_names(heading, callables, x, y, font_size)
 
         return cls(heading, buttons, x, y, drydock, part_store, part_inspection)
 

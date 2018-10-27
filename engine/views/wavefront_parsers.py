@@ -2,22 +2,24 @@ from math import cos, sin, radians
 from os import path
 from typing import List, Tuple
 
+from engine.models.observable import Observable
 
-class Face(object):
+
+class Face(Observable):
 
     def __init__(self, vertices: list, normals: list, material: 'Material'):
+        super().__init__()
         self._vertices = vertices
         self._original_vertices = vertices.copy()
         self._normals = normals
         self.material = material
         self.n_vertices = len(self._vertices)
-        self._observers = set()
         self.center_point = self._calculate_center_point()
         self._original_position = self.center_point
 
     def set_vertices(self, vertices: list):
         self._vertices = vertices
-        self.callback()
+        self._callback("vertices")
 
     def _calculate_center_point(self) -> tuple:
         cx = 0
@@ -40,7 +42,7 @@ class Face(object):
         for i in range(self.n_vertices):
             self._vertices[i] = tuple(a + b for a, b in zip(self._vertices[i], xyz))
         self.center_point = tuple(a + b for a, b in zip(self.center_point, xyz))
-        self.callback()
+        self._callback("vertices")
 
     def rotate(self, *pyr):
         (pc, ps), (yc, ys), (rc, rs) = [(cos(radians(v)), sin(radians(v))) for v in pyr]
@@ -53,21 +55,7 @@ class Face(object):
             x = rc * x + rs * y
             y = -rs * x + rc * y
             self._vertices[i] = tuple(a + b for a, b in zip((x, y, z), self.center_point))
-        self.callback()
-
-    def observe(self, callback):
-        self._observers.add(callback)
-
-    def unobserve(self, callback):
-        try:
-            self._observers.remove(callback)
-        except KeyError:
-            pass
-
-    def callback(self):
-        self.center_point = self._calculate_center_point()
-        for observer in self._observers:
-            observer()
+        self._callback("vertices")
 
 
 class TexturedFace(Face):
@@ -112,6 +100,7 @@ class TexturedMaterial(Material):
                               emissive=self.emissive, shininess=self.shininess, name=self.name, alpha=self.alpha,
                               texture_file_name=self.texture_file_name)
 
+
 class WaveFrontObject(object):
 
     def __init__(self, faces: List[Face], textured_faces: List[TexturedFace], name=None, group=None):
@@ -130,7 +119,7 @@ class MaterialFactory(object):
         self.material_parser = MaterialParser()
 
     def load_materials(self, file_name):
-        if not file_name in self.material_files:
+        if file_name not in self.material_files:
             with open(path.join("objects", file_name), 'r') as f:
                 file_data = f.readlines()
             self.material_files[file_name] = self.material_parser.parse(file_data)
@@ -176,16 +165,15 @@ class MaterialParser(object):
             func = self.parser_map[instruction]
         except KeyError:
             pass
-            #print("Don't know how to interpret instruction {}".format(instruction))
+            #  print("Don't know how to interpret instruction {}".format(instruction))
         else:
             key, value = func(data)
             self._material_data[key] = value
 
-
     def new_material(self, name):
         self._material_data = {}
         self._materials[name] = self._material_data
-        return ("name", name)
+        return "name", name
 
 
 class ObjectParser(object):
@@ -200,6 +188,7 @@ class ObjectParser(object):
         self._textured_faces = []
         self._vertices = []
         self._normals = []
+        self._current_material: Material = None
         self.name = None
         self.group = None
         self.smoothing_group = None

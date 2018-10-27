@@ -65,6 +65,12 @@ class MenuComponent(Observable):
         return (self.left < x < self.right) and (self.bottom < y < self.top)
 
     def draw(self):
+        self.set_up_viewport()
+
+    def draw_transparent(self):
+        self.set_up_viewport()
+
+    def set_up_viewport(self):
         glViewport(self.left * 2, self.bottom * 2, self.width * 2, self.height * 2)
 
     def _set_up_perspective(self):
@@ -85,7 +91,13 @@ class MenuComponent(Observable):
     def _draw_perspective(self):
         pass
 
+    def _draw_perspective_transparent(self):
+        pass
+
     def _draw_ortho(self):
+        pass
+
+    def _draw_ortho_transparent(self):
         pass
 
 
@@ -96,6 +108,11 @@ class PerspectiveMenuComponent(MenuComponent):
         self._set_up_perspective()
         self._draw_perspective()
 
+    def draw_transparent(self):
+        super(PerspectiveMenuComponent, self).draw()
+        self._set_up_perspective()
+        self._draw_perspective_transparent()
+
 
 class OrthoMenuComponent(MenuComponent):
 
@@ -103,6 +120,11 @@ class OrthoMenuComponent(MenuComponent):
         super(OrthoMenuComponent, self).draw()
         self._set_up_ortho()
         self._draw_ortho()
+
+    def draw_transparent(self):
+        super(OrthoMenuComponent, self).draw()
+        self._set_up_ortho()
+        self._draw_ortho_transparent()
 
 
 class PerspectiveOrthoOverlayComponent(MenuComponent):
@@ -113,6 +135,13 @@ class PerspectiveOrthoOverlayComponent(MenuComponent):
         self._draw_perspective()
         self._set_up_ortho()
         self._draw_ortho()
+
+    def draw_transparent(self):
+        super(PerspectiveOrthoOverlayComponent, self).draw()
+        self._set_up_perspective()
+        self._draw_perspective_transparent()
+        self._set_up_ortho()
+        self._draw_ortho_transparent()
 
 
 class BaseMenu(object):

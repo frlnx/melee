@@ -1,15 +1,15 @@
 import os
 from collections import defaultdict
 from ctypes import c_float
-from functools import partial
 from itertools import chain
 from typing import List, Tuple
 
 import pyglet
 from pyglet.gl import *
+from pyglet.graphics.vertexdomain import create_domain, create_attribute_usage
 
-from engine.views.wavefront_parsers import ObjectParser, WavefrontObjectFactory
-from engine.views.wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
+from .wavefront_parsers import ObjectParser, WavefrontObjectFactory
+from .wavefront_parsers import WaveFrontObject, Face, TexturedFace, Material
 
 
 class Drawable(object):
@@ -318,16 +318,34 @@ class OpenGLTexturedMaterial(OpenGLMaterial):
 class OpenGLFaceBundle(Drawable):
     shape_by_n_points = {3: GL_TRIANGLES, 4: GL_QUADS}
 
-    def __init__(self, faces: List[OpenGLFace], material=None, n_points=None, draw_mode=None, **config):
+    def __init__(self, faces: List[OpenGLTexturedFace], material=None, n_points=None, draw_mode=None, **config):
         self.faces = faces
         self.material = material or faces[0].material
         self.n_points = n_points or min(faces[0].n_vertices, 5)
+        self._n_vertices = len(faces) * self.n_points
         self.draw_mode = draw_mode or faces[0].draw_mode
         self.shape = self.shape_by_n_points[self.n_points]
         self.draw_data = []
+        self._vertices = []
+        self._normals = []
+        self._tex_coords = []
+        self._face_data_index = {}
+        self._face_vertex_index = {}
+        self._face_normal_index = {}
+        self._face_tex_coord_index = {}
         for face in faces:
-            face.observe(partial(self._update_c_draw_data, face.get_draw_data, len(self.draw_data)))
+            self._face_data_index[face] = len(self.draw_data)
+            face.observe(self._update_c_draw_data, "vertices")
             self.draw_data += face.draw_data
+            self._face_vertex_index[face] = len(self._vertices)
+            self._vertices += face._vertices
+            face.observe(self._update_vertices, "vertices")
+            self._face_normal_index[face] = len(self._normals)
+            self._normals += face._normals
+            if face._texture_coords:
+                self._face_tex_coord_index[face] = len(self._tex_coords)
+                self._tex_coords += face._texture_coords
+        self.vertex_list = self.create_vertexlist()
         self.data_length = len(self.draw_data)
         self.c_arr = c_float * self.data_length
         self.c_draw_data = self.c_arr(*self.draw_data)
@@ -336,10 +354,28 @@ class OpenGLFaceBundle(Drawable):
         else:
             self._configure_cull_face = self._enable_cull_face
 
-    def _update_c_draw_data(self, data_func, start: int):
-        data = data_func()
+    def create_vertexlist(self):
+        usage = create_attribute_usage(f'{self.draw_mode}/dynamic')
+        vd = create_domain(usage)
+        vertex_list = vd.create(self._n_vertices)
+        if self._tex_coords:
+            vertex_list.tex_coords = self._tex_coords
+        vertex_list.vertices = self._vertices
+        vertex_list.normals = self._normals
+        return vertex_list
+
+    def _update_c_draw_data(self, caller: OpenGLTexturedFace):
+        data = caller.draw_data
+        start = self._face_data_index[caller]
         end = start + len(data)
         self.c_draw_data[start:end] = data
+
+    def _update_vertices(self, caller: OpenGLTexturedFace):
+        data = caller._vertices
+        start = self._face_vertex_index[caller]
+        end = start + len(data)
+        self._vertices[start:end] = data
+        self.vertex_list.vertices = self._vertices
 
     def __getstate__(self):
         d = {k: val for k, val in self.__dict__.items()}
@@ -356,7 +392,7 @@ class OpenGLFaceBundle(Drawable):
         self._configure_cull_face()
         self.material.set_material()
         glInterleavedArrays(self.draw_mode, 0, self.c_draw_data)
-        glDrawArrays(self.shape, 0, len(self.faces) * self.n_points)
+        glDrawArrays(self.shape, 0, self._n_vertices)
 
     def is_transparent(self):
         return self.material.alpha < 1.0

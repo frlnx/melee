@@ -1,3 +1,5 @@
 pyglet
 pytest
 twisted
+vulkan
+pysdl2

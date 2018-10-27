@@ -28,6 +28,9 @@ class Viewport(ContainerView):
         self.setup()
         self._batch.draw_subset(self._vertex_lists)
 
+    def add_vertex_list(self, vertex_list: vertexdomain.VertexList):
+        self._vertex_lists.add(vertex_list)
+
     def add_drawable(self, drawable: Drawable):
         super(Viewport, self).add_drawable(drawable)
         count, mode, group, data = drawable.n_coordinates, drawable.mode, drawable.group, drawable.draw_data
