@@ -27,6 +27,7 @@ The engine itself is based on OpenGL bindings as provided by pyglet. It is not a
  - SOLID with few exceptions
  - Very few if statements
  - Lighting fast test suite
+ - Very small list of package dependencies
  - Zen of Python has been followed
  
 ## Codebase smells
